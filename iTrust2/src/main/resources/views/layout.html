@@ -89,24 +89,126 @@ a {
 <th:block th:replace="${links}" />
 </head>
 <body th:fragment="body">
+		<script th:inline="javascript">
+			$(function() {
+				$http = angular.injector(["ng"]).get("$http");
+				$http.get("/iTrust2/api/v1/role").then(
+						function(response) {
+							console.log(response);
+							var role = response.data.message; //contains user role
+							var navbarparent = document.getElementById('navbar-parent');
+							var admindropdown = document.getElementById('admin-dropdown');
+							var patientdropdown = document.getElementById('patient-dropdown');
+							var hcpdropdown = document.getElementById('hcp-dropdown');
+							if (!role.includes('PATIENT')) {
+								navbarparent.removeChild(patientdropdown);
+							}
+							if (!role.includes('ADMIN')) {
+								navbarparent.removeChild(admindropdown);
+							}
+							if (!role.includes('HCP')) {
+								navbarparent.removeChild(hcpdropdown);
+							}
+						});
+				/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+				/*<![CDATA[*/
+				
+			})
+			
+			/*]]>*/
+		</script>
 	<div id="wrap">
 
 		<!-- Navbar -->
 		<nav class="navbar navbar-inverse" style="margin: 0">
-			<div class="container-fluid">
+			<div id="navbar-parent" class="container-fluid">
 				<div class="navbar-header">
 					<a class="navbar-brand" th:href="@{/}">iTrust2</a>
 				</div>
-				<ul class="nav navbar-nav">
+				<ul id="admin-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Admin<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/admin/addHospital" id="addhospital">Add
+									Hospital</a></li>
+							<li><a href="/iTrust2/admin/deleteHospital"
+								id="deletehospital">Delete Hospital</a></li>
+							<li><a href="/iTrust2/admin/addUser" id="addnewuser">Add
+									User</a></li>
+							<li><a href="/iTrust2/admin/deleteUser" id="deleteuser">Delete
+									User</a></li>
+							<li><a href="/iTrust2/admin/drugs" id="drugs">Manage Drugs</a></li>
+							<li><a href="/iTrust2/admin/manageICDCodes" id="manageICDCodes">Manage ICD-10 Codes</a></li>
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics-personnel">Edit Demographics</a></li>
+						</ul>
+					</li>
+				</ul>
+				<ul id="hcp-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+														<li><a href="/iTrust2/hcp/viewAppointmentRequests"
+								id="viewrequests">View Appointment Requests</a></li>
+							<li><a href="/iTrust2/hcp/viewAppointments"
+								id="upcomingrequests">View Upcoming Appointments</a></li>
+							<li><a href="/iTrust2/hcp/editPatientDemographics"
+								id="editPatientDemographics">Edit Patient</a></li>
+							<li><a href="#">Add Patient -- Not Implemented</a></li>
+							<li><a href="/iTrust2/hcp/documentOfficeVisit.html"
+								id="documentOfficeVisit">Document Office Visit</a></li>
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							<li> <a href="/iTrust2/hcp/editOfficeVisit"
+							      id="editOfficeVisit">Edit Office Visit</a></li>
+					      	<li> <a href="/iTrust2/hcp/editPrescriptions"
+							      id="editPrescriptions-personnel">Edit Prescriptions</a></li>
+						</ul>
+					</li>
+				</ul>
+				<ul id="patient-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" id="appointments" href="#">Appointments<span
+							class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/requestAppointment"
+								id="requestappointment">Request Appointment</a></li>
+							<li><a href="/iTrust2/patient/viewAppointmentRequests"
+								id="viewrequests-patient">View Appointment Requests</a></li>
+							<li><a href="/iTrust2/patient/viewOfficeVisits">Past Office Visits</a></li>
+							<li><a href="/iTrust2/patient/viewDiagnoses" id="viewDiagnoses">Diagnoses</a></li>
+							<li><a href="/iTrust2/patient/viewPrescriptions" id="viewPrescriptions">Prescriptions</a></li>
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/editDemographics"
+								id="editdemographics-patient">Edit Demographics</a></li>
+						</ul>
+					</li>
+				</ul>
+				<ul id="extra-dropdown" class="nav navbar-nav">
 					<li><a
-						href="http://agile.csc.ncsu.edu/iTrust/wiki/doku.php?id=start">About</a></li>
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2/wiki">About</a></li>
 					<li><a
-						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2">View
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2">View
 							Source</a></li>
 				</ul>
 				<div th:if="${#httpServletRequest.remoteUser != null}">
 					<form class="navbar-form navbar-right" th:action="@{/logout}"
 						method="post">
+						<a id="changePassword" style="color:white;" href="/iTrust2/changePassword">Change Password</a>
 						<input type="submit" value="Log out" id="logout" />
 					</form>
 					<p class="navbar-text pull-right"
@@ -129,7 +231,7 @@ a {
 
 	<div id="footer">
 		<div class="container">
-			<p class="muted credit">iTrust2-v1</p>
+			<p class="muted credit">iTrust2-v2</p>
 		</div>
 	</div>
 </body>

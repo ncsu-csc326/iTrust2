@@ -2,32 +2,23 @@ package edu.ncsu.csc.itrust2.selenium;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Before;
+import java.util.logging.Level;
+
 import org.junit.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-import edu.ncsu.csc.itrust2.utils.HibernateDataGenerator;
-
 public class LoginIT {
 
-    private WebDriver           driver;
-    private String              baseUrl;
-    private static final String HOME_URL = "http://localhost:8080/iTrust2/ROLE/index";
-
-    /**
-     * Sets up the test
-     *
-     * @throws Exception
-     */
-    @Before
-    public void setUp () throws Exception {
-        driver = new HtmlUnitDriver();
-        baseUrl = "http://localhost:8080/iTrust2";
-        HibernateDataGenerator.refreshDB();
+    static {
+        java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
     }
+
+    private final WebDriver     driver   = new HtmlUnitDriver( true );
+    private final String        baseUrl  = "http://localhost:8080/iTrust2";
+    private static final String HOME_URL = "http://localhost:8080/iTrust2/ROLE/index";
 
     private void testLogin ( final String role ) {
         driver.get( baseUrl );

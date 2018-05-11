@@ -1,12 +1,14 @@
 package edu.ncsu.csc.itrust2.unit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import org.junit.Test;
 
@@ -121,6 +123,76 @@ public class PatientTest {
         assertEquals( testPatient.getEthnicity().getName(), pf2.getEthnicity() );
         assertEquals( testPatient.getGender().getName(), pf2.getGender() );
 
+    }
+
+    /**
+     * Tests that validation of all fields is working
+     */
+    @Test
+    public void testFieldValidation () {
+        final Patient p = new Patient();
+
+        // invalid chars
+        expectFailure( p::setFirstName, "first name *" );
+        expectFailure( p::setLastName, "last name &\n" );
+        expectFailure( p::setPreferredName, "preferred name +#" );
+        expectFailure( p::setEmail, "preferred name +#" );
+        expectFailure( p::setAddress1, "address 1 ()" );
+        expectFailure( p::setAddress2, "address 2 ----" );
+        expectFailure( p::setCity, "city38" );
+        expectFailure( p::setZip, "zip" );
+        expectFailure( p::setPhone, "phone" );
+
+        // invalid sizes
+        expectFailure( p::setFirstName, "123456789012345678901" );
+        expectFailure( p::setFirstName, "" );
+        expectFailure( p::setLastName, "1234567890123456789012345678901" );
+        expectFailure( p::setLastName, "" );
+        expectFailure( p::setPreferredName, "1234567890123456789012345678901" );
+        expectFailure( p::setEmail, "1234567890123456789012345678901" );
+        expectFailure( p::setEmail, "" );
+        expectFailure( p::setAddress1, "123456789012345678901234567890123456789012345678901" );
+        expectFailure( p::setAddress1, "" );
+        expectFailure( p::setAddress2, "123456789012345678901234567890123456789012345678901" );
+        expectFailure( p::setCity, "abcdefghijklmnop" );
+        expectFailure( p::setCity, "" );
+        expectFailure( p::setZip, "1234" );
+        expectFailure( p::setZip, "123456" );
+        expectFailure( p::setZip, "12345-678" );
+        expectFailure( p::setZip, "12345-67890" );
+        expectFailure( p::setPhone, "123-456-789" );
+        expectFailure( p::setPhone, "123-456-78901" );
+
+        // required values
+        expectFailure( p::setFirstName, null );
+        expectFailure( p::setLastName, null );
+        expectFailure( p::setEmail, null );
+        expectFailure( p::setAddress1, null );
+        expectFailure( p::setCity, null );
+        expectFailure( p::setZip, null );
+        expectFailure( p::setPhone, null );
+
+        // valid values
+        p.setFirstName( "Alexander" );
+        p.setLastName( "Johnson" );
+        p.setPreferredName( "Alex" );
+        p.setEmail( "alex_johnson@gmail.com" );
+        p.setAddress1( "1234 Main St." );
+        p.setAddress2( "still 1234 Main St." );
+        p.setCity( "Raleigh" );
+        p.setZip( "27607" );
+        p.setZip( "27607-1234" );
+        p.setPhone( "123-456-7890" );
+    }
+
+    private void expectFailure ( final Consumer<String> setter, final String value ) {
+        try {
+            setter.accept( value );
+            fail( "expected exception during validation" );
+        }
+        catch ( final Exception e ) {
+            // we want an exception
+        }
     }
 
 }

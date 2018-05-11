@@ -84,7 +84,7 @@ public class AppointmentRequestStepDefs {
     @Then ( "The appointment can be found in the list" )
     public void findAppointment () {
         driver.findElement( By.linkText( "iTrust2" ) ).click();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('viewrequests').click();" );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('viewrequests-patient').click();" );
 
         final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
         final Long value = Calendar.getInstance().getTimeInMillis()

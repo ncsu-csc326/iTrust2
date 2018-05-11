@@ -9,12 +9,12 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import edu.ncsu.csc.itrust2.forms.admin.HospitalForm;
 import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 
 /**
  * Class representing a Hospital object, as stored in the DB
@@ -29,14 +29,7 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
     /**
      * Used for serializing the object.
      */
-    private static final long                          serialVersionUID = 1L;
-
-    /**
-     * In-memory cache that will store instances of the Hospital to avoid
-     * retrieval trips to the database.
-     */
-    static private DomainObjectCache<String, Hospital> cache            = new DomainObjectCache<String, Hospital>(
-            Hospital.class );
+    private static final long serialVersionUID = 1L;
 
     /**
      * Construct a Hospital object from the HospitalForm object provided
@@ -78,17 +71,12 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      * @return The Hospital found, or null if none was found.
      */
     public static Hospital getByName ( final String name ) {
-        Hospital hospital = cache.get( name );
-        if ( null == hospital ) {
-            try {
-                hospital = getWhere( " name = '" + name + "'" ).get( 0 );
-                cache.put( name, hospital );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+        try {
+            return getWhere( createCriterionAsList( "name", name ) ).get( 0 );
         }
-        return hospital;
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -96,11 +84,11 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      * clause provided.
      *
      * @param where
-     *            Clause to match by
+     *            List of Criterion to and together and search for records by
      * @return The matching Hospitals
      */
     @SuppressWarnings ( "unchecked" )
-    private static List<Hospital> getWhere ( final String where ) {
+    private static List<Hospital> getWhere ( final List<Criterion> where ) {
         return (List<Hospital>) getWhere( Hospital.class, where );
     }
 
@@ -124,7 +112,7 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      * Name of the Hospital
      */
     @NotEmpty
-    @Length ( max = 255 )
+    @Length ( max = 100 )
     @Id
     private String name;
 
@@ -132,7 +120,7 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      * Address of the Hospital
      */
     @NotEmpty
-    @Length ( max = 255 )
+    @Length ( max = 100 )
     private String address;
 
     /**

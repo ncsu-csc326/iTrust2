@@ -26,7 +26,22 @@ public enum TransactionType {
      * User logged out
      */
     LOGOUT ( 3, "Logged Out", true ),
-
+    /**
+     * User locked out of system (temporary)
+     */
+    USER_LOCKOUT ( 4, "User Locked Out", true ),
+    /**
+     * IP locked out of system (temporary)
+     */
+    IP_LOCKOUT ( 5, "IP Locked Out", true ),
+    /**
+     * User banned
+     */
+    USER_BANNED ( 6, "User Banned", true ),
+    /**
+     * IP Banned
+     */
+    IP_BANNED ( 7, "IP Banned", true ),
     /**
      * New User created
      */
@@ -55,7 +70,12 @@ public enum TransactionType {
     /**
      * User updated their demographics
      */
-    ENTER_EDIT_DEMOGRAPHICS ( 410, "Demographics edited by user", true ),
+    EDIT_DEMOGRAPHICS ( 410, "Demographics edited by user", true ),
+
+    /**
+     * User creates their demographics
+     */
+    CREATE_DEMOGRAPHICS ( 411, "Demographics created by user", true ),
 
     /**
      * Hospital created
@@ -106,11 +126,11 @@ public enum TransactionType {
     /**
      * Create basic health metrics
      */
-    OFFICE_VISIT_CREATE ( 800, "Create basic health metrics", true ),
+    OFFICE_VISIT_CREATE ( 800, "Create office visit for patient", true ),
     /**
      * HCP views basic health metrics
      */
-    OFFICE_VISIT_HCP_VIEW ( 801, "HCP views basic health metrics", true ),
+    OFFICE_VISIT_HCP_VIEW ( 801, "View office visit by HCP", true ),
     /**
      * HCP edits basic health metrics
      */
@@ -118,9 +138,135 @@ public enum TransactionType {
     /**
      * Patient views basic health metrics for an office visit
      */
-    OFFICE_VISIT_PATIENT_VIEW ( 810, "Patient views basic health metrics for an office visit", true )
+    OFFICE_VISIT_PATIENT_VIEW ( 810, "View office visit by Patient", true ),
 
-    ;
+    /**
+     * Office visit is deleted
+     */
+    OFFICE_VISIT_DELETE ( 811, "Office visit deleted", true ),
+
+    /**
+     * Admin adds an ICD-10 code
+     */
+    ICD_CREATE ( 1001, "Admin adds ICD-10 code", false ),
+    /**
+     * Admin deletes an ICD10 code
+     */
+    ICD_DELETE ( 1002, "Admin deletes ICD-10 code", false ),
+    /**
+     * Admin edits ICD-10 code
+     */
+    ICD_EDIT ( 1003, "Admin edits ICD-10 code", false ),
+    /**
+     * Admin views ICD-10 code
+     */
+    ICD_VIEW ( 1004, "Administrator views ICD-10 codes", false ),
+    /**
+     * Admin views all ICD-10 code
+     */
+    ICD_VIEW_ALL ( 1005, "Administrator views all ICD-10 codes", false ),
+    /**
+     * User gets diagnosis by id
+     */
+    DIAGNOSIS_VIEW_BY_ID ( 1006, "Diagnoses retrieved by id", true ),
+    /**
+     * User gets diagnoses for an office visit
+     */
+    DIAGNOSIS_VIEW_BY_OFFICE_VISIT ( 1007, "Diagnoses retrieved by office visit", true ),
+    /**
+     * Patient views diagnoses
+     */
+    DIAGNOSIS_PATIENT_VIEW_ALL ( 1008, "Patient views diagnoses", true ),
+    /**
+     * HCP creates diagnosis
+     */
+    DIAGNOSIS_CREATE ( 1009, "HCP creates a diagnosis within and office visit", true ),
+    /**
+     * HCP edits diagnosis
+     */
+    DIAGNOSIS_EDIT ( 1010, "HCP edits diagnosis", true ),
+    /**
+     * HCP deletes diagnosis
+     */
+    DIAGNOSIS_DELETE ( 1011, "HCP deletes diagnosis", true ),
+
+    /**
+     * Admin created a new drug
+     */
+    DRUG_CREATE ( 900, "Admin created a new drug", true ),
+    /**
+     * Admin edited an existing drug
+     */
+    DRUG_EDIT ( 901, "Admin edited an existing drug", true ),
+    /**
+     * Admin deleted an existing drug
+     */
+    DRUG_DELETE ( 902, "Admin deleted an existing drug", true ),
+    /**
+     * Admin views all drugs in the system
+     */
+    DRUG_VIEW ( 903, "Admin views all drugs in the system", true ),
+
+    /**
+     * HCP created a new prescription
+     */
+    PRESCRIPTION_CREATE ( 910, "HCP created a new prescription", true ),
+    /**
+     * HCP edited an existing prescription
+     */
+    PRESCRIPTION_EDIT ( 911, "HCP edited an existing prescription", true ),
+    /**
+     * HCP deleted an existing prescription
+     */
+    PRESCRIPTION_DELETE ( 912, "HCP deleted an existing prescription", true ),
+    /**
+     * User viewed an existing prescription
+     */
+    PRESCRIPTION_VIEW ( 913, "User viewed an existing prescription", true ),
+
+    /**
+     * Attempt to update password fails
+     */
+    PASSWORD_UPDATE_FAILURE ( 1100, "Failed password update", true ),
+
+    /**
+     * Attempt to update password is successful
+     */
+    PASSWORD_UPDATE_SUCCESS ( 1101, "Successful password update", true ),
+    /**
+     * Reset request email sent successfully
+     */
+    PASSWORD_RESET_EMAIL_SENT ( 1102, "Reset request email sent", true ),
+
+    /**
+     * HCP views patient's demographics
+     */
+    PATIENT_DEMOGRAPHICS_VIEW ( 1200, "HCP views patient's demographics", true ),
+    /**
+     * HCP edits patient's demographics
+     */
+    PATIENT_DEMOGRAPHICS_EDIT ( 1201, "HCP edits patient's demographics", true ),
+
+    /**
+     * User views their log entries
+     */
+    VIEW_USER_LOG ( 1301, "Log events viewed", true ),
+    /**
+     * An email is sent to the user on password change
+     */
+    CREATE_PW_CHANGE_EMAIL ( 1401, "PW Change Email notification sent", true ),
+    /**
+     * An email is sent to the user on appointment request change
+     */
+    CREATE_APPOINTMENT_REQUEST_EMAIL ( 1402, "AppointmentRequest Email notification sent", true ),
+    /**
+     * An email is sent to the user on lockout
+     */
+    CREATE_LOCKOUT_EMAIL ( 1403, "Account Lockout Email notification sent", true ),
+    /**
+     * An email would be sent but email address is missing.
+     */
+    CREATE_MISSING_EMAIL_LOG ( 1404, "Email notification could not be sent due to missing email address", true );
 
     /**
      * Creates a TransactionType for logging events

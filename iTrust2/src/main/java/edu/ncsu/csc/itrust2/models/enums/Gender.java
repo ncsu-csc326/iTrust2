@@ -1,5 +1,8 @@
 package edu.ncsu.csc.itrust2.models.enums;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Enum representing possible Genders for users of the system.
  *
@@ -50,6 +53,19 @@ public enum Gender {
     }
 
     /**
+     * Returns a map from field name to value, which is more easily serialized
+     * for sending to front-end.
+     *
+     * @return map from field name to value for each of the fields in this enum
+     */
+    public Map<String, Object> getInfo () {
+        final Map<String, Object> map = new HashMap<String, Object>();
+        map.put( "id", name() );
+        map.put( "name", getName() );
+        return map;
+    }
+
+    /**
      * Convert the Gender to a String
      */
     @Override
@@ -59,7 +75,7 @@ public enum Gender {
 
     /**
      * Parse the String provided into an actual Gender enum.
-     * 
+     *
      * @param genderStr
      *            String representation of the Gender
      * @return Gender enum corresponding to the string, or NotSpecified if

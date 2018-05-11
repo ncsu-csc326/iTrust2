@@ -3,6 +3,7 @@ package edu.ncsu.csc.itrust2.models.persistent;
 import java.text.ParseException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import javax.persistence.Entity;
@@ -14,28 +15,24 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.criterion.Criterion;
+
 import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 
 /**
  * Object persisted in the database that represents the BasicHealthMetrics of a
  * patient's office visit.
  *
  * @author Matthew Gray
+ * @author Kai Presler-Marshall
  */
 
 @Entity
 @Table ( name = "BasicHealthMetrics" )
 public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
-    /**
-     * In-memory cache that will store instances of the BasicHealthMetrics to
-     * avoid retrieval trips to the database.
-     */
-    static private DomainObjectCache<Long, BasicHealthMetrics> cache = new DomainObjectCache<Long, BasicHealthMetrics>(
-            BasicHealthMetrics.class );
 
     /**
      * Retrieve an BasicHealthMetrics by its numerical ID.
@@ -45,17 +42,12 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * @return The BasicHealthMetrics, if found, or null if not found.
      */
     public static BasicHealthMetrics getById ( final Long id ) {
-        BasicHealthMetrics request = cache.get( id );
-        if ( null == request ) {
-            try {
-                request = getWhere( "id = '" + id + "'" ).get( 0 );
-                cache.put( id, request );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+        try {
+            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
         }
-        return request;
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -88,11 +80,11 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * Clause is expected to be valid SQL.
      *
      * @param where
-     *            The WhereClause to find BasicHealthMetrics by
+     *            List of Criterion to and together and search for records by
      * @return The matching list
      */
     @SuppressWarnings ( "unchecked" )
-    private static List<BasicHealthMetrics> getWhere ( final String where ) {
+    private static List<BasicHealthMetrics> getWhere ( final List<Criterion> where ) {
         return (List<BasicHealthMetrics>) getWhere( BasicHealthMetrics.class, where );
     }
 
@@ -104,7 +96,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * @return All of their BasicHealthMetrics
      */
     public static List<BasicHealthMetrics> getBasicHealthMetricsForPatient ( final String patientName ) {
-        return getWhere( " patient_id = '" + patientName + "'" );
+        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -115,7 +107,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * @return All BasicHealthMetrics involving this HCP
      */
     public static List<BasicHealthMetrics> getBasicHealthMetricsForHCP ( final String hcpName ) {
-        return getWhere( " hcp_id = '" + hcpName + "' " );
+        return getWhere( createCriterionAsList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
     }
 
     /**
@@ -131,7 +123,11 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      */
     public static List<BasicHealthMetrics> getBasicHealthMetricsForHCPAndPatient ( final String hcpName,
             final String patientName ) {
-        return getWhere( " hcp_id = '" + hcpName + "'" + " AND patient_id = '" + patientName + "' " );
+
+        final Vector<Criterion> criteria = new Vector<Criterion>();
+        criteria.add( createCriterion( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        criteria.add( createCriterion( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        return getWhere( criteria );
     }
 
     /**
@@ -246,7 +242,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      */
     @NotNull
     @ManyToOne
-    @JoinColumn ( name = "patient_id" )
+    @JoinColumn ( name = "patient_id", columnDefinition = "varchar(100)" )
     private User                   patient;
 
     /**
@@ -254,7 +250,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      */
     @NotNull
     @ManyToOne
-    @JoinColumn ( name = "hcp_id" )
+    @JoinColumn ( name = "hcp_id", columnDefinition = "varchar(100)" )
     private User                   hcp;
 
     /**

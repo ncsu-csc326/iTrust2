@@ -2,6 +2,8 @@ package edu.ncsu.csc.itrust2.controllers.api;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,8 +42,8 @@ public class APIEnumController extends APIController {
      * @return blood types
      */
     @GetMapping ( BASE_PATH + "/bloodtype" )
-    public List<BloodType> getBloodTypes () {
-        return Arrays.asList( BloodType.values() );
+    public List<Map<String, Object>> getBloodTypes () {
+        return Arrays.asList( BloodType.values() ).stream().map( bt -> bt.getInfo() ).collect( Collectors.toList() );
     }
 
     /**
@@ -50,8 +52,8 @@ public class APIEnumController extends APIController {
      * @return ethnicity
      */
     @GetMapping ( BASE_PATH + "/ethnicity" )
-    public List<Ethnicity> getEthnicity () {
-        return Arrays.asList( Ethnicity.values() );
+    public List<Map<String, Object>> getEthnicity () {
+        return Arrays.asList( Ethnicity.values() ).stream().map( eth -> eth.getInfo() ).collect( Collectors.toList() );
     }
 
     /**
@@ -60,8 +62,8 @@ public class APIEnumController extends APIController {
      * @return genders
      */
     @GetMapping ( BASE_PATH + "/gender" )
-    public List<Gender> getGenders () {
-        return Arrays.asList( Gender.values() );
+    public List<Map<String, Object>> getGenders () {
+        return Arrays.asList( Gender.values() ).stream().map( gen -> gen.getInfo() ).collect( Collectors.toList() );
     }
 
     /**
@@ -70,8 +72,8 @@ public class APIEnumController extends APIController {
      * @return states
      */
     @GetMapping ( BASE_PATH + "/state" )
-    public List<State> getStates () {
-        return Arrays.asList( State.values() );
+    public List<Map<String, Object>> getStates () {
+        return Arrays.asList( State.values() ).stream().map( st -> st.getInfo() ).collect( Collectors.toList() );
     }
 
     /**

@@ -1,12 +1,16 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
+import java.util.logging.Level;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -14,154 +18,68 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.context.WebApplicationContext;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
+import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
+import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
-import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
+import edu.ncsu.csc.itrust2.models.persistent.Patient;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 
-@ContextConfiguration ( classes = { RootConfiguration.class, WebMvcConfiguration.class } )
-@WebAppConfiguration
 public class DocumentOfficeVisitStepDefs {
 
-    private MockMvc               mvc;
+    static {
+        java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
+    }
 
-    @Autowired
-    private WebApplicationContext context;
+    private final WebDriver driver       = new HtmlUnitDriver( true );
+    private final String    baseUrl      = "http://localhost:8080/iTrust2";
 
-    private final WebDriver       driver       = new HtmlUnitDriver( true );
-    private final String          baseUrl      = "http://localhost:8080/iTrust2";
+    private final String    hospitalName = "Office Visit Hospital" + ( new Random() ).nextInt();
+    BasicHealthMetrics      expectedBhm;
 
-    private final String          hospitalName = "Office Visit Hospital" + ( new Random() ).nextInt();
-    BasicHealthMetrics            expectedBhm;
-
-    WebDriverWait                 wait         = new WebDriverWait( driver, 2 );
+    WebDriverWait           wait         = new WebDriverWait( driver, 2 );
 
     @Given ( "The required facilities exist" )
     public void personnelExists () throws Exception {
-        OfficeVisit.deleteAll( OfficeVisit.class );
-        BasicHealthMetrics.deleteAll( BasicHealthMetrics.class );
+        OfficeVisit.deleteAll();
+        DomainObject.deleteAll( BasicHealthMetrics.class );
 
         // All tests can safely assume the existence of the 'hcp', 'admin', and
         // 'patient' users
 
         /* Make sure we create a Hospital and Patient record */
 
-        /* Create a Hospital */
-        driver.get( baseUrl );
-        WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "admin" );
-        WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('addhospital').click();" );
-        try {
-            final WebElement name = driver.findElement( By.id( "name" ) );
-            name.clear();
-            name.sendKeys( hospitalName );
-
-            final WebElement address = driver.findElement( By.id( "address" ) );
-            address.clear();
-            address.sendKeys( "Bialystok" );
-
-            final WebElement state = driver.findElement( By.id( "state" ) );
-            final Select dropdown = new Select( state );
-            dropdown.selectByVisibleText( "NJ" );
-
-            final WebElement zip = driver.findElement( By.id( "zip" ) );
-            zip.clear();
-            zip.sendKeys( "10101" );
-        }
-        catch ( final Exception e ) {
-            /* Assume the hospital already exists & carry on */
-        }
-        finally {
-            driver.findElement( By.id( "logout" ) ).click();
-        }
+        final Hospital hospital = new Hospital( hospitalName, "Bialystok", "10101", State.NJ.toString() );
+        hospital.save();
 
         /* Create patient record */
 
-        driver.get( baseUrl );
-        username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "patient" );
-        password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
-        try {
-            final WebElement firstName = driver.findElement( By.id( "firstName" ) );
-            firstName.clear();
-            firstName.sendKeys( "Karl" );
+        final Patient patient = new Patient();
+        patient.setSelf( User.getByName( "patient" ) );
+        patient.setFirstName( "Karl" );
+        patient.setLastName( "Liebknecht" );
+        patient.setEmail( "karl_liebknecht@mail.de" );
+        patient.setAddress1( "Karl Liebknecht Haus. Alexanderplatz" );
+        patient.setCity( "Berlin" );
+        patient.setState( State.DE );
+        patient.setZip( "91505" );
+        patient.setPhone( "123-456-7890" );
+        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/DD/YYYY", Locale.ENGLISH );
 
-            final WebElement lastName = driver.findElement( By.id( "lastName" ) );
-            lastName.clear();
-            lastName.sendKeys( "Liebknecht" );
+        final Calendar time = Calendar.getInstance();
+        time.setTime( sdf.parse( "08/13/1871" ) );
 
-            final WebElement preferredName = driver.findElement( By.id( "preferredName" ) );
-            preferredName.clear();
+        patient.setDateOfBirth( time );
 
-            final WebElement mother = driver.findElement( By.id( "mother" ) );
-            mother.clear();
-
-            final WebElement father = driver.findElement( By.id( "father" ) );
-            father.clear();
-
-            final WebElement email = driver.findElement( By.id( "email" ) );
-            email.clear();
-            email.sendKeys( "karl_liebknecht@mail.de" );
-
-            final WebElement address1 = driver.findElement( By.id( "address1" ) );
-            address1.clear();
-            address1.sendKeys( "Karl-Liebknecht-Haus, Alexanderplatz" );
-
-            final WebElement city = driver.findElement( By.id( "city" ) );
-            city.clear();
-            city.sendKeys( "Berlin" );
-
-            final WebElement state = driver.findElement( By.id( "state" ) );
-            final Select dropdown = new Select( state );
-            dropdown.selectByVisibleText( "CA" );
-
-            final WebElement zip = driver.findElement( By.id( "zip" ) );
-            zip.clear();
-            zip.sendKeys( "91505" );
-
-            final WebElement phone = driver.findElement( By.id( "phone" ) );
-            phone.clear();
-            phone.sendKeys( "123-456-7890" );
-
-            final WebElement dob = driver.findElement( By.id( "dateOfBirth" ) );
-            dob.clear();
-            dob.sendKeys( "08/13/1871" );
-
-            final WebElement submit2 = driver.findElement( By.className( "btn" ) );
-            submit2.click();
-
-        }
-        catch ( final Exception e ) {
-            /*  */
-        }
-        finally {
-            driver.findElement( By.id( "logout" ) ).click();
-        }
+        patient.save();
 
     }
 
@@ -185,15 +103,16 @@ public class DocumentOfficeVisitStepDefs {
 
     @When ( "^I fill in information on the office visit$" )
     public void documentOV () {
+        wait.until( ExpectedConditions.and( ExpectedConditions.visibilityOfElementLocated( By.name( "type" ) ),
+                ExpectedConditions.visibilityOfElementLocated( By.name( "name" ) ),
+                ExpectedConditions.visibilityOfElementLocated( By.name( "hospital" ) ) ) );
 
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "notes" ) ) );
         final WebElement notes = driver.findElement( By.name( "notes" ) );
         notes.clear();
         notes.sendKeys( "Patient appears pretty much alive" );
 
         final WebElement patient = driver.findElement( By.name( "name" ) );
         patient.click();
-
         final WebElement type = driver.findElement( By.name( "type" ) );
         type.click();
 
@@ -263,11 +182,8 @@ public class DocumentOfficeVisitStepDefs {
 
     @Then ( "The office visit is documented successfully" )
     public void documentedSuccessfully () {
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "success" ) ) );
-        final WebElement message = driver.findElement( By.name( "success" ) );
-
-        assertFalse( message.getText().contains( "Error occurred creating office visit" ) );
-
+        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "success" ),
+                "Office visit created successfully" ) );
     }
 
     /**
@@ -359,10 +275,9 @@ public class DocumentOfficeVisitStepDefs {
      */
     @Then ( "The office visit is not documented" )
     public void notDocumented () {
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "success" ) ) );
-        final WebElement message = driver.findElement( By.name( "success" ) );
+        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "success" ),
+                "Error occurred creating office visit" ) );
 
-        assertTrue( message.getText().contains( "Error occurred creating office visit" ) );
         final List<BasicHealthMetrics> list = BasicHealthMetrics.getBasicHealthMetrics();
         assertTrue( 0 == list.size() );
     }
@@ -374,76 +289,30 @@ public class DocumentOfficeVisitStepDefs {
      *            The name of the patient.
      * @param birthday
      *            The birthday of the patient.
+     * @throws ParseException
      */
     @Given ( "^A patient exists with name: (.+) and date of birth: (.+)$" )
-    public void patientExistsWithName ( final String name, final String birthday ) {
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "patient" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
+    public void patientExistsWithName ( final String name, final String birthday ) throws ParseException {
 
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
-        try {
-            final WebElement firstName = driver.findElement( By.id( "firstName" ) );
-            firstName.clear();
-            firstName.sendKeys( name.split( " " )[0] );
+        final Patient patient = new Patient();
+        patient.setSelf( User.getByName( "patient" ) );
 
-            final WebElement lastName = driver.findElement( By.id( "lastName" ) );
-            lastName.clear();
-            lastName.sendKeys( name.split( " " )[1] );
+        patient.setFirstName( name.split( " " )[0] );
+        patient.setLastName( name.split( " " )[1] );
+        patient.setEmail( "email@mail.com" );
+        patient.setAddress1( "address place. address" );
+        patient.setCity( "citytown" );
+        patient.setState( State.CA );
+        patient.setZip( "91505" );
+        patient.setPhone( "123-456-7890" );
 
-            final WebElement preferredName = driver.findElement( By.id( "preferredName" ) );
-            preferredName.clear();
+        final Calendar cal = Calendar.getInstance();
+        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
+        cal.setTime( sdf.parse( birthday ) );
+        patient.setDateOfBirth( cal );
 
-            final WebElement mother = driver.findElement( By.id( "mother" ) );
-            mother.clear();
+        patient.save();
 
-            final WebElement father = driver.findElement( By.id( "father" ) );
-            father.clear();
-
-            final WebElement email = driver.findElement( By.id( "email" ) );
-            email.clear();
-            email.sendKeys( "email@mail.com" );
-
-            final WebElement address1 = driver.findElement( By.id( "address1" ) );
-            address1.clear();
-            address1.sendKeys( "address place, address" );
-
-            final WebElement city = driver.findElement( By.id( "city" ) );
-            city.clear();
-            city.sendKeys( "citytown" );
-
-            final WebElement state = driver.findElement( By.id( "state" ) );
-            final Select dropdown = new Select( state );
-            dropdown.selectByVisibleText( "CA" );
-
-            final WebElement zip = driver.findElement( By.id( "zip" ) );
-            zip.clear();
-            zip.sendKeys( "91505" );
-
-            final WebElement phone = driver.findElement( By.id( "phone" ) );
-            phone.clear();
-            phone.sendKeys( "123-456-7890" );
-
-            final WebElement dob = driver.findElement( By.id( "dateOfBirth" ) );
-            dob.clear();
-            dob.sendKeys( birthday );
-
-            final WebElement submit2 = driver.findElement( By.className( "btn" ) );
-            submit2.click();
-
-        }
-        catch ( final Exception e ) {
-            /*  */
-        }
-        finally {
-            driver.findElement( By.id( "logout" ) ).click();
-        }
     }
 
     /**
@@ -550,8 +419,6 @@ public class DocumentOfficeVisitStepDefs {
         wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "submit" ) ) );
         final WebElement submit = driver.findElement( By.name( "submit" ) );
         submit.click();
-        // Give the data time to save to the database
-        Thread.sleep( 2000 );
     }
 
     /**
@@ -675,8 +542,6 @@ public class DocumentOfficeVisitStepDefs {
         wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "submit" ) ) );
         final WebElement submit = driver.findElement( By.name( "submit" ) );
         submit.click();
-        // Give the data time to save to the database
-        Thread.sleep( 2000 );
     }
 
     /**
@@ -865,7 +730,5 @@ public class DocumentOfficeVisitStepDefs {
         wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "submit" ) ) );
         final WebElement submit = driver.findElement( By.name( "submit" ) );
         submit.click();
-        // Give the data time to save to the database
-        Thread.sleep( 2000 );
     }
 }

@@ -2,6 +2,8 @@ package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -11,13 +13,13 @@ import javax.persistence.Table;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
+import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 
 /**
  * Basic class for a User in the system. This User class is a shared type that
@@ -37,12 +39,7 @@ public class User extends DomainObject<User> implements Serializable {
     /**
      * The UID of the user
      */
-    private static final long                      serialVersionUID = 1L;
-
-    /**
-     * The cache representation of the user in the database
-     */
-    static private DomainObjectCache<String, User> cache            = new DomainObjectCache<String, User>( User.class );
+    private static final long serialVersionUID = 1L;
 
     /**
      * Get all users in the database
@@ -66,18 +63,12 @@ public class User extends DomainObject<User> implements Serializable {
      * @return the corresponding user with this username
      */
     public static User getByName ( final String name ) {
-        User user = cache.get( name );
-        if ( null == user ) {
-            try {
-                user = getWhere( "username = '" + name + "'" ).get( 0 );
-                cache.put( name, user );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+        try {
+            return getWhere( createCriterionAsList( "username", name ) ).get( 0 );
         }
-        return user;
-
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -90,7 +81,17 @@ public class User extends DomainObject<User> implements Serializable {
      * @return the user with this role and name
      */
     public static User getByNameAndRole ( final String name, final Role type ) {
-        return getByName( name ); /* Name is primary key, so this is safe */
+
+        final Vector<Criterion> criteria = new Vector<Criterion>();
+        criteria.add( createCriterion( "username", name ) );
+        criteria.add( createCriterion( "role", type ) );
+        try {
+            return getWhere( criteria ).get( 0 );
+        }
+        catch ( final Exception e ) {
+            return null;
+        }
+
     }
 
     /**
@@ -119,11 +120,11 @@ public class User extends DomainObject<User> implements Serializable {
      *                   returns a list of DomainObjects, the cast is okay.
      *
      * @param where
-     *            the passed query
+     *            List of Criterion to and together and search for records by
      * @return users where the passed query is true
      */
     @SuppressWarnings ( "unchecked" )
-    public static List<User> getWhere ( final String where ) {
+    private static List<User> getWhere ( final List<Criterion> where ) {
         return (List<User>) getWhere( User.class, where );
     }
 
@@ -135,7 +136,7 @@ public class User extends DomainObject<User> implements Serializable {
      * @return the users with the passed role
      */
     public static List<User> getByRole ( final Role role ) {
-        return getWhere( "role = '" + role.toString() + "'" );
+        return getWhere( createCriterionAsList( "role", role ) );
     }
 
     /** For Hibernate */
@@ -298,7 +299,7 @@ public class User extends DomainObject<User> implements Serializable {
 
     /**
      * Whether or not this user is equal to the passed User
-     * 
+     *
      * @param obj
      *            the user to compate this user to
      */
@@ -350,6 +351,23 @@ public class User extends DomainObject<User> implements Serializable {
     @Override
     public String getId () {
         return getUsername();
+    }
+
+    @Override
+    public void delete () {
+        try {
+            @SuppressWarnings ( "unchecked" )
+            final List<PasswordResetToken> list = (List<PasswordResetToken>) DomainObject
+                    .getAll( PasswordResetToken.class ).stream()
+                    .filter( x -> ( (PasswordResetToken) x ).getUser().equals( this ) ).collect( Collectors.toList() );
+            for ( final PasswordResetToken t : list ) {
+                t.delete();
+            }
+        }
+        catch ( final Exception e ) {
+            // ignore to allow a second attempt at deleting this object
+        }
+        super.delete();
     }
 
 }

@@ -49,9 +49,10 @@ public class APIHospitalController extends APIController {
     public ResponseEntity getHospital ( @PathVariable ( "id" ) final String id ) {
         final Hospital hospital = Hospital.getByName( id );
         if ( null != hospital ) {
-            LoggerUtil.log( TransactionType.VIEW_HOSPITAL, hospital.getName() );
+            LoggerUtil.log( TransactionType.VIEW_HOSPITAL, LoggerUtil.currentUser() );
         }
-        return null == hospital ? new ResponseEntity( "No hospital found for name " + id, HttpStatus.NOT_FOUND )
+        return null == hospital
+                ? new ResponseEntity( errorResponse( "No hospital found for name " + id ), HttpStatus.NOT_FOUND )
                 : new ResponseEntity( hospital, HttpStatus.OK );
     }
 
@@ -64,20 +65,21 @@ public class APIHospitalController extends APIController {
      */
     @PostMapping ( BASE_PATH + "/hospitals" )
     public ResponseEntity createHospital ( @RequestBody final HospitalForm hospitalF ) {
+        System.err.println( "HOSPITALS" );
         final Hospital hospital = new Hospital( hospitalF );
         if ( null != Hospital.getByName( hospital.getName() ) ) {
-            return new ResponseEntity( "Hospital with the name " + hospital.getName() + " already exists",
+            return new ResponseEntity(
+                    errorResponse( "Hospital with the name " + hospital.getName() + " already exists" ),
                     HttpStatus.CONFLICT );
         }
         try {
             hospital.save();
-            LoggerUtil.log( TransactionType.CREATE_HOSPITAL, hospital.getName() );
+            LoggerUtil.log( TransactionType.CREATE_HOSPITAL, LoggerUtil.currentUser() );
             return new ResponseEntity( hospital, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity(
-                    "Error occured while validating or saving " + hospital.toString() + " because of " + e.getMessage(),
-                    HttpStatus.BAD_REQUEST );
+            return new ResponseEntity( errorResponse( "Error occured while validating or saving " + hospital.toString()
+                    + " because of " + e.getMessage() ), HttpStatus.BAD_REQUEST );
         }
 
     }
@@ -97,7 +99,7 @@ public class APIHospitalController extends APIController {
         final Hospital hospital = new Hospital( hospitalF );
         final Hospital dbHospital = Hospital.getByName( id );
         if ( null == dbHospital ) {
-            return new ResponseEntity( "No hospital found for name " + id, HttpStatus.NOT_FOUND );
+            return new ResponseEntity( errorResponse( "No hospital found for name " + id ), HttpStatus.NOT_FOUND );
         }
         try {
             hospital.save(); /* Will overwrite existing request */
@@ -106,11 +108,11 @@ public class APIHospitalController extends APIController {
                 // because name is used as the primary key in hibernate.
                 dbHospital.delete();
             }
-            LoggerUtil.log( TransactionType.EDIT_HOSPITAL, hospital.getName() );
+            LoggerUtil.log( TransactionType.EDIT_HOSPITAL, LoggerUtil.currentUser() );
             return new ResponseEntity( hospital, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not update " + id + " because of " + e.getMessage(),
+            return new ResponseEntity( errorResponse( "Could not update " + id + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
     }

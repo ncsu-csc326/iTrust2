@@ -3,6 +3,8 @@ package edu.ncsu.csc.itrust2.utils;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.LogEntry;
 import edu.ncsu.csc.itrust2.models.persistent.User;
@@ -141,5 +143,19 @@ public class LoggerUtil {
     public static void log ( final TransactionType code, final User primary, final User secondary ) {
         log( code, primary.getUsername(), secondary.getUsername(), null );
 
+    }
+
+    /**
+     * Gets the name of the currently authenticated user
+     *
+     * @return the name of the current user
+     */
+    public static String currentUser () {
+        try {
+            return SecurityContextHolder.getContext().getAuthentication().getName();
+        }
+        catch ( final NullPointerException npe ) {
+            return "SPRING_API_TEST_USER"; // API tests have no explicit user
+        }
     }
 }

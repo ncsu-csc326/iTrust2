@@ -12,11 +12,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
 
 import edu.ncsu.csc.itrust2.forms.personnel.PersonnelForm;
 import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 
 /**
  * Database-persisted representation of all non-Patient types of iTrust2 users.
@@ -30,12 +30,6 @@ import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 public class Personnel extends DomainObject<Personnel> {
 
     /**
-     * The cache representation of the personnel in the database
-     */
-    static private DomainObjectCache<String, Personnel> cache = new DomainObjectCache<String, Personnel>(
-            Personnel.class );
-
-    /**
      * Get the personnel by username
      *
      * @param username
@@ -43,17 +37,7 @@ public class Personnel extends DomainObject<Personnel> {
      * @return the personnel result with the queried username
      */
     public static Personnel getByName ( final String username ) {
-        Personnel p = cache.get( username );
-        if ( null == p ) {
-            try {
-                p = getWhere( " self_id = '" + username + "'" ).get( 0 );
-                cache.put( username, p );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
-        }
-        return p;
+        return getByName( User.getByName( username ) );
     }
 
     /**
@@ -66,7 +50,12 @@ public class Personnel extends DomainObject<Personnel> {
      * @return the personnel result with the queried username
      */
     public static Personnel getByName ( final User self ) {
-        return getByName( self.getUsername() );
+        try {
+            return getWhere( createCriterionAsList( "self", self ) ).get( 0 );
+        }
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -91,11 +80,11 @@ public class Personnel extends DomainObject<Personnel> {
      *                   returns a list of DomainObjects, the cast is okay.
      *
      * @param where
-     *            the passed query
+     *            List of Criterion to and together and search for records by
      * @return all Personnel in the database where the passed query is true
      */
     @SuppressWarnings ( "unchecked" )
-    public static List<Personnel> getWhere ( final String where ) {
+    private static List<Personnel> getWhere ( final List<Criterion> where ) {
         return (List<Personnel>) getWhere( Personnel.class, where );
     }
 
@@ -103,7 +92,7 @@ public class Personnel extends DomainObject<Personnel> {
      * This stores a reference to the User object that this personnel is.
      * Mandatory.
      */
-    @JoinColumn ( name = "self_id" )
+    @JoinColumn ( name = "self_id", columnDefinition = "varchar(100)" )
     @OneToOne
     private User    self;
 

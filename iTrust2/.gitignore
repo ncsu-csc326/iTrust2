@@ -10,9 +10,11 @@ local.properties
 .loadpath
 .recommenders
 src/main/java/db.properties
+src/main/java/email.properties
 src/main/resources/hibernate.properties
 target/
 WebRoot/
+.classpath
 
 # External tool builders
 .externalToolBuilders/

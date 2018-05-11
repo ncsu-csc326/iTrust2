@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -19,11 +20,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.criterion.Criterion;
+
 import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.Status;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 
 /**
  * Backing object for the Appointment Request system. This is the object that is
@@ -36,12 +38,6 @@ import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 @Entity
 @Table ( name = "AppointmentRequests" )
 public class AppointmentRequest extends DomainObject<AppointmentRequest> {
-    /**
-     * In-memory cache that will store instances of the AppointmentRequests to
-     * avoid retrieval trips to the database.
-     */
-    static private DomainObjectCache<Long, AppointmentRequest> cache = new DomainObjectCache<Long, AppointmentRequest>(
-            AppointmentRequest.class );
 
     /**
      * Retrieve an AppointmentRequest by its numerical ID.
@@ -51,17 +47,12 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return The AppointmentRequest, if found, or null if not found.
      */
     public static AppointmentRequest getById ( final Long id ) {
-        AppointmentRequest request = cache.get( id );
-        if ( null == request ) {
-            try {
-                request = getWhere( "id = '" + id + "'" ).get( 0 );
-                cache.put( id, request );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+        try {
+            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
         }
-        return request;
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -94,11 +85,11 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * clause. Clause is expected to be valid SQL.
      *
      * @param where
-     *            The WhereClause to find AppointmentRequests by
+     *            List of Criterion to and together and search for records by
      * @return The matching list
      */
     @SuppressWarnings ( "unchecked" )
-    private static List<AppointmentRequest> getWhere ( final String where ) {
+    private static List<AppointmentRequest> getWhere ( final List<Criterion> where ) {
         return (List<AppointmentRequest>) getWhere( AppointmentRequest.class, where );
     }
 
@@ -110,7 +101,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return All of their AppointmentRequests
      */
     public static List<AppointmentRequest> getAppointmentRequestsForPatient ( final String patientName ) {
-        return getWhere( " patient_id = '" + patientName + "'" );
+        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -121,7 +112,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return All AppointmentRequests involving this HCP
      */
     public static List<AppointmentRequest> getAppointmentRequestsForHCP ( final String hcpName ) {
-        return getWhere( " hcp_id = '" + hcpName + "' " );
+        return getWhere( createCriterionAsList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
     }
 
     /**
@@ -137,7 +128,10 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      */
     public static List<AppointmentRequest> getAppointmentRequestsForHCPAndPatient ( final String hcpName,
             final String patientName ) {
-        return getWhere( " hcp_id = '" + hcpName + "'" + " AND patient_id = '" + patientName + "' " );
+        final Vector<Criterion> criteria = new Vector<Criterion>();
+        criteria.add( createCriterion( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        criteria.add( createCriterion( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        return getWhere( criteria );
     }
 
     /**
@@ -223,7 +217,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      */
     @NotNull
     @ManyToOne
-    @JoinColumn ( name = "patient_id" )
+    @JoinColumn ( name = "patient_id", columnDefinition = "varchar(100)" )
     private User            patient;
 
     /**
@@ -231,7 +225,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      */
     @NotNull
     @ManyToOne
-    @JoinColumn ( name = "hcp_id" )
+    @JoinColumn ( name = "hcp_id", columnDefinition = "varchar(100)" )
     private User            hcp;
 
     /**

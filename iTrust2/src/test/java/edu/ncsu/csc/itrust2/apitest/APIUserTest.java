@@ -21,6 +21,7 @@ import org.springframework.web.context.WebApplicationContext;
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
 
 /**
@@ -65,6 +66,17 @@ public class APIUserTest {
      */
     @Test
     public void testUserAPI () throws Exception {
+
+        try {
+            final User u = User.getByName( "sven_forkbeard" );
+            if ( null != u ) {
+                u.delete();
+            }
+
+        }
+        catch ( final Exception e ) {
+            //
+        }
 
         final UserForm sven = new UserForm( "sven_forkbeard", "123456", Role.ROLE_PATIENT, 1 );
         mvc.perform( post( "/api/v1/users" ).contentType( MediaType.APPLICATION_JSON )

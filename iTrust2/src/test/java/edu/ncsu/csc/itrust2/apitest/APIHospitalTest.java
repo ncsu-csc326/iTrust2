@@ -76,16 +76,17 @@ public class APIHospitalTest {
         mvc.perform( post( "/api/v1/hospitals" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( hospital ) ) ).andExpect( status().isConflict() );
 
-        hospital.setName( "Test 1" );
+        hospital.setAddress( "2 iTrust Test Street" );
         mvc.perform( put( "/api/v1/hospitals/iTrust Test Hospital 2" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( hospital ) ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
-        mvc.perform( get( "/api/v1/hospitals/Test 1" ) ).andExpect( status().isOk() )
+        // Make sure that the put didn't break anything
+        mvc.perform( get( "/api/v1/hospitals/iTrust Test Hospital 2" ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
         // Editing a non-existent hospital should not work
-        mvc.perform( put( "/api/v1/hospitals/iTrust Test Hospital 2" ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( put( "/api/v1/hospitals/iTrust Test Hospital 3" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( hospital ) ) ).andExpect( status().isNotFound() );
 
     }

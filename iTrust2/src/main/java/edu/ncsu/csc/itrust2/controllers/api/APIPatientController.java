@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
+import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
  * Controller responsible for providing various REST API endpoints for the
@@ -50,10 +54,15 @@ public class APIPatientController extends APIController {
     public ResponseEntity getPatient () {
         final User self = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
         final Patient patient = Patient.getPatient( self );
-        return null == patient
-                ? new ResponseEntity( "Could not find a patient entry for you, " + self.getUsername(),
-                        HttpStatus.NOT_FOUND )
-                : new ResponseEntity( patient, HttpStatus.OK );
+        if ( patient == null ) {
+            return new ResponseEntity( errorResponse( "Could not find a patient entry for you, " + self.getUsername() ),
+                    HttpStatus.NOT_FOUND );
+        }
+        else {
+            LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, LoggerUtil.currentUser(), self.getUsername(),
+                    "Retrieved demographics for user " + self.getUsername() );
+            return new ResponseEntity( patient, HttpStatus.OK );
+        }
     }
 
     /**
@@ -66,9 +75,16 @@ public class APIPatientController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/patients/{username}" )
     public ResponseEntity getPatient ( @PathVariable ( "username" ) final String username ) {
-        final Patient patient = Patient.getPatient( username );
-        return null == patient ? new ResponseEntity( "No Patient found for username " + username, HttpStatus.NOT_FOUND )
-                : new ResponseEntity( patient, HttpStatus.OK );
+        final Patient patient = Patient.getByName( username );
+        if ( patient == null ) {
+            return new ResponseEntity( errorResponse( "No Patient found for username " + username ),
+                    HttpStatus.NOT_FOUND );
+        }
+        else {
+            LoggerUtil.log( TransactionType.PATIENT_DEMOGRAPHICS_VIEW, LoggerUtil.currentUser(), username,
+                    "HCP retrieved demographics for patient with username " + username );
+            return new ResponseEntity( patient, HttpStatus.OK );
+        }
     }
 
     /**
@@ -83,14 +99,17 @@ public class APIPatientController extends APIController {
         try {
             final Patient patient = new Patient( patientF );
             if ( null != Patient.getPatient( patient.getSelf() ) ) {
-                return new ResponseEntity( "Patient with the id " + patient.getSelf().getUsername() + " already exists",
+                return new ResponseEntity(
+                        errorResponse( "Patient with the id " + patient.getSelf().getUsername() + " already exists" ),
                         HttpStatus.CONFLICT );
             }
             patient.save();
+            LoggerUtil.log( TransactionType.CREATE_DEMOGRAPHICS, LoggerUtil.currentUser() );
             return new ResponseEntity( patient, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not create " + patientF.toString() + " because of " + e.getMessage(),
+            return new ResponseEntity(
+                    errorResponse( "Could not create " + patientF.toString() + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
 
@@ -109,21 +128,52 @@ public class APIPatientController extends APIController {
      */
     @PutMapping ( BASE_PATH + "/patients/{id}" )
     public ResponseEntity updatePatient ( @PathVariable final String id, @RequestBody final PatientForm patientF ) {
+        // check that the user is an HCP or a patient with username equal to id
+        boolean userEdit = false; // true if user edits his or her own
+                                  // demographics, false if hcp edits them
+        final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        try {
+            if ( !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) )
+                    && ( !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_PATIENT" ) )
+                            || !auth.getName().equals( id ) ) ) {
+                return new ResponseEntity( errorResponse( "You do not have permission to edit this record" ),
+                        HttpStatus.UNAUTHORIZED );
+            }
+
+            userEdit = auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) ) ? true : false;
+        }
+        catch ( final Exception e ) {
+            return new ResponseEntity( HttpStatus.UNAUTHORIZED );
+        }
+
         try {
             final Patient patient = new Patient( patientF );
             if ( null != patient.getSelf().getUsername() && !id.equals( patient.getSelf().getUsername() ) ) {
-                return new ResponseEntity( "The ID provided does not match the ID of the Patient provided",
+                return new ResponseEntity(
+                        errorResponse( "The ID provided does not match the ID of the Patient provided" ),
                         HttpStatus.CONFLICT );
             }
-            final Patient dbPatient = Patient.getPatient( id );
+            final Patient dbPatient = Patient.getByName( id );
             if ( null == dbPatient ) {
-                return new ResponseEntity( "No Patient found for id " + id, HttpStatus.NOT_FOUND );
+                return new ResponseEntity( errorResponse( "No Patient found for id " + id ), HttpStatus.NOT_FOUND );
             }
             patient.save();
+
+            // Log based on whether user or hcp edited demographics
+            if ( userEdit ) {
+                LoggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS, LoggerUtil.currentUser(),
+                        "User with username " + patient.getSelf().getUsername() + "updated their demographics" );
+            }
+            else {
+                LoggerUtil.log( TransactionType.PATIENT_DEMOGRAPHICS_EDIT, LoggerUtil.currentUser(),
+                        patient.getSelf().getUsername(),
+                        "HCP edited demographics for patient with username " + patient.getSelf().getUsername() );
+            }
             return new ResponseEntity( patient, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not update " + patientF.toString() + " because of " + e.getMessage(),
+            return new ResponseEntity(
+                    errorResponse( "Could not update " + patientF.toString() + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
     }

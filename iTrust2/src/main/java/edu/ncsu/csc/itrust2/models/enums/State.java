@@ -1,5 +1,8 @@
 package edu.ncsu.csc.itrust2.models.enums;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Enum of all US states. Used in addresses; stores abbreviation and full name.
  *
@@ -234,6 +237,19 @@ public enum State {
      */
     public String getName () {
         return name;
+    }
+
+    /**
+     * Returns a map from field name to value, which is more easily serialized
+     * for sending to front-end.
+     *
+     * @return map from field name to value for each of the fields in this enum
+     */
+    public Map<String, Object> getInfo () {
+        final Map<String, Object> map = new HashMap<String, Object>();
+        map.put( "id", name() );
+        map.put( "name", getName() );
+        return map;
     }
 
     /**

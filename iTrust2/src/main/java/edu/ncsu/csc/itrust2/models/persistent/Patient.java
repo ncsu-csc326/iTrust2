@@ -19,7 +19,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.hibernate.Session;
+import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
 
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
@@ -28,8 +28,6 @@ import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
-import edu.ncsu.csc.itrust2.utils.HibernateUtil;
 
 /**
  * Class representing a Patient object. This goes beyond the basic information
@@ -46,13 +44,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
     /**
      * Randomly generated ID.
      */
-    private static final long                         serialVersionUID = 4617248041239679701L;
-
-    /**
-     * The cache representation of the patients in the database
-     */
-    static private DomainObjectCache<String, Patient> cache            = new DomainObjectCache<String, Patient>(
-            Patient.class );
+    private static final long serialVersionUID = 4617248041239679701L;
 
     /**
      * Get all patients in the database
@@ -75,18 +67,14 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the username of the patient to get
      * @return the patient with the queried username
      */
-    public static Patient getPatient ( final String username ) {
-        Patient patient = cache.get( username );
-        if ( null == patient ) {
-            try {
-                patient = getWhere( "self_id = '" + username + "'" ).get( 0 );
-                cache.put( username, patient );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+    public static Patient getByName ( final String username ) {
+        try {
+            return getWhere( createCriterionAsList( "self", User.getByNameAndRole( username, Role.ROLE_PATIENT ) ) )
+                    .get( 0 );
         }
-        return patient;
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -94,27 +82,12 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * query on the database.
      *
      * @param where
-     *            The specific query on the database
-     * @return the result of the query
+     *            List of Criterion to and together and search for records by
+     * @return The list of all patients found matching the Criterion provided
      */
     @SuppressWarnings ( "unchecked" )
-    public static List<Patient> getWhere ( final String where ) {
+    private static List<Patient> getWhere ( final List<Criterion> where ) {
         return (List<Patient>) getWhere( Patient.class, where );
-    }
-
-    /**
-     * Deletes the selected DomainObject from the database. This is operation
-     * cannot be reversed.
-     */
-    @SuppressWarnings ( "unchecked" )
-    @Override
-    public void delete () {
-        final Session session = HibernateUtil.getSessionFactory().openSession();
-        session.beginTransaction();
-        session.delete( this );
-        session.getTransaction().commit();
-        session.close();
-        getCache( this.getClass() ).remove( this.getSelf().getUsername() );
     }
 
     /**
@@ -126,7 +99,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * @return the corresponding patient record
      */
     public static Patient getPatient ( final User user ) {
-        return getPatient( user.getUsername() );
+        return getByName( user.getUsername() );
     }
 
     /**
@@ -179,20 +152,30 @@ public class Patient extends DomainObject<Patient> implements Serializable {
         setPhone( form.getPhone() );
 
         final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        final Date parsedDate = sdf.parse( form.getDateOfBirth() );
-        final Calendar c = Calendar.getInstance();
-        c.setTime( parsedDate );
-        setDateOfBirth( c );
+        try {
+            final Date parsedDate = sdf.parse( form.getDateOfBirth() );
+            final Calendar c = Calendar.getInstance();
+            c.setTime( parsedDate );
+            setDateOfBirth( c );
 
+        }
+        catch ( final Exception e ) {
+            throw new IllegalArgumentException( "Date of birth must be of the form mm/dd/yyyy" );
+        }
         if ( null != form
                 .getDateOfDeath() ) { /*
                                        * Patient can't set their date of death
                                        */
-            final Date parsedDeathDate = sdf.parse( form.getDateOfDeath() );
-            final Calendar deathC = Calendar.getInstance();
-            deathC.setTime( parsedDeathDate );
-            setDateOfDeath( deathC );
-            setCauseOfDeath( form.getCauseOfDeath() );
+            try {
+                final Date parsedDeathDate = sdf.parse( form.getDateOfDeath() );
+                final Calendar deathC = Calendar.getInstance();
+                deathC.setTime( parsedDeathDate );
+                setDateOfDeath( deathC );
+                setCauseOfDeath( form.getCauseOfDeath() );
+            }
+            catch ( final Exception e ) {
+                throw new IllegalArgumentException( "Date of death must be of the form mm/dd/yyyy" );
+            }
         }
 
         setBloodType( BloodType.parse( form.getBloodType() ) );
@@ -209,7 +192,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * Mandatory.
      */
     @OneToOne
-    @JoinColumn ( name = "self_id" )
+    @JoinColumn ( name = "self_id", columnDefinition = "varchar(100)" )
     @Id
     private User      self;
 
@@ -218,7 +201,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * Optional.
      */
     @ManyToOne
-    @JoinColumn ( name = "mother_id" )
+    @JoinColumn ( name = "mother_id", columnDefinition = "varchar(100)" )
     private User      mother;
 
     /**
@@ -226,7 +209,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * Optional.
      */
     @ManyToOne
-    @JoinColumn ( name = "father_id" )
+    @JoinColumn ( name = "father_id", columnDefinition = "varchar(100)" )
     private User      father;
 
     /**
@@ -421,6 +404,10 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the first name to set this patient to
      */
     public void setFirstName ( final String firstName ) {
+        if ( firstName == null || firstName.length() > 20 || !firstName.matches( "[a-zA-Z\\d' -]+" ) ) {
+            throw new IllegalArgumentException(
+                    "First name must contain 1-20 characters (alphanumeric, -, ', or space)" );
+        }
         this.firstName = firstName;
     }
 
@@ -440,6 +427,11 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the preferred name to set this patient to
      */
     public void setPreferredName ( final String preferredName ) {
+        // preferred name is optional
+        if ( preferredName != null && ( preferredName.length() > 30 || !preferredName.matches( "[a-zA-Z\\d' -]*" ) ) ) {
+            throw new IllegalArgumentException(
+                    "Preferred name can contain no more than 30 characters (alphanumeric, -, ', or space)" );
+        }
         this.preferredName = preferredName;
     }
 
@@ -459,6 +451,10 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the last name to set this patient to
      */
     public void setLastName ( final String lastName ) {
+        if ( lastName == null || lastName.length() > 30 || !lastName.matches( "[a-zA-Z\\d' -]+" ) ) {
+            throw new IllegalArgumentException(
+                    "Last name must contain 1-30 characters (alphanumeric, -, ', or space)" );
+        }
         this.lastName = lastName;
     }
 
@@ -478,6 +474,9 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the email to set this patient to
      */
     public void setEmail ( final String email ) {
+        if ( lastName == null || lastName.length() > 30 || !lastName.matches( "[\\w\\.@]+" ) ) {
+            throw new IllegalArgumentException( "Email must contain 1-30 characters (alphanumeric, ., _, or @)" );
+        }
         this.email = email;
     }
 
@@ -497,6 +496,10 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the address line 1 to set this patient to
      */
     public void setAddress1 ( final String address1 ) {
+        if ( address1 == null || address1.length() > 50 || !address1.matches( "[a-zA-Z\\d\\. ]+" ) ) {
+            throw new IllegalArgumentException(
+                    "Address line 1 must contain 1-50 characters (alphanumeric, ., or space)" );
+        }
         this.address1 = address1;
     }
 
@@ -516,6 +519,11 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the address line 2 to set this patient to
      */
     public void setAddress2 ( final String address2 ) {
+        // optional
+        if ( address2 != null && ( address2.length() > 50 || !address2.matches( "[a-zA-Z\\d\\. ]*" ) ) ) {
+            throw new IllegalArgumentException(
+                    "Address line 2 can contain no more than 50 characters (alphanumeric, ., or space)" );
+        }
         this.address2 = address2;
     }
 
@@ -535,6 +543,9 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the city of residence to set this patient to
      */
     public void setCity ( final String city ) {
+        if ( city == null || city.length() > 15 || !city.matches( "[a-zA-Z]+" ) ) {
+            throw new IllegalArgumentException( "City must contain 1-15 alpha characters" );
+        }
         this.city = city;
     }
 
@@ -573,6 +584,9 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the zipcode to set this patient to
      */
     public void setZip ( final String zip ) {
+        if ( zip == null || !zip.matches( "\\d\\d\\d\\d\\d(-\\d\\d\\d\\d)?" ) ) {
+            throw new IllegalArgumentException( "Only 5 or 9 digit zipcode allowed" );
+        }
         this.zip = zip;
     }
 
@@ -592,6 +606,9 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the phone number to set this patient to
      */
     public void setPhone ( final String phone ) {
+        if ( phone == null || !phone.matches( "\\d\\d\\d-\\d\\d\\d-\\d\\d\\d\\d" ) ) {
+            throw new IllegalArgumentException( "Phone number must be of the form XXX-XXX-XXXX (digits only)" );
+        }
         this.phone = phone;
     }
 

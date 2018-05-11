@@ -1,10 +1,11 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+import java.util.List;
 import java.util.Random;
 
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -15,45 +16,33 @@ import org.openqa.selenium.support.ui.Select;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 
 /**
  * Step definitions for adding a user feature
  */
 public class AddUserStepDefs {
 
-    private final WebDriver driver        = new HtmlUnitDriver( true );
-    private final String    baseUrl       = "http://localhost:8080/iTrust2";
-    private final String    jenkins_uname = "jenkins" + ( new Random() ).nextInt();
+    private final WebDriver driver       = new HtmlUnitDriver( true );
+    private final String    baseUrl      = "http://localhost:8080/iTrust2";
+    private final String    jenkinsUname = "jenkins" + ( new Random() ).nextInt();
 
     /**
      * Check for no user
      */
     @Given ( "The user does not already exist in the database" )
     public void noUser () {
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "admin" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-
-        try {
-            driver.get( baseUrl + "/admin/deleteUser" );
-            driver.findElement( By.id( jenkins_uname ) ).click();
-            driver.findElement( By.className( "checkbox" ) ).click();
-            driver.findElement( By.className( "btn" ) ).click();
-
+        final List<User> users = User.getUsers();
+        for ( final User user : users ) {
+            if ( user.getUsername().equals( jenkinsUname ) ) {
+                try {
+                    user.delete();
+                }
+                catch ( final Exception e ) {
+                    Assert.fail();
+                }
+            }
         }
-        catch ( final Exception e ) {
-            // Assume doesn't exist;
-        }
-
-        driver.findElement( By.id( "logout" ) ).click();
-
-        assertTrue( ( baseUrl + "/login?logout" ).equals( driver.getCurrentUrl() ) );
     }
 
     /**
@@ -87,7 +76,7 @@ public class AddUserStepDefs {
     public void fillFields () {
         final WebElement username = driver.findElement( By.id( "username" ) );
         username.clear();
-        username.sendKeys( jenkins_uname );
+        username.sendKeys( jenkinsUname );
 
         final WebElement password = driver.findElement( By.id( "password" ) );
         password.clear();
@@ -124,7 +113,7 @@ public class AddUserStepDefs {
 
         final WebElement username = driver.findElement( By.name( "username" ) );
         username.clear();
-        username.sendKeys( jenkins_uname );
+        username.sendKeys( jenkinsUname );
         final WebElement password = driver.findElement( By.name( "password" ) );
         password.clear();
         password.sendKeys( "123456" );
@@ -140,7 +129,7 @@ public class AddUserStepDefs {
             driver.findElement( By.linkText( "iTrust2" ) );
         }
         catch ( final Exception e ) {
-            fail();
+            Assert.assertNull( e );
         }
     }
 }

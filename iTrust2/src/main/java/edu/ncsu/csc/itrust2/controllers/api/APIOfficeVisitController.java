@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
+import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.User;
@@ -53,7 +53,8 @@ public class APIOfficeVisitController extends APIController {
     @GetMapping ( BASE_PATH + "/officevisits/myofficevisits" )
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
     public List<OfficeVisit> getMyOfficeVisits () {
-        final User self = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
+        final User self = User.getByName( LoggerUtil.currentUser() );
+        LoggerUtil.log( TransactionType.OFFICE_VISIT_PATIENT_VIEW, self );
         return OfficeVisit.getForPatient( self.getId() );
     }
 
@@ -67,8 +68,20 @@ public class APIOfficeVisitController extends APIController {
     @GetMapping ( BASE_PATH + "/officevisits/{id}" )
     public ResponseEntity getOfficeVisit ( @PathVariable ( "id" ) final Long id ) {
         final OfficeVisit visit = OfficeVisit.getById( id );
-        return null == visit ? new ResponseEntity( "No office visit found for id " + id, HttpStatus.NOT_FOUND )
-                : new ResponseEntity( visit, HttpStatus.OK );
+        if ( null == visit ) {
+            return new ResponseEntity( errorResponse( "No office visit found for id " + id ), HttpStatus.NOT_FOUND );
+        }
+        else {
+            final User self = User.getByName( LoggerUtil.currentUser() );
+            if ( null != self && self.getRole().equals( Role.ROLE_HCP ) ) {
+                LoggerUtil.log( TransactionType.OFFICE_VISIT_HCP_VIEW, LoggerUtil.currentUser(),
+                        visit.getPatient().getUsername() );
+            }
+            else {
+                LoggerUtil.log( TransactionType.OFFICE_VISIT_PATIENT_VIEW, LoggerUtil.currentUser() );
+            }
+            return new ResponseEntity( visit, HttpStatus.OK );
+        }
     }
 
     /**
@@ -77,7 +90,8 @@ public class APIOfficeVisitController extends APIController {
      */
     @DeleteMapping ( BASE_PATH + "/officevisits" )
     public void deleteOfficeVisits () {
-        OfficeVisit.deleteAll( OfficeVisit.class );
+        LoggerUtil.log( TransactionType.OFFICE_VISIT_DELETE, LoggerUtil.currentUser() );
+        OfficeVisit.deleteAll();
     }
 
     /**
@@ -92,15 +106,20 @@ public class APIOfficeVisitController extends APIController {
         try {
             final OfficeVisit visit = new OfficeVisit( visitF );
             if ( null != OfficeVisit.getById( visit.getId() ) ) {
-                return new ResponseEntity( "Office visit with the id " + visit.getId() + " already exists",
+                return new ResponseEntity(
+                        errorResponse( "Office visit with the id " + visit.getId() + " already exists" ),
                         HttpStatus.CONFLICT );
             }
             visit.save();
+            LoggerUtil.log( TransactionType.OFFICE_VISIT_CREATE, LoggerUtil.currentUser(),
+                    visit.getPatient().getUsername() );
             return new ResponseEntity( visit, HttpStatus.OK );
 
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not validate or save the OfficeVisit provided due to " + e.getMessage(),
+            e.printStackTrace();
+            return new ResponseEntity(
+                    errorResponse( "Could not validate or save the OfficeVisit provided due to " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
     }
@@ -117,14 +136,16 @@ public class APIOfficeVisitController extends APIController {
     public ResponseEntity deleteOfficeVisit ( @PathVariable final Long id ) {
         final OfficeVisit visit = OfficeVisit.getById( id );
         if ( null == visit ) {
-            return new ResponseEntity( "No office visit found for " + id, HttpStatus.NOT_FOUND );
+            return new ResponseEntity( errorResponse( "No office visit found for " + id ), HttpStatus.NOT_FOUND );
         }
         try {
             visit.delete();
+            LoggerUtil.log( TransactionType.OFFICE_VISIT_DELETE, LoggerUtil.currentUser() );
             return new ResponseEntity( id, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not delete " + id + " because of " + e.getMessage(),
+            e.printStackTrace();
+            return new ResponseEntity( errorResponse( "Could not delete " + id + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
 
@@ -146,12 +167,13 @@ public class APIOfficeVisitController extends APIController {
         try {
             final OfficeVisit visit = new OfficeVisit( form );
             if ( null != visit.getId() && !id.equals( visit.getId() ) ) {
-                return new ResponseEntity( "The ID provided does not match the ID of the OfficeVisit provided",
+                return new ResponseEntity(
+                        errorResponse( "The ID provided does not match the ID of the OfficeVisit provided" ),
                         HttpStatus.CONFLICT );
             }
             final OfficeVisit dbVisit = OfficeVisit.getById( id );
             if ( null == dbVisit ) {
-                return new ResponseEntity( "No visit found for name " + id, HttpStatus.NOT_FOUND );
+                return new ResponseEntity( errorResponse( "No visit found for name " + id ), HttpStatus.NOT_FOUND );
             }
             // It is possible that the HCP did not update the BHM but only the
             // other fields (date, time, etc) thus we need to check if the old
@@ -161,10 +183,12 @@ public class APIOfficeVisitController extends APIController {
                         + " updated basic health metrics for " + form.getPatient() + " from " + form.getDate() );
             }
             visit.save(); /* Will overwrite existing request */
+            LoggerUtil.log( TransactionType.OFFICE_VISIT_EDIT, LoggerUtil.currentUser() );
             return new ResponseEntity( visit, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( "Could not update " + form.toString() + " because of " + e.getMessage(),
+            return new ResponseEntity(
+                    errorResponse( "Could not update " + form.toString() + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
     }
@@ -184,7 +208,7 @@ public class APIOfficeVisitController extends APIController {
     public ResponseEntity viewOfficeVisitHCP ( @PathVariable final Long id, @RequestBody final OfficeVisitForm form ) {
         final OfficeVisit dbVisit = OfficeVisit.getById( id );
         if ( null == dbVisit ) {
-            return new ResponseEntity( "No visit found for name " + id, HttpStatus.NOT_FOUND );
+            return new ResponseEntity( errorResponse( "No visit found for name " + id ), HttpStatus.NOT_FOUND );
         }
         LoggerUtil.log( TransactionType.OFFICE_VISIT_HCP_VIEW, form.getHcp(), form.getPatient(),
                 form.getHcp() + " viewed basic health metrics for " + form.getPatient() + " from " + form.getDate() );
@@ -207,7 +231,7 @@ public class APIOfficeVisitController extends APIController {
             @RequestBody final OfficeVisitForm form ) {
         final OfficeVisit dbVisit = OfficeVisit.getById( id );
         if ( null == dbVisit ) {
-            return new ResponseEntity( "No visit found for name " + id, HttpStatus.NOT_FOUND );
+            return new ResponseEntity( errorResponse( "No visit found for name " + id ), HttpStatus.NOT_FOUND );
         }
         LoggerUtil.log( TransactionType.OFFICE_VISIT_PATIENT_VIEW, form.getHcp(), form.getPatient(),
                 form.getPatient() + " viewed their basic health metrics from " + form.getDate() );

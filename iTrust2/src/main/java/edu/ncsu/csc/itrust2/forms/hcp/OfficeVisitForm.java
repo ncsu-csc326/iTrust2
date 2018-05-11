@@ -2,14 +2,19 @@ package edu.ncsu.csc.itrust2.forms.hcp;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
+import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
+import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 
 /**
  * Office Visit form used to document an Office Visit by the HCP. This will be
@@ -138,6 +143,13 @@ public class OfficeVisitForm implements Serializable {
     private PatientSmokingStatus   patientSmokingStatus;
 
     /**
+     * Diagnoses associated with this visit
+     */
+    private List<Diagnosis>        diagnoses;
+
+    private List<PrescriptionForm> prescriptions;
+
+    /**
      * Creates an OfficeVisitForm from the OfficeVisit provided
      *
      * @param ov
@@ -153,7 +165,9 @@ public class OfficeVisitForm implements Serializable {
         setNotes( ov.getNotes() );
         setId( ov.getId().toString() );
         setPreScheduled( ( (Boolean) ( ov.getAppointment() != null ) ).toString() );
-
+        setDiagnoses( new ArrayList<Diagnosis>() );
+        setPrescriptions( ov.getPrescriptions().stream().map( ( Prescription p ) -> new PrescriptionForm( p ) )
+                .collect( Collectors.toList() ) );
     }
 
     /**
@@ -515,5 +529,43 @@ public class OfficeVisitForm implements Serializable {
      */
     public void setPatientSmokingStatus ( final PatientSmokingStatus patientSmokingStatus ) {
         this.patientSmokingStatus = patientSmokingStatus;
+    }
+
+    /**
+     * Sets the Diagnosis list for this visit.
+     *
+     * @param list
+     *            The list of Diagnoses.
+     */
+    public void setDiagnoses ( final List<Diagnosis> list ) {
+        diagnoses = list;
+    }
+
+    /**
+     * Returns the list of diagnoses associated with this office visit.
+     *
+     * @return The list of Diagnoses
+     */
+    public List<Diagnosis> getDiagnoses () {
+        return diagnoses;
+    }
+
+    /**
+     * Sets the list of prescriptions for this visit.
+     *
+     * @param prescriptions
+     *            the list of prescriptions
+     */
+    public void setPrescriptions ( final List<PrescriptionForm> prescriptions ) {
+        this.prescriptions = prescriptions;
+    }
+
+    /**
+     * Returns the list of prescriptions associated with this office visit.
+     *
+     * @return prescriptions the list prescriptions
+     */
+    public List<PrescriptionForm> getPrescriptions () {
+        return prescriptions;
     }
 }

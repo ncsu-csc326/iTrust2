@@ -142,4 +142,18 @@ public class AdminUserController {
         return "admin/deleteUser";
 
     }
+
+    /**
+     * Retrieves the form for the Drugs action
+     *
+     * @param model
+     *            Data for front end
+     * @return The page to display
+     */
+    @RequestMapping ( value = "admin/drugs" )
+    @PreAuthorize ( "hasRole('ROLE_ADMIN')" )
+    public String drugs ( final Model model ) {
+        model.addAttribute( "users", User.getUsers() );
+        return "admin/drugs";
+    }
 }

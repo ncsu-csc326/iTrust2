@@ -1,5 +1,6 @@
 package edu.ncsu.csc.itrust2.config;
 
+import javax.servlet.Filter;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +10,13 @@ import org.springframework.security.authentication.DefaultAuthenticationEventPub
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configurers.provisioning.JdbcUserDetailsManagerConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.access.channel.ChannelProcessingFilter;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
@@ -45,11 +49,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public void configureGlobal ( final AuthenticationManagerBuilder auth ) throws Exception {
         final JdbcUserDetailsManagerConfigurer<AuthenticationManagerBuilder> dbManager = auth.jdbcAuthentication();
-        dbManager.dataSource( dataSource ).passwordEncoder( passwordEncoder() )
-                .usersByUsernameQuery( "select username,password,enabled from Users where username=?" )
-                .authoritiesByUsernameQuery( "select username,role from Users where username=?" );
 
+        // User query enabled flag also checks for locked or banned users. The
+        // FailureHandler then
+        // determines if the DisabledUser Exception was due to ban, lockout, or
+        // true disable.
+        // POSSIBLE FUTURE CHANGE: Refactor the UserSource here along the lines
+        // of this:
+        // http://websystique.com/springmvc/spring-mvc-4-and-spring-security-4-integration-example/
+        dbManager.dataSource( dataSource ).passwordEncoder( passwordEncoder() ).usersByUsernameQuery(
+                "select username,password,enabled AND b.time IS NULL AND c.time IS NULL AS enabled  from Users AS u"
+                        + " LEFT JOIN LoginBans AS b ON u.username = b.user_id "
+                        + "LEFT JOIN LoginLockouts AS c ON u.username = c.user_id AND TIMESTAMPDIFF(MINUTE, c.time, NOW()) < 60 WHERE username = ?;" )
+                .authoritiesByUsernameQuery( "select username,role from Users where username=?" );
         auth.authenticationEventPublisher( defaultAuthenticationEventPublisher() );
+
     }
 
     /**
@@ -60,9 +74,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure ( final HttpSecurity http ) throws Exception {
 
         final String[] patterns = new String[] { "/login*" };
+        // Add filter for banned/locked IP
+        /*
+         * According to
+         * https://docs.spring.io/spring-security/site/docs/current/apidocs/org/
+         * springframework/security/config/annotation/web/builders/HttpSecurity.
+         * html#addFilter-javax.servlet.Filter- ChannelProcessingFIlter is the
+         * first filter processed, so this means the IP block will be the
+         * absolute first Filter.
+         */
+        http.addFilterBefore( ipBlockFilter(), ChannelProcessingFilter.class );
 
         http.authorizeRequests().antMatchers( patterns ).anonymous().anyRequest().authenticated().and().formLogin()
-                .loginPage( "/login" ).defaultSuccessUrl( "/" ).and().csrf()
+                .loginPage( "/login" ).failureHandler( failureHandler() ).defaultSuccessUrl( "/" ).and().csrf()
+
                 .csrfTokenRepository( CookieCsrfTokenRepository
                         .withHttpOnlyFalse() ); /*
                                                  * Credit to
@@ -81,6 +106,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                                                  * with CSRF protection
                                                  */
 
+    }
+
+    @Override
+    public void configure ( final WebSecurity web ) throws Exception {
+        // Allow anonymous access to the 3 mappings related to resetting a
+        // forgotten password
+        web.ignoring().antMatchers( "/api/v1/requestPasswordReset", "/api/v1/resetPassword/*", "/requestPasswordReset",
+                "/resetPassword" );
     }
 
     /**
@@ -102,5 +135,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public DefaultAuthenticationEventPublisher defaultAuthenticationEventPublisher () {
         return new DefaultAuthenticationEventPublisher();
+    }
+
+    /**
+     * Failure Handler used to track failed attempts to determine if a user or
+     * IP needs to be banned.
+     *
+     * @return The AuthenticationFailureHandler
+     */
+    @Bean
+    public SimpleUrlAuthenticationFailureHandler failureHandler () {
+        return new FailureHandler();
+    }
+
+    /**
+     * Servlet Filter used to redirect all requests from banned/locked IPs to
+     * the appropriate pages.
+     *
+     * @return The IP FIlter
+     */
+    @Bean
+    public Filter ipBlockFilter () {
+        return new IPFilter();
     }
 }

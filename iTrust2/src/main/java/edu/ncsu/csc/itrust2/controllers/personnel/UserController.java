@@ -76,7 +76,7 @@ public class UserController {
         }
         else {
             p.save();
-            LoggerUtil.log( TransactionType.ENTER_EDIT_DEMOGRAPHICS,
+            LoggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS,
                     SecurityContextHolder.getContext().getAuthentication().getName() );
             return "personnel/editDemographicsResult";
         }

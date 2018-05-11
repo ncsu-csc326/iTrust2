@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
+import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.LogEntry;
 
@@ -39,7 +40,7 @@ public class DomainObjectTest {
         le.setTime( Calendar.getInstance() );
         le.save();
 
-        final LogEntry retrieve = (LogEntry) LogEntry.getBy( LogEntry.class, "primaryUser", "test" );
+        final LogEntry retrieve = (LogEntry) DomainObject.getBy( LogEntry.class, "primaryUser", "test" );
         assertNotNull( retrieve );
         assertEquals( retrieve.getLogCode(), TransactionType.LOGIN_SUCCESS );
 

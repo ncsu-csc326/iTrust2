@@ -2,6 +2,7 @@ package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.Random;
 
 import org.openqa.selenium.By;
@@ -14,6 +15,7 @@ import org.openqa.selenium.support.ui.Select;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 
 /**
  * Step definitions for AddHosptial feature
@@ -30,28 +32,15 @@ public class AddHospitalStepDefs {
      */
     @Given ( "The desired hospital doesn't exist" )
     public void noHospital () {
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "admin" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-
-        try {
-            driver.get( baseUrl + "/admin/deleteHospital" );
-            driver.findElement( By.id( hospitalName ) ).click();
-            driver.findElement( By.className( "checkbox" ) ).click();
-            driver.findElement( By.className( "btn" ) ).click();
+        final List<Hospital> hospitals = Hospital.getHospitals();
+        for ( final Hospital hospital : hospitals ) {
+            try {
+                hospital.delete();
+            }
+            catch ( final Exception e ) {
+                // Assume this hospital is in use & can't be deleted.
+            }
         }
-        catch ( final Exception e ) {
-            // Assume doesn't exist; print stack trace and carry on.
-            e.printStackTrace();
-        }
-
-        driver.findElement( By.id( "logout" ) ).click();
 
     }
 

@@ -3,6 +3,8 @@ package edu.ncsu.csc.itrust2.cucumber;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.logging.Level;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
@@ -15,6 +17,9 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
 public class EditMyDemographicsStepDefs {
+    static {
+        java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
+    }
 
     private final WebDriver driver  = new HtmlUnitDriver( true );
     private final String    baseUrl = "http://localhost:8080/iTrust2";
@@ -40,7 +45,7 @@ public class EditMyDemographicsStepDefs {
 
     @When ( "I navigate to the Edit My Demographics page" )
     public void editDemographics () {
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics-patient').click();" );
     }
 
     @When ( "I fill in new, updated demographics" )
@@ -68,7 +73,7 @@ public class EditMyDemographicsStepDefs {
 
         final WebElement address1 = driver.findElement( By.id( "address1" ) );
         address1.clear();
-        address1.sendKeys( "Karl-Liebknecht-Haus, Alexanderplatz" );
+        address1.sendKeys( "Karl Liebknecht Haus. Alexanderplatz" );
 
         final WebElement city = driver.findElement( By.id( "city" ) );
         city.clear();
@@ -104,12 +109,12 @@ public class EditMyDemographicsStepDefs {
     public void viewDemographics () {
 
         driver.get( baseUrl );
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics-patient').click();" );
         final WebElement firstName = driver.findElement( By.id( "firstName" ) );
         assertEquals( firstName.getAttribute( "value" ), "Karl" );
 
         final WebElement address = driver.findElement( By.id( "address1" ) );
-        assertEquals( address.getAttribute( "value" ), "Karl-Liebknecht-Haus, Alexanderplatz" );
+        assertEquals( address.getAttribute( "value" ), "Karl Liebknecht Haus. Alexanderplatz" );
     }
 
 }

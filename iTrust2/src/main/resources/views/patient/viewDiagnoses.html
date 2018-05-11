@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns:th="http://www.thymeleaf.org">
+	<head th:include="layout :: head(title=~{::title},links=~{})">
+	<title>View Diagnoses</title>
+	
+	<!-- Angular and Bootstrap files  -->
+	<link rel="stylesheet"
+		href="//netdna.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	
+	</head>
+ 
+	<body th:include="layout :: body" th:with="content=~{::content}">
+		<div th:fragment="content">
+		
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("viewDiagnoses", []);
+			app.controller('controller', function($scope, $http) {
+				// get all diagnoses of patient and display in table			
+				$http.get("/iTrust2/api/v1/diagnoses").then(
+						function(response) {
+							$scope.diagnoses = response.data;
+							$scope.message = "";
+						}, function(rejection) {
+							$scope.diagoses = [];
+							$scope.message = "Unable to display diagnoses";
+						});
+				
+				
+				// Helper method to create 2-digit version of a value -- from documentOfficeVisit.html
+				function twoDigit(num) {
+					if (num < 10) {
+						return "0" + num;
+					}
+					return num;
+				}
+				
+				// Format a date from given json
+				$scope.getDate = function getDate(date) {
+					/* The months start at 0... only the months.  So we have to add 1 to get the correct input.*/
+					month = date.month + 1;
+					return twoDigit(month) + "/" + twoDigit(date.dayOfMonth) + "/" + date.year;
+				}
+			});
+		</script>
+		
+		<div ng-app="viewDiagnoses" ng-controller="controller">
+		
+			<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->
+			<div class="container">
+				<h4 style="color:red" ng-model="message"></h4>
+				
+				<h2>Diagnoses</h2>
+				<table style="width:100%" class="table table-hover">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>HCP</th>
+							<th>ICD-10 Code</th>
+							<th>Description</th>
+							<th>Notes</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="d in diagnoses" name="diagnosis">
+							<td name="date">{{getDate(d.visit.date)}}</td>
+							<td name="hcp">{{d.visit.hcp.username}}</td>
+							<td name="code">{{d.code.code}}</td>
+							<td name="description">{{d.code.description}}</td>
+							<td name="note">{{d.note}}</td>
+						</tr>
+					</tbody>			
+				</table>
+			</div>
+		</div>
+		
+		</div>
+	</body>
+</html>

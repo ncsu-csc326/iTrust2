@@ -1,0 +1,74 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+  <title>View Prescriptions</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+  <div th:fragment="content">
+
+
+    <script th:inline="javascript">
+      /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+      /*<![CDATA[*/
+      var app = angular.module("prescriptionsApp", []);
+      app.controller('prescriptionsCtrl', function ($scope, $http) {
+        $scope.prescriptions = [];
+        $scope.pattern = /^\d{4}-\d{4}-\d{2}$/;
+        $scope.loadTable = function () {
+          $http.get("/iTrust2/api/v1/prescriptions").then(
+            function (response) {
+              $scope.prescriptions = response.data;
+              $scope.message = "";
+            }, function (rejection) {
+              $scope.prescriptions = [];
+              $scope.message = "Could not display prescriptions";
+            });
+        }
+        $scope.loadTable();
+      });
+			/*]]>*/
+    </script>
+
+    <div ng-app="prescriptionsApp" ng-controller="prescriptionsCtrl">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3>Patient View Prescriptions</h3>
+              </div>
+              <div class="panel-body">
+                <table class="table table-bordered">
+                  <caption>My Prescriptions:</caption>
+                  <thead>
+                    <tr>
+                      <th>Drug</th>
+                      <th>Dosage (mg)</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Renewals</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr name="prescriptionTableRow" ng-repeat="p in prescriptions | orderBy: 'drug'" prescriptionId={{p.id}}>
+                      <td name="drugCell">{{p.drug.name}}</td>
+                      <td name="codeCell">{{p.dosage}}</td>
+                      <td name="startCell">{{p.startDate.month + 1}}/{{p.startDate.dayOfMonth}}/{{p.startDate.year}}</td>
+                      <td name="endCell">{{p.endDate.month + 1}}/{{p.endDate.dayOfMonth}}/{{p.endDate.year}}</td>
+                      <td name="renewalsCell">{{p.renewals}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

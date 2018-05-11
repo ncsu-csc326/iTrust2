@@ -13,7 +13,7 @@
 			modelAttribute="appointmentRequestForm">
 			<div th:each="appointment : ${appointments}" class="radio">
 				<input type="radio" th:value="${appointment.id}" name="appointment">
-				<div name="${recipe.name}">
+				<div>
 					<strong>Type:</strong>
 					<div th:text="${appointment.type}" style="display: inline-block">
 					</div>

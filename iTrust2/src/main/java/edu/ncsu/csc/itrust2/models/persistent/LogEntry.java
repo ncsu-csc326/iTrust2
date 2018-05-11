@@ -1,7 +1,9 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Vector;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,8 +12,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Restrictions;
+
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
+import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
  * Class that represents a LogEntry that is created in response to certain user
@@ -27,46 +32,40 @@ import edu.ncsu.csc.itrust2.utils.DomainObjectCache;
 public class LogEntry extends DomainObject<LogEntry> {
 
     /**
-     * In-memory cache that will store instances of the LogEntries to avoid
-     * retrieval trips to the database.
-     */
-    static private DomainObjectCache<Long, LogEntry> cache = new DomainObjectCache<Long, LogEntry>( LogEntry.class );
-
-    /**
      * Type of event that has been logged
      */
     @NotNull
-    private TransactionType                          logCode;
+    private TransactionType logCode;
 
     /**
      * The primary user for the event that has been logged
      */
     @NotNull
-    private String                                   primaryUser;
+    private String          primaryUser;
 
     /**
      * The timestamp of when the event occurred
      */
     @NotNull
-    private Calendar                                 time;
+    private Calendar        time;
 
     /**
      * The secondary user for the event that has been logged (optional)
      */
-    private String                                   secondaryUser;
+    private String          secondaryUser;
 
     /**
      * An additional elaborative message for the event that has been logged.
      * Optional.
      */
-    private String                                   message;
+    private String          message;
 
     /**
      * ID of the LogEntry
      */
     @Id
     @GeneratedValue ( strategy = GenerationType.AUTO )
-    private Long                                     id;
+    private Long            id;
 
     /**
      * Retrieve all LogEntries from the database.
@@ -87,29 +86,53 @@ public class LogEntry extends DomainObject<LogEntry> {
      * @return Matching LogEntry, or null if nothing was found
      */
     public static LogEntry getById ( final Long id ) {
-        LogEntry le = cache.get( id );
-        if ( null == le ) {
-            try {
-                le = getWhere( " id = " + id ).get( 0 );
-                cache.put( id, le );
-            }
-            catch ( final Exception e ) {
-                // Exception ignored
-            }
+        try {
+            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
         }
-        return le;
+        catch ( final Exception e ) {
+            return null;
+        }
 
+    }
+
+    /**
+     * Retrieves a LogEntry list within the date range startDate and endDate is
+     * parsed by APILogEntry
+     *
+     * @param startDate
+     *            The start date of the time range
+     * @param endDate
+     *            The end date of the time range
+     *
+     * @return LogEntries within date range
+     */
+
+    public static List<LogEntry> getByDateRange ( final Date startDate, final Date endDate ) {
+        final Calendar start = Calendar.getInstance();
+        start.setTime( startDate );
+        final Calendar end = Calendar.getInstance();
+        end.setTime( endDate );
+        end.add( Calendar.DAY_OF_MONTH, 1 ); // to make inclusive
+
+        final String user = LoggerUtil.currentUser();
+
+        final List<Criterion> search = new Vector<Criterion>();
+        search.add( createBetween( "time", start, end ) );
+        search.add(
+                Restrictions.or( createCriterion( "primaryUser", user ), createCriterion( "secondaryUser", user ) ) );
+
+        return getWhere( search );
     }
 
     /**
      * Retrieve all LogEntries based on the where clause provided.
      *
      * @param where
-     *            Where clause to retrieve OfficeVisits by
+     *            List of Criterion to and together and search for records by
      * @return All matching log entries for the clause provided.
      */
     @SuppressWarnings ( "unchecked" )
-    public static List<LogEntry> getWhere ( final String where ) {
+    private static List<LogEntry> getWhere ( final List<Criterion> where ) {
         return (List<LogEntry>) getWhere( LogEntry.class, where );
     }
 
@@ -122,7 +145,8 @@ public class LogEntry extends DomainObject<LogEntry> {
      * @return All matching LogEntries
      */
     public static List<LogEntry> getAllForUser ( final String user ) {
-        return getWhere( "primaryUser = '" + user + "' OR secondaryUser = '" + user + "'" );
+        return getWhere( createCriterionList(
+                Restrictions.or( createCriterion( "primaryUser", user ), createCriterion( "secondaryUser", user ) ) ) );
     }
 
     /**
@@ -264,4 +288,5 @@ public class LogEntry extends DomainObject<LogEntry> {
     public void setTime ( final Calendar time ) {
         this.time = time;
     }
+
 }
