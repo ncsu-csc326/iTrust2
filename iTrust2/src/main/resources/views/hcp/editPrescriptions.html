@@ -1,0 +1,362 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+  <title>Edit Prescriptions</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+  <div th:fragment="content">
+
+
+    <script th:inline="javascript">
+      /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+      /*<![CDATA[*/
+      var app = angular.module("prescriptionsApp", []);
+      app.controller('prescriptionsCtrl', function ($scope, $http) {
+        $scope.prescriptions = [];
+        $scope.loadTable = function () {
+          $http.get("/iTrust2/api/v1/prescriptions").then(
+            function (response) {
+              $scope.prescriptions = response.data;
+              $scope.message = "";
+            }, function (rejection) {
+              $scope.prescriptions = [];
+              $scope.message = "Could not display prescriptions";
+            });
+        }
+
+        var isDate = function (input) {
+          if (!input) {
+            return false;
+          }
+          var match = /^(\d?\d)\/(\d?\d)\/(\d{4})$/.exec(input);
+          if (!match) {
+            return false;
+          }
+          var parsedDate = {
+            year: +match[3],
+            month: +match[1] - 1,
+            day: +match[2]
+          };
+          var date = new Date(parsedDate.year, parsedDate.month, parsedDate.day);
+          return date.getFullYear() === parsedDate.year && date.getMonth() === parsedDate.month && date.getDate() === parsedDate.day;
+        };
+
+        var checkValidPrescription = function (p) {
+          var err = [];
+          if (!p.drug) {
+            err.push("Prescription must be associated with a drug");
+          }
+          if (!isDate(p.startDate)) {
+            err.push("Start date is in an invalid format");
+          }
+          if (!isDate(p.endDate)) {
+            err.push("End date is in an invalid format");
+          }
+          if (!/^\+?\d+$/.test(p.dosage)) {
+            err.push("Dosage must be a positive integer");
+          }
+          if (!/^\+?\d+$/.test(p.renewals)) {
+            err.push("Renewals must be an integer zero or more");
+          }
+          if (!p.patient) {
+            err.push("Prescription must be associated with a patient");
+          }
+
+          return err.join(". ");
+        }
+
+        $scope.addPrescription = function () {
+          var err = checkValidPrescription($scope.prescription);
+          if (err) {
+            $scope.errorAdding = err;
+            return;
+          }
+          $http.post("/iTrust2/api/v1/prescriptions", $scope.prescription).then(
+            function (response) {
+              $scope.loadTable();
+              $scope.prescription.drug = "";
+              $scope.prescription.dosage = "";
+              $scope.prescription.startDate = "";
+              $scope.prescription.endDate = "";
+              $scope.prescription.renewals = "";
+              $scope.prescription.patient = "";
+              $scope.errorAdding = "";
+            }, function (rejection) {
+              $scope.errorAdding = "Could not add prescription";
+            });
+
+        }
+        $scope.deletePrescription = function (prescription) {
+          var msg = "Are you sure you want to remove the prescription of " + prescription.drug.name + " for " + prescription.patient.username + "?";
+          if (confirm(msg)) {
+	          $http.delete('/iTrust2/api/v1/prescriptions/' + prescription.id).then(
+	            function (response) {
+	              $scope.loadTable();
+	              $scope.message = "";
+	            }, function (rejection) {
+	              $scope.message = "Could not remove prescription";
+	            });
+          };
+        }
+
+        $http.get("/iTrust2/api/v1/patients").then(
+          function (response) {
+            $scope.patients = response.data;
+          });
+
+        $http.get("/iTrust2/api/v1/drugs").then(
+          function (response) {
+            $scope.drugs = response.data;
+            $scope.message = "";
+          }, function (rejection) {
+            $scope.drugs = [];
+            $scope.message = "Could not display drugs";
+          });
+
+        // gets the template to ng-include for a table row / item
+        $scope.selectedPrescription = {};
+
+        $scope.getTemplate = function (prescription) {
+          if (prescription.id === $scope.selectedPrescription.id) return 'edit';
+          else return 'view';
+        };
+
+        $scope.editPrescription = function (prescription) {
+          $scope.selectedPrescription = angular.copy(prescription);
+          $scope.selectedPrescription.startDate = prescription.startDate.month + 1 + "/" + prescription.startDate.dayOfMonth + "/" + prescription.startDate.year;
+          $scope.selectedPrescription.endDate = prescription.endDate.month + 1 + "/" + prescription.endDate.dayOfMonth + "/" + prescription.endDate.year;
+          $scope.selectedPrescription.drug = prescription.drug.code;
+          $scope.selectedPrescription.patient = prescription.patient.username;
+        };
+        $scope.savePrescription = function () {
+          var err = checkValidPrescription($scope.selectedPrescription);
+          if (err) {
+            $scope.errorAdding = err;
+          } else {
+            $http.put("/iTrust2/api/v1/prescriptions", $scope.selectedPrescription).then(
+              function (response) {
+                $scope.loadTable();
+                $scope.resetSelected();
+              }, function (rejection) {
+                $scope.errorAdding = "Failed to edit prescription";
+              });
+          }
+        };
+
+        $scope.resetSelected = function () {
+          $scope.selectedPrescription = {};
+        };
+
+
+        $scope.loadTable();
+      });
+			/*]]>*/
+    </script>
+
+
+
+    <div ng-app="prescriptionsApp" ng-controller="prescriptionsCtrl">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3>HCP Manage Prescriptions</h3>
+              </div>
+              <div class="panel-body">
+                <table class="table table-bordered">
+                  <caption>Existing Prescriptions:</caption>
+                  <thead>
+                    <tr>
+                      <th>Drug</th>
+                      <th>Dosage (mg)</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
+                      <th>Renewals</th>
+                      <th>Patient</th>
+                      <th>Manage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr name="prescriptionTableRow" ng-repeat="p in prescriptions | orderBy: 'drug'" ng-include="getTemplate(p)" prescriptionId={{p.id}}>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- table in view mode -->
+                <script type="text/ng-template" id="view">
+                  <td name="drugCell">{{p.drug.name}}</td>
+                  <td name="dosageCell">{{p.dosage}}</td>
+                  <td name="startCell">{{p.startDate.month + 1}}/{{p.startDate.dayOfMonth}}/{{p.startDate.year}}</td>
+                  <td name="endCell">{{p.endDate.month + 1}}/{{p.endDate.dayOfMonth}}/{{p.endDate.year}}</td>
+                  <td name="renewalsCell">{{p.renewals}}</td>
+                  <td name="patientCell">{{p.patient.username}}</td>
+                  <td>
+                    <div class="row text-center">
+                      <div class="col-md-6">
+                        <input type="button" value="Edit" class="btn btn-primary" name="editPrescription" ng-click="editPrescription(p)" />                         
+                      </div>
+                      <div class="col-md-6">
+                          <input type="button" value="Delete" class="btn btn-danger" name="deletePrescription" ng-click="deletePrescription(p)" />                          
+                      </div>
+                    </div>                  
+                  </td>
+                </script>
+
+                <!-- table in edit mode -->
+                <script type="text/ng-template" id="edit">
+                  <td name="editDrugCell">
+                    <ul style="list-style: none;">
+                      <li ng-repeat="d in drugs">
+                        <label>
+                          <input type="radio" ng-model="$parent.selectedPrescription.drug" name="drug" value="{{d.code}}" required="true" /> {{d.name}}
+                        </label>
+                      </li>
+                    </ul>                  
+                  </td>
+                  <td name="editDosageCell">
+                    <input type="text" class="form-control" ng-model="selectedPrescription.dosage" />                    
+                  </td>
+                  <td name="editStartCell">
+                    <input type="text" class="form-control" placeholder="MM/DD/YYYY" ng-model="selectedPrescription.startDate" required/>
+                  </td>
+                  <td name="editEndCell">
+                    <input type="text" class="form-control" placeholder="MM/DD/YYYY" ng-model="selectedPrescription.endDate" required/>                    
+                  </td>
+                  <td name="editRenewalsCell">
+                    <input class="form-control" ng-model="selectedPrescription.renewals" required></input>                    
+                  </td>
+                  <td name="editPatientCell">
+                    <ul style="max-height:15%;overflow:auto;list-style: none;">
+                      <li ng-repeat="patient in patients">
+                        <label>
+                          <input type="radio" ng-model="$parent.selectedPrescription.patient" name="name" value="{{patient.self.username}}" required="true"
+                          />&nbsp; {{patient.self.username}}
+                        </label>
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <div class="row text-center">
+                      <div class="col-md-6">
+                          <input type="button" value="Save" class="btn btn-success" name="saveDrug" ng-click="savePrescription()" />                          
+                      </div>
+                      <div class="col-md-6">
+                          <input type="button" value="Cancel" class="btn btn-danger" name="cancelEdit" ng-click="resetSelected()" />                            
+                      </div>
+                    </div>                  
+                  </td>
+                </script>
+
+
+
+
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="panel panel-default">
+                      <div class="panel-heading ">Add a Prescription</div>
+                      <div class="panel-body">
+                        <form class="form-horizontal" role="form" name="addPrescriptionForm" ng-submit="addPrescription(addPrescriptionForm.$valid)">
+                          <div class="row">
+
+                            <!-- patient -->
+                            <div class="col-md-5 radio-box">
+                              <div class="form-check">
+                                <label>Patient:</label>
+                                <ul style="max-height:15%;overflow:auto;list-style: none;">
+                                  <li ng-repeat="patient in patients">
+                                    <label>
+                                      <input type="radio" ng-model="$parent.prescription.patient" name="name" value="{{patient.self.username}}" required="true"
+                                      />&nbsp; {{patient.self.username}}
+                                    </label>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            <!-- drug -->
+                            <div class="col-md-5 radio-box">
+                              <div class="form-check">
+                                <label>Drug:</label>
+                                <ul style="list-style: none;">
+                                  <li ng-repeat="d in drugs">
+                                    <label>
+                                      <input type="radio" ng-model="$parent.prescription.drug" name="drug" value="{{d.code}}" required="true" /> {{d.name}}
+                                    </label>
+                                  </li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            <!-- dosage -->
+                            <div class="col-md-2">
+                              <label>Dosage:</label>
+                              <div class="row">
+                                <div class="col-md-8">
+                                  <input class="form-control" name="dosage" ng-model="prescription.dosage" required></input>
+                                </div>
+                                <div class="col-md-4">
+                                  <span id="helpBlock" class="help-block">mg</span>
+                                </div>
+                              </div>
+                            </div>
+
+                          </div>
+                          <br>
+                          <div class="row">
+                            <!-- start date -->
+                            <div class="col-md-5">
+                              <label>Start Date:</label>
+                              <div class="row">
+                                <div class="col-md-4">
+                                  <input type="text" class="form-control" placeholder="MM/DD/YYYY" name="startDate" ng-model="prescription.startDate" required/>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- end date -->
+                            <div class="col-md-5">
+                              <label>End Date:</label>
+                              <div class="row">
+                                <div class="col-md-4">
+                                  <input type="text" class="form-control" placeholder="MM/DD/YYYY" name="endDate" ng-model="prescription.endDate" required/>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- renewals -->
+                            <div class="col-md-2">
+                              <label>Renewals:</label>
+                              <div class="row">
+                                <div class="col-md-8">
+                                  <input class="form-control" name="renewals" ng-model="prescription.renewals" required></input>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <br>
+                          <br>
+                          <div class="row">
+                            <div class="col-md-12 text-center">
+                              <button type="submit" class="btn btn-success" name="submit">Add Prescription</button>
+                            </div>
+                          </div>
+                        </form>
+                        <div>
+                          <p class="text-danger" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+</body>
+
+</html>

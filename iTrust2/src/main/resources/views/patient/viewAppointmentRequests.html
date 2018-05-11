@@ -1,0 +1,34 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View AppointmentRequests</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<span th:if="${appointments!=null and appointments.size() == 0}">No
+			appointment requests found.</span>
+		<form th:method="POST" th:action="@{/patient/viewAppointmentRequests}"
+			th:object="${appointmentRequestForm}" method="post"
+			modelAttribute="appointmentRequestForm">
+			<div th:each="appointment : ${appointments}" class="radio">
+				<input type="radio" th:value="${appointment.id}" name="appointment">
+				<div>
+					<strong>Type:</strong>
+					<div th:text="${appointment.type}" style="display: inline-block">
+					</div>
+					<br /> <strong>Date</strong>
+					<div th:text="${appointment.date}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Time</strong>
+					<div th:text="${appointment.time}" style="display: inline-block"></div>
+					<br />
+				</div>
+				</input>
+			</div>
+			<span th:if="${appointments!=null and appointments.size() != 0}"><button
+					type="submit" class="btn btn-default">Delete</button></span>
+		</form>
+
+	</div>
+</body>
+</html>

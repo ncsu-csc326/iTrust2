@@ -1,0 +1,42 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Appointment Requests</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<span th:if="${appointments!=null and appointments.size() == 0}">No
+			appointment requests found.</span>
+		<form th:method="POST" th:action="@{/hcp/viewAppointmentRequests}"
+			th:object="${appointmentForm}" method="post"
+			modelAttribute="appointmentForm">
+			<div th:each="appointment : ${appointments}" class="radio">
+				<input type="radio" th:value="${appointment.id}" name="appointment">
+				<div name="${appointment.name}">
+					<strong>Type:</strong>
+					<div th:text="${appointment.type}" style="display: inline-block">
+					</div>
+					<br /> <strong>Date</strong>
+					<div th:text="${appointment.date}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Time</strong>
+					<div th:text="${appointment.time}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Patient</strong>
+					<div th:text="${appointment.patient}" style="display: inline-block"></div>
+					<br />
+				</div>
+				</input>
+			</div>
+
+			<span th:if="${appointments!=null and appointments.size() != 0}">
+				<select th:field="*{action}">
+					<option th:each="action : ${allActions}" th:value="${action}"
+						th:text="${action}"></option>
+			</select> <br />
+				<button type="submit" class="btn btn-default">Submit</button>
+			</span>
+		</form>
+
+	</div>
+</body>
+</html>

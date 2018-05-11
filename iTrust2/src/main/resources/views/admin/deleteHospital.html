@@ -1,0 +1,39 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Delete Hospital</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<span th:if="${hospitals!=null and hospitals.size() == 0}">No
+			hospitals found.</span>
+		<form th:method="POST" th:action="@{/admin/deleteHospital}"
+			th:object="${deleteHospitalForm}" method="post"
+			modelAttribute="deleteHospitalForm">
+			<div th:each="hospital : ${hospitals}" class="radio">
+				<input type="radio" th:value="${hospital.name}" name="name"
+					th:id="${hospital.name}">
+				<div name="${hospital.name}">
+					<br /> <strong>Name</strong>
+					<div th:text="${hospital.name}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Address</strong>
+					<div th:text="${hospital.address}" style="display: inline-block"></div>
+					<br />
+				</div>
+				</input>
+			</div>
+
+			<span th:if="${hospitals!=null and hospitals.size() != 0}">
+
+				<tr>
+					<td><input type="checkbox" name="confirm" class="checkbox">Confirm
+						Delete</input></td>
+				</tr> <br />
+				<button type="submit" class="btn btn-default">Submit</button>
+			</span>
+		</form>
+
+	</div>
+</body>
+</html>

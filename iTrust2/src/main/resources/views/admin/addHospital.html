@@ -1,0 +1,52 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Add Hospital</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<h1>Add Hospital</h1>
+		<form action="#" th:action="@{/admin/addHospital}"
+			th:object="${HospitalForm}" method="post">
+			<table>
+
+				<tr>
+					<td>Name:</td>
+					<td><input type="text" th:field="*{name}" /></td>
+					<td th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name
+						invalid or already in use</td>
+				</tr>
+
+				<tr>
+					<td>Address:</td>
+					<td><input type="text" th:field="*{address}" /></td>
+					<td th:if="${#fields.hasErrors('address')}" th:errors="*{address}">Address
+						is invalid</td>
+				</tr>
+
+				<tr>
+					<td>State:</td>
+					<td><select th:field="*{state}">
+							<option
+								th:each="state : ${T(edu.ncsu.csc.itrust2.models.enums.State).values()}"
+								th:value="${state}" th:text="${state}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td>ZIP:</td>
+					<td><input type="text" th:field="*{zip}" /></td>
+					<td th:if="${#fields.hasErrors('zip')}" th:errors="*{zip}">ZIP
+						is invalid</td>
+				</tr>
+
+				<tr>
+					<td><button type="submit" class="btn">Add Hospital</button></td>
+				</tr>
+
+			</table>
+		</form>
+	</div>
+</body>
+</html>

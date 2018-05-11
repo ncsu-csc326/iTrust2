@@ -1,0 +1,127 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Manage ICD-10 Codes</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("manageICDCodesApp", []);
+			app.controller('manageICDCodesCtrl', function($scope, $http) {
+
+				$scope.codes = [];
+				$scope.loadTable = function() {
+					// get list of icd codes from rest api
+					$http.get("/iTrust2/api/v1/icdcodes").then(
+							function(response) {
+								$scope.codes = response.data; // or just response?
+								$scope.message = "";
+							}, function(rejection) {
+								$scope.codes = [];
+								$scope.codes = "Could not display ICD-10 Codes";
+							});
+				}
+				
+				// handle add code button click
+				$scope.addCode = function() {
+					if ($scope.code.description.length > 250) {
+						$scope.errorAdding = "Description exceeds character limit of 250";
+					} else if (/^[A-Z][0-9][0-9|A-Z](\.[0-9|A-Z]{0,4})?$/.test($scope.code.code) == false) {
+						$scope.errorAdding = "Code doesn't meet specifications";
+					} else {
+						$http.post("/iTrust2/api/v1/icdcodes", $scope.code).then(
+								function(response) {
+									$scope.loadTable();
+									$scope.code.code = "";
+									$scope.code.description = "";
+									$scope.errorAdding = "";
+								}, function(rejection) {
+									$scope.errorAdding = "Could not add code";
+								})
+					}
+					
+				}
+				
+				$scope.removeRow = function(code) {
+					$http.delete('/iTrust2/api/v1/icdcode/' + code.id).then(
+							function(response) {
+								$scope.loadTable();
+								$scope.message = "";
+							}, function(rejection) {
+								$scope.message = "Could not remove ICD-10 code";
+							})
+				}
+				
+				// load table upon page loading
+				$scope.loadTable();
+			});
+			/*]]>*/
+		</script>
+		
+		<div ng-app="manageICDCodesApp" ng-controller="manageICDCodesCtrl">
+		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
+			<h4 style="color:red" ng-model="message"></h4>
+			
+			<h1>Manage ICD-10 Codes</h1>
+			<table style="width:100%">
+				<tr>
+					<td style="vertical-align: top">
+						<table class="table">
+							<tr>
+								<th>ICD-10 Code</th>
+								<th>Description</th>
+								<th>Action</th>
+							</tr>
+							<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'" codeId={{c.id}}>
+								<td name="codeCell">{{c.code}}</td>
+								<td name="descriptionCell">{{c.description}}</td>
+								<td>
+									<input type="button" value="Remove" class="btn btn-primary" ng-click="removeRow(c)"/>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td style="width:35%;vertical-align: top">
+						<div style="padding: 0px 0px 20px 30px">
+							<h3>Add an ICD-10 Code</h3>
+						</div>
+						<form class="form-horizontal" role="form" name="addCodeForm" ng-submit="addCode(addCodeForm.$valid)">
+							<div class="form-group" style="padding-left:30px">
+								<label>ICD-10 Code</label>
+								<input type="text" class="form-control" name="code" ng-model="code.code" required/>
+							</div>
+							<div class="form-group" style="padding-left:30px">
+								<label>Description</label>
+								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
+							</div>
+							<div class="form-group" style="padding-left:30px">								
+								<div style="padding-left:170px">
+									<button class="btn btn-primary" name="submit">Add Code</button> 
+									<!-- <input type="submit" value="Add Code" class="btn btn-primary"/>  -->
+								</div>
+							</div>
+						</form>
+						<div>
+							<!-- <h4 style="color: red" ng-show="addCodeForm.$valid">Code doesn't meet specifications</h4>  -->
+							<p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+						</div>	
+						<div>
+							<!-- Formate guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
+							<h4 style="color: blue">ICD-10 Code Format:</h4>
+							<ul>
+								<li>3-7 digits</li>
+								<li>Digit 1 is uppercase alpha</li>
+								<li>Digit 2 is numeric</li>
+								<li>Digits 3-7 are uppercase alpha or numeric</li>
+								<li>Decimal is after third digit</li>
+							</ul>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		</div>
+	</body>
+</html>

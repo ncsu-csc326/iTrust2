@@ -1,0 +1,28 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Upcoming Appointments</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<span th:if="${appointments!=null and appointments.size() == 0}">No
+			appointments found.</span>
+
+		<div th:each="appointment : ${appointments}">
+			<div th:value="${appointment.id}" name="appointment">
+				<div name="${appointment.name}">
+					<strong>Type:</strong>
+					<div th:text="${appointment.type}" style="display: inline-block">
+					</div>
+					<br /> <strong>Date</strong>
+					<div th:text="${appointment.date}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Time</strong>
+					<div th:text="${appointment.time}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Patient</strong>
+					<div th:text="${appointment.patient}" style="display: inline-block"></div>
+					<br />
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

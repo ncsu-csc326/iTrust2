@@ -1,0 +1,143 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Edit My Demographics</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<h1>Edit My Demographics</h1>
+		<form action="#" th:action="@{/patient/editDemographics}"
+			th:object="${PatientForm}" method="post">
+			<table>
+				<tr>
+					<td>First Name</td>
+					<td><input type="text" th:field="*{firstName}" /></td>
+					<td th:if="${#fields.hasErrors('firstName')}"
+						th:errors="*{firstName}">First name missing or invalid</td>
+				</tr>
+
+				<tr>
+					<td>Last Name</td>
+					<td><input type="text" th:field="*{lastName}" /></td>
+					<td th:if="${#fields.hasErrors('lastName')}"
+						th:errors="*{lastName}">Last name missing or invalid</td>
+				</tr>
+
+				<tr>
+					<td>Preferred Name</td>
+					<td><input type="text" th:field="*{preferredName}" /></td>
+					<td th:if="${#fields.hasErrors('preferredName')}"
+						th:errors="*{preferredName}">Preferred name is invalid</td>
+				</tr>
+
+
+				<tr>
+					<td>Mother (username)</td>
+					<td><input type="text" th:field="*{mother}" /></td>
+					<td th:if="${#fields.hasErrors('mother')}" th:errors="*{mother}">Mother's
+						username was invalid</td>
+				</tr>
+
+				<tr>
+					<td>Father (username)</td>
+					<td><input type="text" th:field="*{father}" /></td>
+					<td th:if="${#fields.hasErrors('father')}" th:errors="*{father}">Father's
+						username was invalid</td>
+				</tr>
+
+				<tr>
+					<td>Email</td>
+					<td><input type="text" th:field="*{email}" /></td>
+					<td th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email
+						was missing or too long</td>
+				</tr>
+
+				<tr>
+					<td>Address Line 1</td>
+					<td><input type="text" th:field="*{address1}" /></td>
+					<td th:if="${#fields.hasErrors('address1')}"
+						th:errors="*{address1}">Address Line 1 invalid or missing</td>
+				</tr>
+
+				<tr>
+					<td>Address Line 2</td>
+					<td><input type="text" th:field="*{address2}" /></td>
+					<td th:if="${#fields.hasErrors('address2')}"
+						th:errors="*{address2}">Address Line 2 invalid</td>
+				</tr>
+
+				<tr>
+					<td>City</td>
+					<td><input type="text" th:field="*{city}" /></td>
+					<td th:if="${#fields.hasErrors('city')}" th:errors="*{city}">City
+						required and misisng or invalid</td>
+				</tr>
+
+				<tr>
+					<td>State</td>
+					<td><select th:field="*{state}">
+							<option
+								th:each="state : ${T(edu.ncsu.csc.itrust2.models.enums.State).values()}"
+								th:value="${state}" th:text="${state}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td>Zip</td>
+					<td><input type="text" th:field="*{zip}" /></td>
+					<td th:if="${#fields.hasErrors('zip')}" th:errors="*{zip}">Zip
+						required and misisng or invalid</td>
+				</tr>
+
+				<tr>
+					<td>Phone</td>
+					<td><input type="text" th:field="*{phone}" /></td>
+					<td th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Phone
+						required and misisng or invalid</td>
+				</tr>
+
+				<tr>
+					<td>Date of Birth</td>
+					<td><input type="text" th:field="*{dateOfBirth}" /></td>
+					<td th:if="${#fields.hasErrors('dateOfBirth')}"
+						th:errors="*{dateOfBirth}">Date of birth required and misisng
+						or invalid</td>
+				</tr>
+
+				<tr>
+					<td>Blood Type</td>
+					<td><select th:field="*{bloodType}">
+							<option
+								th:each="type : ${T(edu.ncsu.csc.itrust2.models.enums.BloodType).values()}"
+								th:value="${type}" th:text="${type}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td>Ethnicity</td>
+					<td><select th:field="*{ethnicity}">
+							<option
+								th:each="ethnicity : ${T(edu.ncsu.csc.itrust2.models.enums.Ethnicity).values()}"
+								th:value="${ethnicity}" th:text="${ethnicity}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td>Gender</td>
+					<td><select th:field="*{gender}">
+							<option
+								th:each="gender : ${T(edu.ncsu.csc.itrust2.models.enums.Gender).values()}"
+								th:value="${gender}" th:text="${gender}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td><button type="submit" class="btn">Submit</button></td>
+				</tr>
+
+			</table>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+  <title>Edit Office Visit</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+  <div th:fragment="content">
+    <div class="container">
+
+      <script th:inline="javascript">
+        /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+        /*<![CDATA[*/
+
+        var app = angular.module('myApp', []);
+        app
+          .controller(
+          'editOfficeVisitCtrl',
+          function ($scope, $http) {
+        	  
+        	  var isDate = function(input) {
+              	if (!input) {
+              		return false;
+              	}			
+              	var match = /^(\d?\d)\/(\d?\d)\/(\d{4})$/.exec(input);
+              	if (!match) {
+              		return false;
+              	}
+              	var parsedDate = {
+              		year: +match[3],
+              		month: +match[1] - 1,
+              		day: +match[2]
+              	};
+              	var date = new Date(parsedDate.year, parsedDate.month, parsedDate.day);
+              	return date.getFullYear() === parsedDate.year && date.getMonth() === parsedDate.month && date.getDate() === parsedDate.day;
+              };
+              
+              var checkValidPrescription = function(p) {
+              	var err = [];
+              	if (!p.drug) {
+              		err.push("Prescription must be associated with a drug");
+              	}
+              	if (!isDate(p.startDate)) {
+              		err.push("Start date is in an invalid format");
+              	}
+              	if (!isDate(p.endDate)) {
+              		err.push("End date is in an invalid format");
+              	}
+              	var s = Date.parse(p.startDate);
+              	var e = Date.parse(p.endDate);
+              	if(s > e){
+              		err.push("Start date must be earlier than end date");
+              	}
+              	if (!/^\+?\d+$/.test(p.dosage)) {
+              		err.push("Dosage must be a positive integer");
+              	}
+              	if (!/^\+?\d+$/.test(p.renewals)) {
+              		err.push("Renewals must be an integer zero or more");
+              	}
+              	
+              	return err.join(". ");
+              }
+
+
+            $scope.getTime = function getTime(date) {
+              var hour = date.hourOfDay;
+              var suffix;
+              if (hour > 12) {
+                hour = hour - 12;
+                suffix = "PM";
+              } else {
+                suffix = "AM";
+              }
+              return twoDigit(hour) + ":" + twoDigit(date.minute) + " " + suffix;
+            }
+
+            $scope.getDate = function getDate(date) {
+              /* The months start at 0... only the months.  So we have to add 1 to get the correct input.*/
+              month = date.month + 1;
+              return twoDigit(month) + "/" + twoDigit(date.dayOfMonth) + "/" + date.year;
+            }
+
+            $scope.noVisitSelected = true;
+            $scope.loadingVisits = true;
+            $http.get("/iTrust2/api/v1/officevisits").then(
+              function (response) {
+                $scope.noVisitSelected = true;
+                $scope.loadingVisits = false;
+                $scope.visits = response.data;
+                var visitsLength = $scope.visits.length;
+                //The problem is that the visit does not contain an actual reference to the patient as a patient, only as a user
+                //to get around this, we will use the patients api which can get us this mapping, and we will have angular help
+                for (var i = 0; i < visitsLength; i++) {
+                  $scope.visits[i].formattedDate = $scope.getDate($scope.visits[i].date);
+                  //passing to inner loop taken from https://stackoverflow.com/questions/17244614/passing-variable-to-promise-in-a-loop
+                  (function (i) {
+                    $http.get("/iTrust2/api/v1/patients/" + $scope.visits[i].patient.username).then(
+                      function (response) {
+                        $scope.visits[i].actualPatient = response.data;
+                      });
+                  })(i);
+                }
+              });
+
+            $http.get("/iTrust2/api/v1/appointmenttype")
+              .then(function (response) {
+                $scope.types = response.data;
+              });
+
+            $http.get("/iTrust2/api/v1/housesmoking")
+              .then(function (response) {
+                $scope.housesmoking = response.data;
+              });
+
+            $http.get("/iTrust2/api/v1/patientsmoking")
+              .then(function (response) {
+                $scope.patientsmoking = response.data;
+              });
+
+            $http.get("/iTrust2/api/v1/hospitals").then(
+              function (response) {
+                $scope.hospitals = response.data;
+              });
+            $http.get("/iTrust2/api/v1/drugs").then(
+              function (response) {
+                $scope.drugs = response.data;
+              });
+            $http.get("/iTrust2/api/v1/icdcodes").then(
+              function (response) {
+                $scope.icdcodes = response.data;
+              });
+
+            $scope.selectedVisitID = null;
+            $scope.selectedVisit = {};
+
+            function twoDigit(num) {
+              if (num < 10) {
+                return "0" + num;
+              }
+              return num;
+            }
+
+            $scope.populateVisit = function () {
+              $scope.prescriptions = [];
+              $scope.diagnoses = [];
+              var visitsLength = $scope.visits.length;
+              $scope.noVisitSelected = false;
+              for (var i = 0; i < visitsLength; i++) {
+                if ($scope.visits[i].id == $scope.selectedVisitID) {
+                  $http({
+                    method: 'POST',
+                    url: '/iTrust2/api/v1/officevisits/hcp/view/' + $scope.selectedVisitID,
+                    data: $scope.selectedVisit
+                  });
+                  $scope.selectedVisit.patient = $scope.visits[i].patient.username;
+                  $scope.selectedVisit.hcp = $scope.visits[i].hcp.username;
+                  $scope.selectedVisit.notes = $scope.visits[i].notes;
+                  $scope.selectedVisit.type = $scope.visits[i].type;
+                  $scope.selectedVisit.hospital = $scope.visits[i].hospital.name;
+                  $scope.selectedVisit.time = $scope.getTime($scope.visits[i].date);
+                  $scope.selectedVisit.date = $scope.getDate($scope.visits[i].date);
+                  $scope.selectedVisit.id = $scope.visits[i].id;
+                  $scope.selectedVisit.height = $scope.visits[i].basicHealthMetrics.height;
+                  $scope.selectedVisit.weight = $scope.visits[i].basicHealthMetrics.weight;
+                  $scope.selectedVisit.headCircumference = $scope.visits[i].basicHealthMetrics.headCircumference;
+                  $scope.selectedVisit.systolic = $scope.visits[i].basicHealthMetrics.systolic;
+                  $scope.selectedVisit.diastolic = $scope.visits[i].basicHealthMetrics.diastolic;
+                  $scope.selectedVisit.hdl = $scope.visits[i].basicHealthMetrics.hdl;
+                  $scope.selectedVisit.ldl = $scope.visits[i].basicHealthMetrics.ldl;
+                  $scope.selectedVisit.tri = $scope.visits[i].basicHealthMetrics.tri;
+                  $scope.selectedVisit.houseSmokingStatus = $scope.visits[i].basicHealthMetrics.houseSmokingStatus;
+                  $scope.selectedVisit.patientSmokingStatus = $scope.visits[i].basicHealthMetrics.patientSmokingStatus;
+                  
+                  $http.get("/iTrust2/api/v1/diagnosesforvisit/" + $scope.selectedVisitID).then(
+                  	function (response) {
+                    	$scope.diagnosesResponse = response.data;
+                        var dLength = $scope.diagnosesResponse.length;
+	                   	for( var i = 0; i < dLength; i++){
+	                        $scope.diagnoses.push({
+	                          note: $scope.diagnosesResponse[i].note,
+	                          code: $scope.diagnosesResponse[i].code
+	                        });
+	                      }
+                   });
+                  
+                  // prescriptions
+                  var pLength = $scope.visits[i].prescriptions.length;
+                  for( var j = 0; j < pLength; j++){
+                	var myStart = $scope.getDate($scope.visits[i].prescriptions[j].startDate);
+                  	var myEnd = $scope.getDate($scope.visits[i].prescriptions[j].endDate);
+                    $scope.prescriptions.push({
+                      drug: $scope.visits[i].prescriptions[j].drug.code,
+                      dosage: $scope.visits[i].prescriptions[j].dosage,
+                      startDate: myStart,
+                      endDate: myEnd,
+                      renewals: $scope.visits[i].prescriptions[j].renewals
+                    });
+                  }
+                  
+
+                  $scope.three = false;
+                  $scope.threeAndUp = false;
+                  $scope.twelveAndUp = false;
+                  var month = $scope.visits[i].date.month;
+                  var day = $scope.visits[i].date.dayOfMonth;
+                  var year = $scope.visits[i].date.year;
+                  var dob = $scope.visits[i].actualPatient.dateOfBirth;
+                  var age = year - dob.year;
+                  if (month < dob.month) {
+                    age -= 1;
+                  } else if (month == dob.month) {
+                    if (day < dob.day) {
+                      age -= 1;
+                    } else if (day == dob.day) {
+                      console.log("Happy Birthday!");
+                    }
+                  }
+                  if (age < 3) {
+                    $scope.three = true;
+                  }
+                  if (age >= 3) {
+                    $scope.threeAndUp = true;
+                  }
+                  if (age >= 12) {
+                    $scope.twelveAndUp = true;
+                  }
+
+                  break;
+                }
+              }
+            }
+
+            $scope.submit = function () {     
+              $scope.selectedVisit.hcp = /*[[${#httpServletRequest.remoteUser}]]*/null; /* Ugly hack; use this to retrieve the name of the HCP who is currently logged in.  This grabs it from Thymeleaf */
+              $scope.errorMsg = "";
+              $scope.selectedVisit.status = "PENDING";
+
+              if ($scope.selectedVisit.type == null) {
+                $scope.errorMsg += "Please select a visit type\n";
+              }
+
+              if ($scope.selectedVisit.type == null) {
+                $scope.errorMsg += "Please select a hospital\n";
+              }
+
+              if (/(\d{1,2})\/(\d{1,2})\/(\d{4})/.test($scope.selectedVisit.date) == false) {
+                $scope.errorMsg += "Please input a valid date as MM/dd/yyyy"
+              }
+              if (/(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.test($scope.selectedVisit.time) == false) {
+                $scope.errorMsg += "Please input a valid time as hh:mm aa"
+              }
+              //info on date usage comes from here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+              var dateInput = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec($scope.selectedVisit.date);
+              dateInput[1] = (parseInt(dateInput[1]) - 1) + '';//months are 0 indexed
+              var timeInput = /(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.exec($scope.selectedVisit.time);
+              if ((timeInput[3] == 'pm' || timeInput[3] == 'PM') && parseInt(timeInput[1]) < 12) { //add 12 for check
+                timeInput[1] = (parseInt(timeInput[1]) + 12) + '';
+              }
+              var date = new Date(dateInput[3], dateInput[1], dateInput[2], timeInput[1], timeInput[2]);
+              if (!(date.getFullYear() == dateInput[3] && date.getMonth() == dateInput[1] && date.getDate() == dateInput[2] && date.getHours() == timeInput[1] && date.getMinutes() == timeInput[2])) {
+                $scope.errorMsg += "Please input a valid date and time\n";
+              }
+
+              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.height) == false) {
+                $scope.errorMsg += "Height/length can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
+              }
+              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.weight) == false) {
+                $scope.errorMsg += "Weight can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
+              }
+              if ($scope.three && /^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.headCircumference) == false) {
+                $scope.errorMsg += "Head circumference can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
+              }
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.systolic) == false) {
+                $scope.errorMsg += "Systolic blood pressure can be up to a 3-digit positive number\n"
+              }
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.diastolic) == false) {
+                $scope.errorMsg += "Diastolic blood pressure can be up to a 3-digit positive number\n"
+              }
+              //handle invalid and outside of range
+              if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test($scope.selectedVisit.hdl) == false) {
+                $scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"
+              } else if ($scope.twelveAndUp) {
+                var hdlInt = parseInt($scope.selectedVisit.hdl);
+                if (hdlInt > 90) {
+                  $scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"
+                }
+              }
+              //handle invalid and outside of range
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.ldl) == false) {
+                $scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"
+              } else if ($scope.twelveAndUp) {
+                var ldlInt = parseInt($scope.selectedVisit.ldl);
+                if (ldlInt > 600) {
+                  $scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"
+                }
+              }
+              //handle invalid and outside of range
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.tri) == false) {
+                $scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"
+              } else if ($scope.twelveAndUp) {
+                var triInt = parseInt($scope.selectedVisit.tri);
+                if (triInt > 600 || triInt < 100) {
+                  $scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"
+                }
+              }
+              $scope.selectedVisit.diagnoses = $scope.diagnoses;
+              $scope.selectedVisit.prescriptions = $scope.prescriptions;
+              $scope.selectedVisit.prescriptions.forEach(function (p) {
+                  p.patient = $scope.selectedVisit.patient;
+                });
+
+              $http({
+                method: 'PUT',
+                url: '/iTrust2/api/v1/officevisits/' + $scope.selectedVisitID,
+                data: $scope.selectedVisit
+              }).then(function (response) {
+                $scope.message = "Office visit edited successfully";
+              }, function (rejection) {
+                $scope.message = "Error occurred editing office visit";
+              })
+            }
+
+            /** diagnoses **/
+            
+            $scope.noteEntry = "";
+            $scope.codeEntry = "";
+
+          //clears local variables for diagnosis form
+            function resetDiagnosisForm() {
+              noteEntry = "";
+              codeEntry = "";
+            }
+          
+            $scope.fillDiagnosis = function () {
+                $scope.diagnoses.push({
+                  note: $scope.noteEntry,
+                  code: $scope.codeEntry
+                });
+                resetDiagnosisForm();
+              }
+            
+            /** prescriptions **/
+            
+            $scope.drugEntry = "";
+            $scope.dosageEntry = "";
+            $scope.startEntry = "";
+            $scope.endEntry = "";
+            $scope.renewalEntry = "";
+
+            //clears local variables for prescription form
+            function resetPrescriptionForm() {
+              $scope.drugEntry = "";
+              $scope.dosageEntry = "";
+              $scope.startEntry = "";
+              $scope.endEntry = "";
+              $scope.renewalEntry = "";
+            }
+            $scope.fillPrescription = function () {
+              $scope.errorMsg = "";
+              var p = {
+                      drug: $scope.drugEntry,
+                      dosage: $scope.dosageEntry,
+                      startDate: $scope.startEntry,
+                      endDate: $scope.endEntry,
+                      renewals: $scope.renewalEntry
+              }
+              var err = checkValidPrescription(p);
+              if (err) {
+            	  $scope.errorMsg = err;
+              } else {
+	              $scope.prescriptions.push(p);
+	              resetPrescriptionForm();
+              }
+            }
+            
+            //remove local diagnosis from list
+            $scope.removeDiagnosis = function ($index) {
+              $scope.diagnoses.splice($index, 1);
+            }
+
+            //remove local prescription from list
+            $scope.removePrescription = function ($index) {
+              $scope.prescriptions.splice($index, 1);
+            }
+
+            //call initally 
+            resetPrescriptionForm();
+            resetDiagnosisForm();
+
+
+          });
+
+			/*]]>*/
+      </script>
+
+
+
+      <div ng-app="myApp" ng-controller="editOfficeVisitCtrl">
+        <nav class="navbar navbar-default">
+          <div class="container-fluid">
+            <ul class="nav navbar-nav">
+              <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Patient
+                  <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a href="/iTrust2/hcp/viewAppointmentRequests" id="viewrequests">View Appointment Requests</a>
+                  </li>
+                  <li>
+                    <a href="/iTrust2/hcp/viewAppointments" id="upcomingrequests">View Upcoming Appointments</a>
+                  </li>
+                  <li>
+                    <a href="/iTrust2/hcp/editPatientDemographics" id="editPatientDemographics">Edit Patient</a>
+                  </li>
+                  <li>
+                    <a href="#">Add Patient -- Not Implemented</a>
+                  </li>
+                  <li>
+                    <a href="/iTrust2/hcp/documentOfficeVisit.html" id="documentOfficeVisit">Document Office Visit</a>
+                  </li>
+                </ul>
+              </li>
+              <li class="dropdown">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Edit
+                  <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a href="/iTrust2/personnel/editDemographics" id="editdemographics">Edit Demographics</a>
+                  </li>
+                  <li>
+                    <a href="/iTrust2/hcp/editOfficeVisit" id="editOfficeVisit">Edit Office Visit</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </nav>
+
+        <div class="row">
+
+          <div class="col-md-12">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h4>Select an Office Visit to Edit</h4>
+              </div>
+              <div class="panel-body">
+                <div class="row">
+                  <div class="col-md-12">
+                    <ul style="list-style: none;">
+                      <li ng-repeat="visit in visits">
+                        <h4>
+                          <label>
+                            <input type="radio" ng-model="$parent.selectedVisitID" ng-click="populateVisit()" name="{{visit.id}}" value="{{visit.id}}" required="true"
+                            /> {{visit.patient.username}}'s {{visit.type}} on {{visit.formattedDate}} at {{getTime(visit.date)}}
+                          </label>
+                        </h4>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="panel panel-primary">
+                  <div class="panel-heading">
+                    <h3>{{selectedVisit.patient}}'s {{selectedVisit.type}} on {{selectedVisit.date}} at {{selectedVisit.time}}</h3>
+                  </div>
+                  <div class="panel-body">
+                    <div class="row">
+                      <div class="form-group col-md-2">
+                        <label>Date:</label>
+                        <input class="form-control" type="text" id="date" name="date" ng-model="selectedVisit.date" required="true" />
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label>Time:</label>
+                        <input class="form-control" type="text" id="time" name="time" ng-model="selectedVisit.time" required="true" />
+                      </div>
+                      <div class="form-group col-md-2 text-right">
+                        <div class="checkbox">
+                          <label>
+                            <input type="checkbox" name="preScheduled" class="checkbox" ng-model="selectedVisit.prescheduled">Prescheduled?
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="form-group col-md-4">
+                        <label>Patient:</label>
+
+                        <div class="panel panel-default">
+                          <div class="panel-body">
+                            <div class="form-check">
+                              {{selectedVisit.patient}}
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label>Type of Visit:</label>
+
+                        <div class="panel panel-default">
+                          <div class="panel-body">
+                            <div class="form-check">
+                              <ul style="max-height:15%;overflow:auto;list-style: none;">
+                                <li ng-repeat="type in types">
+                                  <label>
+                                    <input type="radio" ng-model="$parent.selectedVisit.type" name="type" value="{{type}}" required="true" />{{type}}
+                                  </label>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label>Hospital:</label>
+                        <div class="panel panel-default">
+                          <div class="panel-body">
+                            <div class="form-check">
+                              <ul style="max-height:15%;overflow:auto;list-style: none;">
+                                <li ng-repeat="hospital in hospitals">
+                                  <label>
+                                    <input type="radio" ng-model="$parent.selectedVisit.hospital" name="{{hospital.name}}" value="{{hospital.name}}" required="true" /> {{hospital.name}}
+                                  </label>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+
+                      <!-- Basic Health Metrics Panel -->
+                      <div class="col-md-4">
+                        <div class="panel panel-info">
+                          <div class="panel-heading">
+                            <h4>Basic Health Metrics</h4>
+                          </div>
+                          <div class="panel-body">
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Height/Length:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="height" ng-model="selectedVisit.height" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Weight:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="weight" ng-model="selectedVisit.weight" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="three">
+                              <div class="col-xs-6">
+                                <label>Head Circumference:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="head" ng-model="selectedVisit.headCircumference" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="threeAndUp">
+                              <div class="col-xs-6">
+                                <label>Systolic:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="systolic" ng-model="selectedVisit.systolic" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="threeAndUp">
+                              <div class="col-xs-6">
+                                <label>Diastolic:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="diastolic" ng-model="selectedVisit.diastolic" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="twelveAndUp">
+                              <div class="col-xs-6">
+                                <label>HDL:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="hdl" ng-model="selectedVisit.hdl" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="twelveAndUp">
+                              <div class="col-xs-6">
+                                <label>LDL:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="ldl" ng-model="selectedVisit.ldl" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="twelveAndUp">
+                              <div class="col-xs-6">
+                                <label>Triglycerides:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="tri" ng-model="selectedVisit.tri" required="true" type="text">
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="twelveAndUp">
+                              <div class="col-xs-6">
+                                <label>Household Smoking Status:</label>
+                              </div>
+                              <div class="col-xs-6 radio-box">
+                                <div class="form-check">
+                                  <ul style="list-style: none;">
+                                    <li ng-repeat="hsmokes in housesmoking">
+                                      <label>
+                                        <input type="radio" ng-model="$parent.selectedVisit.houseSmokingStatus" name="houseSmokingStatus" value="{{hsmokes}}" required="true"
+                                        /> {{hsmokes}}
+                                      </label>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="form-group row" ng-show="twelveAndUp">
+                              <div class="col-xs-6">
+                                <label>Patient Smoking Status:</label>
+                              </div>
+                              <div class="col-xs-6 radio-box">
+                                <div class="form-check">
+                                  <ul style="list-style: none;">
+                                    <li ng-repeat="psmokes in patientsmoking">
+                                      <label>
+                                        <input type="radio" ng-model="$parent.selectedVisit.patientSmokingStatus" name="patientSmokingStatus" value="{{psmokes}}"
+                                          required="true" /> {{psmokes}}
+                                      </label>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Diagnosis Panel  -->
+                      <div class="col-md-4">
+                        <div class="panel panel-info">
+                          <div class="panel-heading">
+                            <h4>Diagnosis</h4>
+                          </div>
+                          <div class="panel-body">
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Code:</label>
+                              </div>
+                              <div class="col-xs-6 radio-box">
+                                <div class="form-check">
+                                  <ul style="list-style: none;">
+                                    <li ng-repeat="i in icdcodes">
+                                      <label>
+                                        <input type="radio" ng-model="$parent.codeEntry" name="{{i.code}}" ng-value="i" required="true" /> {{i.code}}
+                                      </label>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Date:</label>
+                              </div>
+                              <div class="col-xs-4">
+                                {{visit.date}}
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Notes:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input class="form-control" name="notesEntry" ng-model="noteEntry" required="true" type="text">
+                              </div>
+                            </div>
+
+                            <div class="form-group row text-center">
+                              <div class="col-md-12">
+                                <button class="btn btn-success" ng-click="fillDiagnosis()" name="fillDiagnosis">Add Diagnosis</button>
+                              </div>
+                            </div>
+
+                            <div class="form-group row">
+                              <div class="col-md-12">
+                                <div class="panel panel-default">
+                                  <div class="panel-heading">
+                                    Added Diagnoses
+                                  </div>
+                                  <div class="panel-body">
+                                    <div class="row" ng-repeat="d in diagnoses">
+                                      <div class="col-md-4">
+                                        {{d.code.code}}
+                                      </div>
+                                      <div class="col-md-4">
+                                        {{d.note}}
+                                      </div>
+                                      <div class="col-md-4">
+                                        <button class="btn btn-danger btn-xs" ng-click="removeDiagnosis($index)" name="removeDiagnosis">
+                                          <b>x</b>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Prescription Panel -->
+                      <div class="col-md-4">
+                        <div class="panel panel-info">
+                          <div class="panel-heading">
+                            <h4>Prescription</h4>
+                          </div>
+                          <div class="panel-body">
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Drug:</label>
+                              </div>
+                              <div class="col-xs-6 radio-box">
+                                <div class="form-check">
+                                  <ul style="list-style: none;">
+                                    <li ng-repeat="d in drugs">
+                                      <label>
+                                        <input type="radio" ng-model="$parent.drugEntry" name="{{d.name}}" value="{{d.code}}" required="true" /> {{d.name}}
+                                      </label>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Dosage:</label>
+                              </div>
+                              <div class="col-xs-4">
+                                <input class="form-control" name="dosageEntry" ng-model="dosageEntry" required></input>
+                              </div>
+                              <div class="col-xs-2">
+                                <span id="helpBlock" class="help-block">mg</span>
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Start Date:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input type="text" class="form-control" placeholder="MM/DD/YYYY" name="startEntry" ng-model="startEntry" required/>
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>End Date:</label>
+                              </div>
+                              <div class="col-xs-6">
+                                <input type="text" class="form-control" placeholder="MM/DD/YYYY" name="endEntry" ng-model="endEntry" required/>
+                              </div>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-xs-6">
+                                <label>Renewals:</label>
+                              </div>
+                              <div class="col-xs-4">
+                                <input class="form-control" name="renewalEntry" ng-model="renewalEntry" required></input>
+                              </div>
+                            </div>
+                            <div class="form-group row text-center">
+                              <button class="btn btn-success" ng-click="fillPrescription()" name="fillPrescription">Add Prescription</button>
+                            </div>
+                            <div class="form-group row">
+                              <div class="col-md-12">
+                              <div class="panel panel-default">
+                                <div class="panel-heading">
+                                  Added Prescriptions
+                                </div>
+                                <div class="panel-body">
+                                  <div class="row" ng-repeat="p in prescriptions">
+                                    <div class="col-md-2">
+                                      {{p.drug}}
+                                    </div>
+                                    <div class="col-md-2">
+                                      {{p.dosage}}mg
+                                    </div>
+                                    <div class="col-md-2">
+                                      {{p.startDate}}
+                                    </div>
+                                    <div class="col-md-2">
+                                      {{p.endDate}}
+                                    </div>
+                                    <div class="col-md-2">
+                                      {{p.renewals}}
+                                    </div>
+                                    <div class="col-md-2">
+                                      <button class="btn btn-danger btn-xs" ng-click="removePrescription($index)" name="removePrescription">
+                                        <b>x</b>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Notes and Error Messages -->
+                  <div class="row">
+                    <div class="form-group col-md-6">
+                      <label>Notes:</label>
+                      <textarea name="time" ng-model="visit.notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-12 text-right">
+                      <div>
+                        <div name="errorMsg" class="text-success">
+                          {{message}}
+                        </div>
+                        <div name="success" class="text-danger">
+                          {{errorMsg}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel-footer text-right">
+                  <button class="btn btn-primary btn-lg" ng-click="submit()" name="submit">Update Office Visit</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+  </div>
+  </div>
+</body>
+
+</html>

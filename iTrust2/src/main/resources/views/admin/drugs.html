@@ -1,0 +1,218 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+  <title>Admin Drugs</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+  <div th:fragment="content">
+
+
+    <script th:inline="javascript">
+      /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+      /*<![CDATA[*/
+      var app = angular.module("drugsApp", []);
+      app.controller('drugsCtrl', function ($scope, $http) {
+    	  
+    	var checkValidDrug = function(drug) {
+    		var err = [];
+    		if (drug.description.length > 1024) {
+    			err.push("Description exceeds character limit of 1024");
+    		}
+    		if (drug.name.length > 64) {
+    			err.push("Name exceeds the character limit of 64");
+    		}
+    		if (!/^\d{4}-\d{4}-\d{2}$/.test(drug.code)) {
+    			err.push("Code must be in the format XXXX-XXXX-XX");
+    		}
+    		return err.join(". ");
+    	}
+
+        $scope.drugs = [];
+        $scope.loadTable = function () {
+          $http.get("/iTrust2/api/v1/drugs").then(
+            function (response) {
+              $scope.drugs = response.data;
+              $scope.message = "";
+            }, function (rejection) {
+              $scope.drugs = [];
+              $scope.message = "Could not display drugs";
+            });
+        }
+
+        $scope.addDrug = function () {
+          var err = checkValidDrug($scope.drug);
+          if (err) {
+            $scope.errorAdding = err;
+          } else {
+            $http.post("/iTrust2/api/v1/drugs", $scope.drug).then(
+              function (response) {
+                $scope.loadTable();
+                $scope.drug.name = "";
+                $scope.drug.code = "";
+                $scope.drug.description = "";
+                $scope.errorAdding = "";
+              }, function (rejection) {
+                $scope.errorAdding = "Could not add drug";
+              });
+          }
+
+        }
+
+        $scope.deleteDrug = function (drug) {
+          $http.delete('/iTrust2/api/v1/drugs/' + drug.id).then(
+            function (response) {
+              $scope.loadTable();
+              $scope.message = "";
+            }, function (rejection) {
+              $scope.message = "Could not remove drug";
+            })
+        }
+
+        // gets the template to ng-include for a table row / item
+        $scope.selectedDrug = {};
+
+        $scope.getTemplate = function (drug) {
+          if (drug.id === $scope.selectedDrug.id) return 'edit';
+          else return 'view';
+        };
+
+        $scope.editDrug = function (drug) {
+          $scope.selectedDrug = angular.copy(drug);
+        };
+        $scope.saveDrug = function () {
+       	  var err = checkValidDrug($scope.selectedDrug);
+          if (err) {
+            $scope.errorAdding = err;
+          } else {
+            $http.put("/iTrust2/api/v1/drugs", $scope.selectedDrug).then(
+              function (response) {
+                $scope.loadTable();
+                $scope.resetSelected();
+              }, function (rejection) {
+                $scope.errorAdding = "Failed to edit drug";
+              });
+          }
+        };
+
+        $scope.resetSelected = function () {
+          $scope.selectedDrug = {};
+        };
+
+        // load table initially
+        $scope.loadTable();
+      });
+			/*]]>*/
+    </script>
+
+
+
+    <div ng-app="drugsApp" ng-controller="drugsCtrl">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3>Admin Manage Drugs</h3>
+              </div>
+              <div class="panel-body">
+                <table class="table table-bordered">
+                  <caption>Existing Medications:</caption>
+                  <thead>
+                    <tr>
+                      <th>Drug</th>
+                      <th>NDC</th>
+                      <th>Description</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr name="drugTableRow" ng-repeat="d in drugs | orderBy: 'name'" ng-include="getTemplate(d)" drugId={{d.id}}>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- table in view mode -->
+                <script type="text/ng-template" id="view">
+                  <td name="nameCell">{{d.name}}</td>
+                  <td name="codeCell">{{d.code}}</td>
+                  <td name="descriptionCell">{{d.description}}</td>
+                  <td>
+                    <div class="row text-center">
+                      <div class="col-md-6">
+                        <input type="button" value="Edit" class="btn btn-primary" name="editDrug" ng-click="editDrug(d)" />                         
+                      </div>
+                      <div class="col-md-6">
+                          <input type="button" value="Delete" class="btn btn-danger" name="deleteDrug" ng-click="deleteDrug(d)" />                          
+                      </div>
+                    </div>
+                  </td>
+                </script>
+
+                <!-- table in edit mode -->
+                <script type="text/ng-template" id="edit">
+                  <td name="editNameCell">
+                    <input type="text" class="form-control" ng-model="selectedDrug.name" />
+                  </td>
+                  <td name="editCodeCell">
+                    <input type="text" class="form-control" ng-model="selectedDrug.code" />
+                  </td>
+                  <td name="editDescriptionCell">
+                    <input type="text" class="form-control" ng-model="selectedDrug.description" />
+                  </td>
+                  <td>
+                    <div class="row text-center">
+                      <div class="col-md-6">
+                          <input type="button" value="Save" class="btn btn-success" name="saveDrug" ng-click="saveDrug()" />                          
+                      </div>
+                      <div class="col-md-6">
+                          <input type="button" value="Cancel" class="btn btn-danger" name="cancelEdit" ng-click="resetSelected()" />                            
+                      </div>
+                    </div>
+                  </td>
+                </script>
+
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="panel panel-default">
+                      <div class="panel-heading ">Add a Drug</div>
+                      <div class="panel-body">
+                        <form class="form-horizontal" role="form" name="addDrugForm" ng-submit="addDrug(addDrugForm.$valid)">
+                          <div class="row">
+                            <div class="col-md-4">
+                              <label>Name</label>
+                              <input type="text" class="form-control" name="drug" ng-model="drug.name" required/>
+                            </div>
+                            <div class="col-md-4">
+                              <label>Code</label>
+                              <input type="text" class="form-control" placeholder="xxxx-xxxx-xx" name="code" ng-model="drug.code" required />
+                            </div>
+                            <div class="col-md-4">
+                              <label>Description</label>
+                              <textarea class="form-control" rows="5" name="description" ng-model="drug.description" required ng-minlength="1"></textarea>
+                            </div>
+                          </div>
+                          <div class="row">
+                            <div class="col-md-12 text-right">
+                              <button type="submit" class="btn btn-success" name="submit">Submit</button>
+                            </div>
+                          </div>
+                        </form>
+                        <div>
+                          <p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+</body>
+
+</html>
+
+<!-- still here? -->

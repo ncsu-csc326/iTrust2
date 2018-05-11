@@ -1,0 +1,59 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Request Appointment</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<h1>Request Medical Appointment</h1>
+		<form action="#" th:action="@{/patient/requestAppointment}"
+			th:object="${AppointmentRequestForm}" method="post">
+			<table>
+				<tr>
+					<td>HCP:</td>
+					<td><select th:field="*{hcp}">
+							<option th:each="hcp : ${hcps}" th:value="${hcp.username}"
+								th:text="${hcp.username}"></option>
+					</select></td>
+					<td th:if="${#fields.hasErrors('hcp')}" th:errors="*{hcp}">HCP
+						not found</td>
+				</tr>
+
+				<tr>
+					<td>Date:</td>
+					<td><input type="text" th:field="*{date}" /></td>
+					<td th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Invalid
+						date or date format</td>
+				</tr>
+
+				<tr>
+					<td>Time:</td>
+					<td><input type="text" th:field="*{time}" /></td>
+					<td th:if="${#fields.hasErrors('time')}" th:errors="*{time}">Invalid
+						time</td>
+				</tr>
+
+				<tr>
+					<td>Comments:</td>
+					<td><input type="text" th:field="*{comments}" /></td>
+				</tr>
+
+				<tr>
+					<td>Type:</td>
+					<td><select th:field="*{type}">
+							<option
+								th:each="type : ${T(edu.ncsu.csc.itrust2.models.enums.AppointmentType).values()}"
+								th:value="${type}" th:text="${type}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td><button type="submit" class="btn">Submit Request</button></td>
+				</tr>
+
+			</table>
+		</form>
+	</div>
+</body>
+</html>
