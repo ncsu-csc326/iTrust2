@@ -1,0 +1,55 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Request Appointment</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<h1>Add a new user</h1>
+		<form action="#" th:action="@{/admin/addUser}" th:object="${UserForm}"
+			method="post">
+			<table>
+				<tr>
+					<td>Username:</td>
+					<td><input type="text" th:field="*{username}" /></td>
+					<td th:if="${#fields.hasErrors('username')}"
+						th:errors="*{username}">Username invalid</td>
+				</tr>
+
+				<tr>
+					<td>Password:</td>
+					<td><input type="password" th:field="*{password}" /></td>
+					<td th:if="${#fields.hasErrors('password')}"
+						th:errors="*{password}">Passwords do not match</td>
+				</tr>
+
+				<tr>
+					<td>Password (again):</td>
+					<td><input type="password" th:field="*{password2}" /></td>
+					<td th:if="${#fields.hasErrors('password')}"
+						th:errors="*{password}">Passwords do not match</td>
+				</tr>
+
+				<tr>
+					<td>Role:</td>
+					<td><select th:field="*{role}">
+							<option
+								th:each="role : ${T(edu.ncsu.csc.itrust2.models.enums.Role).values()}"
+								th:value="${role}" th:text="${role}"></option>
+					</select></td>
+				</tr>
+
+				<tr>
+					<td><input type="checkbox" name="enabled" class="checkbox">Enabled?</input>
+					</td>
+				</tr>
+				<tr>
+					<td><button type="submit" class="btn">Add User</button></td>
+				</tr>
+
+			</table>
+		</form>
+	</div>
+</body>
+</html>

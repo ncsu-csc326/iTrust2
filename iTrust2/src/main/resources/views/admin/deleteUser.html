@@ -1,0 +1,38 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Delete User</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<span th:if="${users!=null and users.size() == 0}">No users
+			found.</span>
+		<form th:method="POST" th:action="@{/admin/deleteUser}"
+			th:object="${deleteUserForm}" method="post" modelAttribute="userForm">
+			<div th:each="user : ${users}" class="radio">
+				<input type="radio" th:value="${user.username}" name="name"
+					th:id="${user.username}">
+				<div name="${user.username}">
+					<br /> <strong>Username</strong>
+					<div th:text="${user.username}" style="display: inline-block"></div>
+					<br /> <br /> <strong>Role</strong>
+					<div th:text="${user.role}" style="display: inline-block"></div>
+					<br />
+				</div>
+				</input>
+			</div>
+
+			<span th:if="${users!=null and users.size() != 0}">
+
+				<tr>
+					<td><input type="checkbox" name="confirm" class="checkbox">Confirm
+						Delete</input></td>
+				</tr> <br />
+				<button type="submit" class="btn btn-default">Submit</button>
+			</span>
+		</form>
+
+	</div>
+</body>
+</html>

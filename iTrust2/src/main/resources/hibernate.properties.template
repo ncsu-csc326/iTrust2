@@ -1,0 +1,3 @@
+hibernate.connection.url = jdbc:mysql://localhost:3306/iTrust2?createDatabaseIfNotExist=true
+hibernate.connection.username = root
+hibernate.connection.password = 

@@ -1,0 +1,377 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Document Office Visit</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+
+			var app = angular.module('myApp', []);
+			app
+					.controller(
+							'documentOfficeVisitCtrl',
+							function($scope, $http) {
+								
+								$scope.three = false;
+								$scope.threeAndUp = false;
+								$scope.twelveAndUp = false;
+								
+								//ran when patient is selected
+								//validate birthdate here
+								$scope.patientSelect = function(patient) {
+									 if ($scope.visit.actualPatient == null && patient != null) {
+										 $scope.visit.actualPatient = patient;
+									 }
+									 if (patient == null) {
+										 if ($scope.visit.actualPatient != null) {
+											 patient = $scope.visit.actualPatient;
+										 } else {
+											 return; //we don't have enough information to continue
+										 }
+									 }
+								     if (patient.dateOfBirth == null) { //we don't know DoB so submit everything
+								    	 	$scope.three = true;
+								    	 	$scope.threeAndUp = true;
+								    	 	$scope.twelveAndUp = true;
+								    	 	return;
+								     }
+								     $scope.three = false;
+								     $scope.threeAndUp = false;
+								     $scope.twelveAndUp = false;
+								     //thanks to https://stackoverflow.com/questions/26934703/extract-month-day-and-year-from-date-regex
+								     //for the next two lines
+								     var dateRegexp = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
+								     var date = dateRegexp.exec(document.getElementsByName("date")[0].value);
+								     if (!$scope.visit.date || date == null) { //no date yet
+								    	 	return;
+								     }
+								     var month = date[1];
+								     var day = date[2];
+								     var year = date[3];
+								     var dob = patient.dateOfBirth;
+								     var age = year - dob.year;
+								     if (month < dob.month) {
+								    	 	age -= 1;
+								     } else if (month == dob.month) {
+								    	 	if (day < dob.day) {
+								    	 		age -= 1;
+								    	 	} else if (day == dob.day) {
+								    	 		console.log("Happy Birthday!");
+								    	 	}
+								     }
+								     if (age < 3) {
+								    	 	$scope.three = true;
+								     }
+								    	 if (age >= 3) {
+								    		 $scope.threeAndUp = true;
+								    	 }
+								    	 if (age >= 12) {
+								    		 $scope.twelveAndUp = true;
+								    	 }
+								}
+
+								$http.get("/iTrust2/api/v1/patients").then(
+										function(response) {
+											$scope.patients = response.data;
+
+										});
+
+								$http.get("/iTrust2/api/v1/appointmenttype")
+										.then(function(response) {
+											$scope.types = response.data;
+										});
+								$http.get("/iTrust2/api/v1/housesmoking")
+										.then(function(response) {
+											$scope.housesmoking = response.data;
+										});
+								$http.get("/iTrust2/api/v1/patientsmoking")
+										.then(function(response) {
+											$scope.patientsmoking = response.data;
+										});
+
+								$http.get("/iTrust2/api/v1/hospitals").then(
+										function(response) {
+											$scope.hospitals = response.data;
+										});
+
+								console.log($scope);
+
+								$scope.submit = function() {
+									$scope.errorMsg = "";
+									$scope.visit.hcp = /*[[${#httpServletRequest.remoteUser}]]*/null; /* Ugly hack; use this to retrieve the name of the HCP who is currently logged in.  This grabs it from Thymeleaf */
+									$scope.visit.status = "PENDING";
+									
+									if ($scope.visit.type == null) {
+										$scope.errorMsg += "Please select a visit type\n";
+									}
+									
+									if ($scope.visit.type == null) {
+										$scope.errorMsg += "Please select a hospital\n";
+									}
+									
+									if (/(\d{1,2})\/(\d{1,2})\/(\d{4})/.test($scope.visit.date) == false ) {
+										$scope.errorMsg += "Please input a valid date as MM/dd/yyyy"	
+									}
+									if (/(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.test($scope.visit.time) == false ) {
+										$scope.errorMsg += "Please input a valid time as hh:mm aa"	
+									}
+									//info on date usage comes from here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+									var dateInput = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec($scope.visit.date);
+									dateInput[1] = (parseInt(dateInput[1]) - 1) + '';//months are 0 indexed
+									var timeInput = /(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.exec($scope.visit.time);
+									if ((timeInput[3] == 'pm' || timeInput[3] == 'PM') && parseInt(timeInput[1]) < 12) { //add 12 for check
+										timeInput[1] = (parseInt(timeInput[1]) + 12) + '';
+									}
+									var date = new Date(dateInput[3], dateInput[1], dateInput[2], timeInput[1], timeInput[2]);
+									if (!(date.getFullYear() == dateInput[3] && date.getMonth() == dateInput[1] && date.getDate() == dateInput[2] && date.getHours() == timeInput[1] && date.getMinutes() == timeInput[2])) {
+										$scope.errorMsg += "Please input a valid date and time\n";
+									}
+									
+									if (/^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.height) == false) {
+										$scope.errorMsg += "Height/length can be up to a 3-digit positive number and potentially one digit of decimal precision\n"	
+									}
+									if (/^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.weight) == false) {
+										$scope.errorMsg += "Weight can be up to a 3-digit positive number and potentially one digit of decimal precision\n"	
+									}
+									if ($scope.three && /^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.headCircumference) == false) {
+										$scope.errorMsg += "Head circumference can be up to a 3-digit positive number and potentially one digit of decimal precision\n"	
+									}
+									if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.visit.systolic) == false) {
+										$scope.errorMsg += "Systolic blood pressure can be up to a 3-digit positive number\n"	
+									}
+									if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.visit.diastolic) == false) {
+										$scope.errorMsg += "Diastolic blood pressure can be up to a 3-digit positive number\n"	
+									}
+									//handle invalid and outside of range
+									if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test($scope.visit.hdl) == false) {
+										$scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"	
+									} else if ($scope.twelveAndUp) {
+										var hdlInt = parseInt($scope.visit.hdl);
+										if (hdlInt > 90) {
+											$scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"	
+										}
+									}
+									//handle invalid and outside of range
+									if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.visit.ldl) == false) {
+										$scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"	
+									} else if ($scope.twelveAndUp) {
+										var ldlInt = parseInt($scope.visit.ldl);
+										if (ldlInt > 600) {
+											$scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"	
+										}
+									}
+									//handle invalid and outside of range
+									if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.visit.tri) == false) {
+										$scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"	
+									} else if ($scope.twelveAndUp) {
+										var triInt = parseInt($scope.visit.tri);
+										if (triInt > 600 || triInt < 100) {
+											$scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"	
+										}
+									}
+
+									$http({
+										method : 'POST',
+										url : '/iTrust2/api/v1/officevisits',
+										data : $scope.visit
+									}).then(function(response) {
+										$scope.message="Office visit created successfully";
+										console.log(response);
+									}, function(rejection) {
+										$scope.message="Error occurred creating office visit";
+										console.log(rejection);
+									})
+								}
+							});
+
+			/*]]>*/
+		</script>
+
+
+
+		<div ng-app="myApp" ng-controller="documentOfficeVisitCtrl">
+<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<ul class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/hcp/viewAppointmentRequests"
+								id="viewrequests">View Appointment Requests</a></li>
+							<li><a href="/iTrust2/hcp/viewAppointments"
+								id="upcomingrequests">View Upcoming Appointments</a></li>
+							<li><a href="#">Edit Patient -- Not Implemented</a></li>
+							<li><a href="#">Add Patient -- Not Implemented</a></li>
+							<li><a href="/iTrust2/hcp/documentOfficeVisit.html"
+								id="documentOfficeVisit">Document Office Visit</a></li>
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							<li> <a href="/iTrust2/hcp/editOfficeVisit"
+							      id="editOfficeVisit">Edit Office Visit</a></li>
+						</ul></li>
+				</ul>
+			</div>
+		</nav>
+			<div style="float:left;width:30%;height:75%;overflow-y:auto">
+			<h2>Patients:</h2>
+			<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
+				and https://docs.angularjs.org/api/ng/filter/filter -->
+			<h4>Search: <input type="text" ng-model="searchFilter.self.username"/></h4>
+			<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+			<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+			<ul style="overflow:auto;height=90%;">
+			<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+							<li ng-repeat="patient in patients | filter:searchFilter"><h4><label>
+									<input type="radio" ng-model="$parent.visit.patient"
+									name="name" value="{{patient.self.username}}" required="true"
+									ng-change='patientSelect(patient)' />&nbsp;{{patient.self.username}}</label>
+							</h4></li>
+						</ul>
+			</div>
+			<!-- information on vertical rule found here: https://stackoverflow.com/questions/571900/is-there-a-vr-vertical-rule-in-html  -->
+		<div style="float:left;width:70%;border-left:1px solid #bbb;padding: 3%;height:75%;overflow-y:auto">
+			<h2>Patient: {{visit.actualPatient.self.username}}</h2>
+			<h2>Primary Office Visit Data</h2>
+			<table>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Prescheduled?</b></td>
+					<td><input type="checkbox" name="preScheduled"
+						class="checkbox" ng-model="visit.prescheduled"></td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Appointment Type:</b></td>
+					<td>
+					<!-- Info on max height taken from here: https://www.w3schools.com/cssref/pr_dim_max-height.asp -->
+						<ul style="max-height:15%;overflow:auto">
+							<li ng-repeat="type in types"><label> <input
+									type="radio" ng-model="$parent.visit.type" name="type"
+									value="{{type}}" required="true" />
+									{{type}}
+							</label></li>
+						</ul>
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Hospital:</b></td>
+					<td>
+						<ul style="max-height:15%;overflow:auto">
+							<li ng-repeat="hospital in hospitals"><label>
+									<input type="radio" ng-model="$parent.visit.hospital"
+									name="hospital" value="{{hospital.name}}" required="true" />
+									{{hospital.name}}
+							</label></li>
+						</ul>
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Date:</b></td>
+					<td><input type="text" name="date" ng-model="visit.date"
+						required="true" ng-change="patientSelect(null);" /></td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Time:</b></td>
+					<td><input type="text" name="time" ng-model="visit.time"
+						required="true" /></td>
+				</tr>
+								<tr>
+					<td style="text-align:right;padding:5px"><b>Notes:</b></td>
+					<!-- Info on text areas taken from here: https://www.w3schools.com/tags/tag_textarea.asp-->
+					<td><textarea name="notes" ng-model="visit.notes" rows="6" cols="30" style="overflow:auto"></textarea></td>
+				</tr>
+</table>
+<h2>Basic Health Metrics</h2>
+<table>
+    				<tr>
+					<td style="text-align:right;padding:5px"><b>Height/Length:</b></td>
+					<td><input type="text" name="height" ng-model="visit.height"
+						required="true" /></td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Weight:</b></td>
+					<td><input type="text" name="weight" ng-model="visit.weight"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="three" >
+					<td style="text-align:right;padding:5px"><b>Head Circumference:</b></td>
+					<td><input type="text" name="head" ng-model="visit.headCircumference"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="threeAndUp" >
+					<td style="text-align:right;padding:5px"><b>Systolic:</b></td>
+					<td><input type="text" name="systolic" ng-model="visit.systolic"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="threeAndUp" >
+					<td style="text-align:right;padding:5px"><b>Diastolic:</b></td>
+					<td><input type="text" name="diastolic" ng-model="visit.diastolic"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>HDL:</b></td>
+					<td><input type="text" name="hdl" ng-model="visit.hdl"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>LDL:</b></td>
+					<td><input type="text" name="ldl" ng-model="visit.ldl"
+						required="true" /></td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>Triglycerides:</b></td>
+					<td><input type="text" name="tri" ng-model="visit.tri"
+						required="true" /></td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Household Smoking Status:</b></td>
+					<td>
+						<ul>
+							<li ng-repeat="hsmokes in housesmoking"><label>
+									<input type="radio" ng-model="$parent.visit.houseSmokingStatus"
+									name="houseSmokingStatus" value="{{hsmokes}}" required="true" />
+									{{hsmokes}}
+							</label></li>
+						</ul>
+					</td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>Patient Smoking Status:</b></td>
+					<td>
+						<ul>
+							<li ng-repeat="psmokes in patientsmoking"><label>
+									<input type="radio" ng-model="$parent.visit.patientSmokingStatus"
+									name="patientSmokingStatus" value="{{psmokes}}" required="true" />
+									{{psmokes}}
+							</label></li>
+						</ul>
+					</td>
+				</tr>
+			</table>
+
+
+			<br />
+			<button ng-click="submit()" name="submit">Submit Office
+				Visit</button>
+
+			<div name="errorMsg"><pre>{{errorMsg}}</pre></div>
+
+			<div name="success">{{message}}</div>
+			</div>
+
+
+
+
+		</div>
+
+
+
+
+	</div>
+</body>
+</html>

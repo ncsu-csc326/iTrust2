@@ -1,0 +1,240 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Office Visits</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+
+			var app = angular.module('myApp', []);
+			app
+					.controller(
+							'viewOfficeVisitCtrl',
+							function($scope, $http) {
+								$scope.getTime = function getTime(date) {									
+									var hour = date.hourOfDay;
+									var suffix;
+									if ( hour > 12 ) {
+										hour = hour - 12;
+										suffix = "PM";
+									} else {
+										suffix = "AM";
+									}
+									return twoDigit(hour) + ":" + twoDigit(date.minute) + " " + suffix;
+								}
+								
+								$scope.getDate = function getDate(date) {
+									/* The months start at 0... only the months.  So we have to add 1 to get the correct input.*/
+									month = date.month + 1;
+									return twoDigit(month) + "/" + twoDigit(date.dayOfMonth) + "/" + date.year;
+								}
+								$scope.noVisitSelected = true;
+								$scope.loadingVisits = true;
+								$http.get("/iTrust2/api/v1/officevisits/myofficevisits").then(
+										function(response) {
+											$scope.noVisitSelected = true;
+											$scope.loadingVisits = false;
+											$scope.visits = response.data;
+											var visitsLength = $scope.visits.length;
+											for (var i = 0; i < visitsLength; i++) {
+												$scope.visits[i].formattedDate = $scope.getDate($scope.visits[i].date);
+												console.log($scope.visits[i]);
+											}
+										});
+								$http.get("/iTrust2/api/v1/patient").then(
+										function(response) {
+											$scope.myself = response.data;
+										});
+								
+								console.log($scope);
+								
+								$scope.selectedVisitID = null;
+								$scope.selectedVisit = {};
+								
+								function twoDigit(num) {
+									if (num < 10) {
+										return "0" + num;
+									}
+									return num;
+								}
+								
+								
+								$scope.populateVisit = function () {
+									var visitsLength = $scope.visits.length;
+									$scope.noVisitSelected = false;
+									for (var i = 0; i < visitsLength; i++) {
+										if ($scope.visits[i].id == $scope.selectedVisitID) {
+											$http({
+												method : 'POST',
+												url : '/iTrust2/api/v1/officevisits/patient/view/' + $scope.selectedVisitID,
+												data : $scope.selectedVisit
+											});
+											$scope.selectedVisit.patient = $scope.visits[i].patient.username;
+											//make this show the actual name?
+											$scope.selectedVisit.hcp = $scope.visits[i].hcp.username;
+											$scope.selectedVisit.notes = $scope.visits[i].notes;
+											$scope.selectedVisit.type = $scope.visits[i].type;
+											$scope.selectedVisit.hospital = $scope.visits[i].hospital.name;
+											$scope.selectedVisit.time = $scope.getTime($scope.visits[i].date);
+											$scope.selectedVisit.date = $scope.getDate($scope.visits[i].date);
+											$scope.selectedVisit.id = $scope.visits[i].id;
+											$scope.selectedVisit.metrics = $scope.visits[i].basicHealthMetrics;
+											console.log($scope.selectedVisit.metrics);
+										     $scope.three = false;
+										     $scope.threeAndUp = false;
+										     $scope.twelveAndUp = false;
+										     var month = $scope.visits[i].date.month;
+										     var day = $scope.visits[i].date.dayOfMonth;
+										     var year = $scope.visits[i].date.year;
+										     var dob = $scope.myself.dateOfBirth;
+										     var age = year - dob.year;
+										     if (month < dob.month) {
+										    	 	age -= 1;
+										     } else if (month == dob.month) {
+										    	 	if (day < dob.day) {
+										    	 		age -= 1;
+										    	 	} else if (day == dob.day) {
+										    	 		console.log("Happy Birthday!");
+										    	 	}
+										     }
+										     if (age < 3) {
+										    	 	$scope.three = true;
+										     }
+										    	 if (age >= 3) {
+										    		 $scope.threeAndUp = true;
+										    	 }
+										    	 if (age >= 12) {
+										    		 $scope.twelveAndUp = true;
+										    	 }
+										    	 
+											break;
+										}
+									}
+								}
+								
+							});
+
+			/*]]>*/
+		</script>
+
+
+
+		<div ng-app="myApp" ng-controller="viewOfficeVisitCtrl">
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<ul class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Appointments<span
+							class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/requestAppointment"
+								id="requestappointment">Request Appointment</a></li>
+							<li><a href="/iTrust2/patient/viewAppointmentRequests"
+								id="viewrequests">View Appointment Requests</a></li>
+							<li><a href="/iTrust2/patient/viewOfficeVisits">Past Office Visits</a></li>
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+						</ul></li>
+				</ul>
+			</div>
+		</nav>
+		<!-- information on floats found here: https://stackoverflow.com/questions/6385293/simple-two-column-html-layout-without-using-tables -->
+		<div style="float:left;width:35%;height:75%;overflow-y:auto">
+								<h2>Visits:</h2>
+								<h3 ng-show="loadingVisits">Loading visits, please wait...</h3>
+								<h4>Search by date: <input type="text" ng-model="searchFilter.formattedDate"/></h4>
+								<ul>
+										<li ng-repeat="visit in visits"><h4> <!-- https://stackoverflow.com/questions/32051486/how-to-call-javascript-function-on-radio-button-click-not-on-focus -->
+												<label><input type="radio" ng-model="$parent.selectedVisitID"
+												ng-click="populateVisit()" name="name" value="{{visit.id}}"
+												required="true" />{{visit.type}} on {{visit.formattedDate}} at {{getTime(visit.date)}}</label>
+										</h4></li>
+									</ul>
+		</div>
+		<!-- information on vertical rule found here: https://stackoverflow.com/questions/571900/is-there-a-vr-vertical-rule-in-html  -->
+		<div style="float:left;width:65%;border-left:1px solid #bbb;padding: 3%;height:75%;overflow-y:auto">
+			<div ng-show="noVisitSelected">
+				<h3>Please select a visit to view detailed report.</h3>
+			</div>
+			<div ng-show="!noVisitSelected">
+			<h2>Appointment Details</h2>
+			<table>
+					<tr><td style="text-align:right;padding:5px"><b>Patient:</b></td><td> {{selectedVisit.patient}}</td>
+					</tr>
+					<tr><td style="text-align:right;padding:5px"><b>Date:</b></td><td> {{selectedVisit.date}}</td>
+					</tr>
+					<tr><td style="text-align:right;padding:5px"><b>Time:</b></td><td> {{selectedVisit.time}}</td>
+					</tr>
+					<tr><td style="text-align:right;padding:5px"><b>Location:</b></td><td> {{selectedVisit.hospital}}</td>
+					</tr>
+					<tr><td style="text-align:right;padding:5px"><b>HCP:</b></td><td> {{selectedVisit.hcp}}</td>
+					</tr>
+					<tr><td style="text-align:right;padding:5px"><b>Notes:</b></td><td> {{selectedVisit.notes}}</td>
+			</table>
+			<h2>Basic Health Metrics</h2>
+			<table>
+			<tr>
+					<td style="text-align:right;padding:5px"><b>Height/Length:</b></td>
+					<td>{{selectedVisit.metrics.height}}</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;padding:5px"><b>Weight:</b></td>
+					<td>{{selectedVisit.metrics.weight}}</td>
+				</tr>
+				<tr ng-show="three" >
+					<td style="text-align:right;padding:5px"><b>Head Circumference:</b></td>
+					<td>{{selectedVisit.metrics.headCircumference}}</td>
+				</tr>
+				<tr ng-show="threeAndUp" >
+					<td style="text-align:right;padding:5px"><b>Systolic:</b></td>
+					<td>{{selectedVisit.metrics.systolic}}</td>
+				</tr>
+				<tr ng-show="threeAndUp" >
+					<td style="text-align:right;padding:5px"><b>Diastolic:</b></td>
+					<td>{{selectedVisit.metrics.diastolic}}</td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>HDL:</b></td>
+					<td>{{selectedVisit.metrics.hdl}}</td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>LDL:</b></td>
+					<td>{{selectedVisit.metrics.ldl}}</td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td style="text-align:right;padding:5px"><b>Triglycerides:</b></td>
+					<td>{{selectedVisit.metrics.tri}}</td>
+				</tr>
+				<tr>
+					<td><b>Household Smoking Status:</b></td>
+					<td style="text-align:right;padding:5px">
+						{{selectedVisit.metrics.houseSmokingStatus}}
+					</td>
+				</tr>
+				<tr ng-show="twelveAndUp" >
+					<td><b>Patient Smoking Status:</b></td>
+					<td style="text-align:right;padding:5px">
+						{{selectedVisit.metrics.patientSmokingStatus}}
+					</td>
+				</tr>
+			</table>
+			</div>
+		</div>
+			<br />
+
+
+		</div>
+
+
+
+
+	</div>
+</body>
+</html>

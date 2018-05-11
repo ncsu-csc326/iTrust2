@@ -1,0 +1,12 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>User Deleted</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<h1>User deleted successfully</h1>
+	</div>
+</body>
+</html>

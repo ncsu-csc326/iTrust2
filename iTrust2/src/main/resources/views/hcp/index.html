@@ -1,0 +1,40 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>HCP Home</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<ul class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/hcp/viewAppointmentRequests"
+								id="viewrequests">View Appointment Requests</a></li>
+							<li><a href="/iTrust2/hcp/viewAppointments"
+								id="upcomingrequests">View Upcoming Appointments</a></li>
+							<li><a href="#">Edit Patient -- Not Implemented</a></li>
+							<li><a href="#">Add Patient -- Not Implemented</a></li>
+							<li><a href="/iTrust2/hcp/documentOfficeVisit.html"
+								id="documentOfficeVisit">Document Office Visit</a></li>
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							<li> <a href="/iTrust2/hcp/editOfficeVisit"
+							      id="editOfficeVisit">Edit Office Visit</a></li>
+						</ul></li>
+				</ul>
+			</div>
+		</nav>
+		Welcome to iTrust2 - HCP
+
+
+	</div>
+</body>
+</html>

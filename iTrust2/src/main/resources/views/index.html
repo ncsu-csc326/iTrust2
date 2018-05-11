@@ -1,0 +1,12 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Main Landing</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<h1>If you've been redirected to this page, a serious error has
+			occurred or you haven't properly mapped a new user role type to the
+			landing for that role</h1>
+	</div>
+</body>
+</html>
