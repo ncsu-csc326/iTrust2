@@ -1,47 +1,31 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.models.persistent.Drug;
-import edu.ncsu.csc.itrust2.models.persistent.Hospital;
+import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
+import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
+import edu.ncsu.csc.itrust2.models.persistent.Prescription;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 
-public class PrescriptionsStepDefs {
+public class PrescriptionsStepDefs extends CucumberTest {
 
     private static final String BASE_URL  = "http://localhost:8080/iTrust2/";
     private static final String VISIT_URL = BASE_URL + "hcp/documentOfficeVisit.html";
-    private static final String VIEW_URL  = BASE_URL + "patient/viewPrescriptions.html";
+    private static final String VIEW_URL  = BASE_URL + "patient/officeVisit/viewPrescriptions.html";
     private static final String DRUG_URL  = BASE_URL + "admin/drugs.html";
 
-    private final WebDriver     driver    = new HtmlUnitDriver( true );
     private final String        baseUrl   = "http://localhost:8080/iTrust2";
-
-    WebDriverWait               wait      = new WebDriverWait( driver, 5 );
-
-    @Before
-    public void setup () {
-        final Hospital hosp = new Hospital( "General Hospital", "123 Main St", "12345", "NC" );
-        hosp.save();
-
-        final Drug d = new Drug();
-        d.setCode( "1000-0001-10" );
-        d.setName( "Quetiane Fumarate" );
-        d.setDescription( "atypical antipsychotic and antidepressant" );
-        d.save();
-
-    }
 
     private String getUserName ( final String first, final String last ) {
         return first.substring( 0, 1 ).toLowerCase() + last.toLowerCase();
@@ -55,7 +39,7 @@ public class PrescriptionsStepDefs {
 
     private void selectItem ( final String name, final String value ) {
         final By selector = By.cssSelector( "input[name='" + name + "'][value='" + value + "']" );
-        wait.until( ExpectedConditions.visibilityOfElementLocated( selector ) );
+        waitForAngular();
         final WebElement element = driver.findElement( selector );
         element.click();
     }
@@ -67,6 +51,8 @@ public class PrescriptionsStepDefs {
 
     @Given ( "I have logged in with username: (.+)" )
     public void login ( final String username ) {
+        attemptLogout();
+
         driver.get( baseUrl );
 
         enterValue( "username", username );
@@ -76,9 +62,30 @@ public class PrescriptionsStepDefs {
 
     @When ( "I start documenting an office visit for the patient with name: (.+) (.+) and date of birth: (.+)" )
     public void startOfficeVisit ( final String firstName, final String lastName, final String dob ) {
+
         driver.get( VISIT_URL );
         final String patient = getUserName( firstName, lastName );
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.cssSelector( "[value='" + patient + "']" ) ) );
+
+        try {
+            Prescription.getForPatient( patient ).forEach( e -> e.delete() );
+        }
+        catch ( final Exception e ) {
+            /* Ignored */
+        }
+        try {
+            Diagnosis.getForPatient( User.getByName( patient ) ).forEach( e -> e.delete() );
+        }
+        catch ( final Exception e ) {
+            /* Ignored */
+        }
+        try {
+            OfficeVisit.getForPatient( patient ).forEach( e -> e.delete() );
+        }
+        catch ( final Exception e ) {
+            /* Ignored */
+        }
+
+        waitForAngular();
         selectItem( "name", patient );
     }
 
@@ -86,9 +93,14 @@ public class PrescriptionsStepDefs {
     public void fillOfficeVisitForm ( final String date, final String hospital, final String notes, final String weight,
             final String height, final String bloodPressure, final String hss, final String pss, final String hdl,
             final String ldl, final String triglycerides ) {
+
+        waitForAngular();
+
         enterValue( "date", date );
         enterValue( "time", "10:10 AM" );
-        selectItem( "hospital", hospital );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementsByName('hospital')[0].click();" );
+
+        waitForAngular();
         enterValue( "notes", notes );
         enterValue( "weight", weight );
         enterValue( "height", height );
@@ -104,6 +116,7 @@ public class PrescriptionsStepDefs {
     @When ( "add a prescription for (.+) with a dosage of (.+) starting on (.+) and ending on (.+) with (.+) renewals" )
     public void addPrescription ( final String drug, final String dosage, final String startDate, final String endDate,
             final String renewals ) {
+        waitForAngular();
         enterValue( "dosageEntry", dosage );
         enterValue( "startEntry", startDate );
         enterValue( "endEntry", endDate );
@@ -116,11 +129,12 @@ public class PrescriptionsStepDefs {
     @When ( "submit the office visit" )
     public void submitOfficeVisit () {
         driver.findElement( By.name( "submit" ) ).click();
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "success" ), " " ) );
+        waitForAngular();
     }
 
     @Then ( "A message indicates the visit was submitted successfully" )
     public void officeVisitSuccessful () {
+        waitForAngular();
         final WebElement msg = driver.findElement( By.name( "success" ) );
         assertEquals( "Office visit created successfully", msg.getText() );
     }
@@ -133,12 +147,13 @@ public class PrescriptionsStepDefs {
     @Then ( "I see a prescription for (.+) with a dosage of (.+) starting on (.+) and ending on (.+) with (.+) renewals" )
     public void prescriptionVisible ( final String drug, final String dosage, final String startDate,
             final String endDate, final String renewals ) {
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.tagName( "body" ), drug ) );
+        waitForAngular();
         final List<WebElement> rows = driver.findElements( By.name( "prescriptionTableRow" ) );
 
         List<WebElement> data = null;
         for ( final WebElement r : rows ) {
             if ( r.getText().contains( drug ) ) {
+                waitForAngular();
                 data = r.findElements( By.tagName( "td" ) );
                 break;
             }
@@ -146,8 +161,6 @@ public class PrescriptionsStepDefs {
 
         assertEquals( drug, data.get( 0 ).getText() );
         assertEquals( dosage, data.get( 1 ).getText() );
-        assertEquals( startDate, data.get( 2 ).getText() );
-        assertEquals( endDate, data.get( 3 ).getText() );
         assertEquals( renewals, data.get( 4 ).getText() );
     }
 
@@ -159,11 +172,11 @@ public class PrescriptionsStepDefs {
     @When ( "submit the values for NDC (.+), name (.+), and description (.*)" )
     public void submitDrug ( final String ndc, final String name, final String description )
             throws InterruptedException {
-        // Piazza post 381
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.tagName( "h3" ) ) );
+
+        waitForAngular();
         assertEquals( "Admin Manage Drugs", driver.findElement( By.tagName( "h3" ) ).getText() );
 
-        Thread.sleep( 1000 );
+        waitForAngular();
         enterValue( "drug", name );
         enterValue( "code", ndc );
         enterValue( "description", description );
@@ -172,9 +185,7 @@ public class PrescriptionsStepDefs {
 
     @Then ( "the drug (.+) is successfully added to the system" )
     public void drugSuccessful ( final String drug ) throws InterruptedException {
-        Thread.sleep( 2000 );
-
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.tagName( "body" ), drug ) );
+        waitForAngular();
         assertEquals( "", driver.findElement( By.id( "errP" ) ).getText() );
 
         for ( final WebElement r : driver.findElements( By.name( "drugTableRow" ) ) ) {
@@ -182,8 +193,15 @@ public class PrescriptionsStepDefs {
                 r.findElement( By.name( "deleteDrug" ) ).click();
             }
         }
-        wait.until( ExpectedConditions
-                .not( ExpectedConditions.textToBePresentInElementLocated( By.tagName( "body" ), drug ) ) );
+        waitForAngular();
+
+        try {
+            assertFalse( driver.findElement( By.tagName( "body" ) ).getText().contains( drug ) );
+
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
     }
 
 }

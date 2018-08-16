@@ -63,6 +63,28 @@
               	
               	return err.join(". ");
               }
+              
+              var checkValidDiagnosis = function(d) {
+                	var err = [];
+                	if (!d.code) {
+                		err.push("Diagnosis must be associated with a diagnosis code");
+                	}
+                	return err.join(". ");
+                }
+              
+              var checkValidProcedure = function(p) {
+          	  	var err = [];
+          	  	if(!p.loinc) {
+          	  		err.push("Lab procedure must be associated with a diagnosis code");
+          	  	}
+          	  	if(!p.priority) {
+          	  		err.push("Lab procedure must have an associated priority");
+          	  	}
+          	  	if(!p.labtech) {
+          	  		err.push("Lab procedure must have an associated lab tech");
+          	  	}
+          	  	return err.join(". ");
+            }
 
 
             $scope.three = false;
@@ -153,6 +175,29 @@
               function (response) {
                 $scope.icdcodes = response.data;
               });
+            
+            $http.get("/iTrust2/api/v1/personnel/getbyroles/ROLE_LABTECH").then(
+                    function (response) {
+                      $scope.tech = response.data;
+                      var techLength = $scope.tech.length;
+                      for(i = 0; i < techLength; i++) {
+  	                      //passing to inner loop taken from https://stackoverflow.com/questions/17244614/passing-variable-to-promise-in-a-loop
+  	        	  			(function(i) {
+	  	        	  			$http.get("/iTrust2/api/v1/labprocedures/byUser/" + $scope.tech[i].self.username).then(
+		  	        	  			function(response) {
+		  	        	  				$scope.tech[i].numAssigned = response.data.length;
+		  	        	  			}, function(rejection) {
+		  	        	  				$scope.tech[i].numAssigned = "UNKNOWN";
+		  	        	  			});
+                      	})(i);
+            			  }
+                    });
+            
+            $http.get("/iTrust2/api/v1/loinccodes").then(
+                    function (response) {
+                      $scope.loinccodes = response.data;
+            });
+            
 
             $scope.submit = function () {
               $scope.errorMsg = "";
@@ -185,23 +230,23 @@
                 $scope.errorMsg += "Please input a valid date and time\n";
               }
 
-              if (/^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.height) == false) {
+              if (/^[0-9]{1,3}(\.[0-9]?)?$/.test(String($scope.visit.height).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Height/length can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if (/^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.weight) == false) {
+              if (/^[0-9]{1,3}(\.[0-9]?)?$/.test(String($scope.visit.weight).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Weight can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if ($scope.three && /^[0-9]{1,3}(\.[0-9]?)?$/.test($scope.visit.headCircumference) == false) {
+              if ($scope.three && /^[0-9]{1,3}(\.[0-9]?)?$/.test(String($scope.visit.headCircumference).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Head circumference can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.visit.systolic) == false) {
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test(String($scope.visit.systolic).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Systolic blood pressure can be up to a 3-digit positive number\n"
               }
-              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.visit.diastolic) == false) {
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test(String($scope.visit.diastolic).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Diastolic blood pressure can be up to a 3-digit positive number\n"
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test($scope.visit.hdl) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test(String($scope.visit.hdl).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"
               } else if ($scope.twelveAndUp) {
                 var hdlInt = parseInt($scope.visit.hdl);
@@ -210,7 +255,7 @@
                 }
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.visit.ldl) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test(String($scope.visit.ldl).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"
               } else if ($scope.twelveAndUp) {
                 var ldlInt = parseInt($scope.visit.ldl);
@@ -219,7 +264,7 @@
                 }
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.visit.tri) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test(String($scope.visit.tri).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"
               } else if ($scope.twelveAndUp) {
                 var triInt = parseInt($scope.visit.tri);
@@ -233,6 +278,8 @@
               $scope.visit.prescriptions.forEach(function (p) {
                 p.patient = $scope.visit.patient;
               });
+              
+              $scope.visit.labProcedures = $scope.procedures;
 
               $http({
                 method: 'POST',
@@ -254,12 +301,19 @@
             $scope.startEntry = "";
             $scope.endEntry = "";
             $scope.renewalEntry = "";
+            
+            $scope.loincEntry = "";
+            $scope.priorityEntry = "";
+            $scope.techEntry = "";
+            
+            $scope.procedure = {};
+            $scope.procedures = [];
 
 
             //clears local variables for diagnosis form
             function resetDiagnosisForm() {
-              noteEntry = "";
-              codeEntry = "";
+              $scope.noteEntry = "";
+              $scope.codeEntry = "";
             }
 
             //clears local variables for prescription form
@@ -274,11 +328,19 @@
             // capture each diagnosis into an array
             $scope.diagnoses = [];
             $scope.fillDiagnosis = function () {
-              $scope.diagnoses.push({
-                note: $scope.noteEntry,
-                code: $scope.codeEntry
-              });
-              resetDiagnosisForm();
+            		$scope.errorMsg = "";
+	            var d = {
+	            		note: $scope.noteEntry,
+	            		code: $scope.codeEntry
+	             }
+	            var err = checkValidDiagnosis(d);
+	            if (err) {
+	            		$scope.errorMsg = err;
+	            		$scope.message = "";
+	            } else {
+	            		$scope.diagnoses.push(d);
+	            		resetDiagnosisForm();
+	            	}
             }
 
             //capture each prescription into an array
@@ -295,10 +357,29 @@
                 var err = checkValidPrescription(p);
                 if (err) {
               	  $scope.errorMsg = err;
+              	  $scope.message = "";
                 } else {
   	              $scope.prescriptions.push(p);
   	              resetPrescriptionForm();
                 }
+            }
+            
+            $scope.addProcedure = function() {
+	            	var procCopy = {};
+	            	$scope.errorMsg = "";
+	            	$scope.procedure.patient = $scope.visit.actualPatient.self;
+	            	$scope.procedure.status = "ASSIGNED";
+	            	angular.copy($scope.procedure, procCopy);
+	            	var err = checkValidProcedure($scope.procedure);
+	            	if (err) {
+	            		$scope.errorMsg = err;
+	            		$scope.message = "";
+	            	} else {
+		            	$scope.procedures.push(procCopy);
+		            	$scope.procedure = {};
+		            	$scope.message = "Lab procedure added successfully";
+	            	}
+            
             }
 
             //remove local diagnosis from list
@@ -309,6 +390,11 @@
             //remove local prescription from list
             $scope.removePrescription = function ($index) {
               $scope.prescriptions.splice($index, 1);
+            }
+            
+            //remove local procedure from list
+            $scope.removeProcedure = function ($index) {
+              $scope.procedures.splice($index, 1);
             }
 
             //call initally
@@ -324,48 +410,6 @@
 
 
       <div ng-app="myApp" ng-controller="documentOfficeVisitCtrl">
-        <nav class="navbar navbar-default">
-          <div class="container-fluid">
-            <ul class="nav navbar-nav">
-              <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Patient
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a href="/iTrust2/hcp/viewAppointmentRequests" id="viewrequests">View Appointment Requests</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/viewAppointments" id="upcomingrequests">View Upcoming Appointments</a>
-                  </li>
-                  <li>
-                    <a href="#">Edit Patient -- Not Implemented</a>
-                  </li>
-                  <li>
-                    <a href="#">Add Patient -- Not Implemented</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/documentOfficeVisit.html" id="documentOfficeVisit">Document Office Visit</a>
-                  </li>
-                </ul>
-              </li>
-              <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Edit
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a href="/iTrust2/personnel/editDemographics" id="editdemographics">Edit Demographics</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/editOfficeVisit" id="editOfficeVisit">Edit Office Visit</a>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </nav>
-
         <div class="row">
           <div class="col-md-12">
             <div class="panel panel-primary">
@@ -402,7 +446,7 @@
                             <li ng-repeat="patient in patients | filter:searchFilter">
                               <label>
                                 <input type="radio" ng-model="$parent.visit.patient" name="name" value="{{patient.self.username}}" required="true" ng-change='patientSelect(patient)'
-                                />&nbsp;{{patient.self.username}}</label>
+                           				id = "{{patient.self.username}}"/>&nbsp;{{patient.self.username}}</label>
                             </li>
                           </ul>
                         </div>
@@ -698,22 +742,24 @@
                               </div>
                               <div class="panel-body">
                                 <div class="row" ng-repeat="p in prescriptions">
-                                  <div class="col-md-2">
+                                  <div class="col-md-3">
                                     {{p.drug}}
                                   </div>
                                   <div class="col-md-2">
                                     {{p.dosage}}mg
                                   </div>
-                                  <div class="col-md-2">
+                                  <br>
+                                  <div class="col-md-1"></div>	<!-- "tab" over columns -->
+                                  <div class="col-md-3">
                                     {{p.startDate}}
                                   </div>
-                                  <div class="col-md-2">
+                                  <div class="col-md-3">
                                     {{p.endDate}}
                                   </div>
-                                  <div class="col-md-2">
+                                  <div class="col-md-3">
                                     {{p.renewals}}
                                   </div>
-                                  <div class="col-md-2">
+                                  <div class="col-md-1">
                                     <button class="btn btn-danger btn-xs" ng-click="removePrescription($index)" name="removePrescription">
                                       <b>x</b>
                                     </button>
@@ -727,7 +773,113 @@
                     </div>
                   </div>
                 </div>
+                
+                <!-- Lab Procedures Panel -->
+				<div class="row">
+					<div class="col-md-4">
+                    <div class="panel panel-info">
+                      <div class="panel-heading">
+                        <h4>Lab Procedures</h4>
+                      </div>
+                      <div class="panel-body">
+                        <div class="form-group row">
+                          <div class="col-xs-6">
+                            <label>Procedure Code:</label>
+                          </div>
+                          <div class="col-xs-6">
+                          	<ul>
+                          	<li ng-repeat="l in loinccodes">
+                                  <label>
+                                    <input type="radio" ng-model="procedure.loinc" name="{{l.commonName}}" ng-value="l" value="{{l.code}}" required="true" /> {{l.commonName}}
+                                  </label>
+                             </li>
+                             </ul>
+                          </div>
+                        </div>
+                        <div class="form-group row">
+                          <div class="col-xs-6">
+                            <label>Priority:</label>
+                          </div>
+                          <div class="col-xs-6">
+                          	<select name="priority" ng-model="procedure.priority" required="true">
+                          		<option value="CRITICAL">Critical</option>
+                          		<option value="HIGH">High</option>
+                          		<option value="MEDIUM">Medium</option>
+                          		<option value="LOW">Low</option>
+                          	</select>
+                          </div>
+                        </div>
+                        <!-- List of Lab Techs -->
+                        <div class="form-group row">
+                          <div class="col-xs-6">
+                            <label>Lab Techs:</label>
+                          </div>
+                          <div class="col-xs-6 radio-box">
+                            <div class="form-check">
+                              <ul style="list-style: none;">
+                                <li ng-repeat="t in tech">
+                                  <label>
+                                    <input type="radio" ng-model="procedure.labtech" name="{{t.self.username}}" ng-value="t.self" value="{{t.self.username}}" required="true"id="radio-{{t.self.username}}"/> 
+                                    		{{t.self.username}}  ({{t.numAssigned}} assigned)
+                                  </label>
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- Comments for lab procedure -->
+                        <div class="form-group row">
+                        	<div class="col-xs-6">
+                        		<label>Notes:</label>
+                        		<textarea name="procNotes" ng-model="procedure.comments" class="form-control" rows="3"></textarea>
+                        		
+                        	</div>
+                        </div>
+                        <!-- Add procedure button -->
+                        <div class="form-group row text-center">
+                          <button class="btn btn-success" ng-click="addProcedure()" name="addProcedure">Add Procedure</button>
+                        </div>
+                        
+                        <!-- Currently added procedures -->
+                        <div class="form-group row">
+                          <div class="col-md-12">
+                            <div class="panel panel-default">
+                              <div class="panel-heading">
+                                Added Procedures
+                              </div>
+                              <div class="panel-body">
+                                <div class="row" ng-repeat="p in procedures">
+                                  <div class="col-md-3">
+                                    <b>Code:</b> {{p.loinc.code}} 
+                                    <br>
+                                    <b>Name: {{p.commonName}}</b>
+                                  </div>
+                                  <br>
+                                 <div class="row" ng-repeat="p in procedures">
+                                    <div class="col-md-2">
+                                      <!-- "tabs" over the columns -->
+                                    </div>
+                                    <div class="col-md-8">
+                                      <b>Common Name:</b> {{p.commonName}}
+                                      <br>
+                                      <b>Priority:</b> {{p.priority}}
+                                      <br>
+                                      <b>Status:</b> {{p.status}}
+                                      <br>
+                                      <b>Comments:</b> {{p.comments}}
+                                    </div>
+                                </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                      </div>
+                    </div>
+                  </div>
 
+				</div>
                 <!-- Notes and Error Messages -->
                 <div class="row">
                   <div class="form-group col-md-6">
@@ -755,6 +907,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
 </body>
 

@@ -135,7 +135,7 @@ public class LoginBan extends DomainObject<LoginBan> {
      * @return true if banned, false otherwise
      */
     public static boolean isIPBanned ( final String addr ) {
-        return getWhere( createCriterionAsList( "ip", addr ) ).size() > 0;
+        return getWhere( eqList( "ip", addr ) ).size() > 0;
     }
 
     /**
@@ -146,7 +146,7 @@ public class LoginBan extends DomainObject<LoginBan> {
      * @return true if banned, false otherwise.
      */
     public static boolean isUserBanned ( final User user ) {
-        return getWhere( createCriterionAsList( "user", user ) ).size() > 0;
+        return getWhere( eqList( "user", user ) ).size() > 0;
     }
 
     /**
@@ -156,7 +156,7 @@ public class LoginBan extends DomainObject<LoginBan> {
      *            The IP to clear.
      */
     public static void clearIP ( final String addr ) {
-        getWhere( createCriterionAsList( "ip", addr ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "ip", addr ) ).stream().forEach( e -> e.delete() );
     }
 
     /**
@@ -166,6 +166,6 @@ public class LoginBan extends DomainObject<LoginBan> {
      *            The user to clear.
      */
     public static void clearUser ( final User user ) {
-        getWhere( createCriterionAsList( "user", user ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "user", user ) ).stream().forEach( e -> e.delete() );
     }
 }

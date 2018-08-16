@@ -1,9 +1,11 @@
 package edu.ncsu.csc.itrust2.controllers.api;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.forms.personnel.PersonnelForm;
+import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.Personnel;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
@@ -58,6 +62,30 @@ public class APIPersonnelController extends APIController {
     }
 
     /**
+     * If you are logged in as a personnel, then you can use this convenience
+     * lookup to find your own information without remembering your id. This
+     * allows you the shorthand of not having to look up the id in between.
+     *
+     * @return The personnel object for the currently authenticated user.
+     */
+    @GetMapping ( BASE_PATH + "/curPersonnel" )
+    @PreAuthorize ( "hasRole('ROLE_HCP') or hasRole('ROLE_LABTECH') or hasRole('ROLE_ER') or hasRole('ROLE_ADMIN')" )
+    public ResponseEntity getCurrentPersonnel () {
+        final User self = User.getByName( LoggerUtil.currentUser() );
+        final Personnel personnel = Personnel.getByName( self.getUsername() );
+        if ( personnel == null ) {
+            return new ResponseEntity(
+                    errorResponse( "Could not find a personnel entry for you, " + self.getUsername() ),
+                    HttpStatus.NOT_FOUND );
+        }
+        else {
+            LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, self.getUsername(),
+                    "Retrieved demographics for user " + self.getUsername() );
+            return new ResponseEntity( personnel, HttpStatus.OK );
+        }
+    }
+
+    /**
      * Creates a new Personnel record for a User from the RequestBody provided.
      *
      * @param personnelF
@@ -66,6 +94,8 @@ public class APIPersonnelController extends APIController {
      */
     @PostMapping ( BASE_PATH + "/personnel" )
     public ResponseEntity createPersonnel ( @RequestBody final PersonnelForm personnelF ) {
+        final User self = User.getByName( LoggerUtil.currentUser() );
+        personnelF.setSelf( self.getUsername() );
         final Personnel personnel = new Personnel( personnelF );
         if ( null != Personnel.getByName( personnel.getSelf() ) ) {
             return new ResponseEntity(
@@ -74,7 +104,7 @@ public class APIPersonnelController extends APIController {
         }
         try {
             personnel.save();
-            LoggerUtil.log( TransactionType.CREATE_DEMOGRAPHICS, LoggerUtil.currentUser() );
+            LoggerUtil.log( TransactionType.CREATE_DEMOGRAPHICS, self );
             return new ResponseEntity( personnel, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -109,6 +139,7 @@ public class APIPersonnelController extends APIController {
         if ( null == dbPersonnel ) {
             return new ResponseEntity( errorResponse( "No personnel found for id " + id ), HttpStatus.NOT_FOUND );
         }
+        personnel.setId( dbPersonnel.getId() );
         try {
             personnel.save();
             LoggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS, LoggerUtil.currentUser() );
@@ -119,6 +150,40 @@ public class APIPersonnelController extends APIController {
                     errorResponse( "Could not update " + personnel.toString() + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
+    }
+
+    /**
+     * Returns only personnel of a specific role, based on what the user wants.
+     *
+     * @param role
+     *            the role to filter out personnel by
+     * @return response and list of personnel matching query
+     */
+    @GetMapping ( BASE_PATH + "/personnel/getbyroles/{role}" )
+    public ResponseEntity getPersonnelByRole ( @PathVariable ( "role" ) final String role ) {
+        if ( role.equals( Role.ROLE_LABTECH.toString() ) ) {
+            final List<Personnel> allLabtechs = new ArrayList<Personnel>();
+            for ( final User u : User.getByRole( Role.ROLE_LABTECH ) ) {
+                if ( Personnel.getByName( u ) != null ) {
+                    allLabtechs.add( Personnel.getByName( u ) );
+                }
+            }
+            return new ResponseEntity( allLabtechs, HttpStatus.OK );
+        }
+        else if ( role.equals( Role.ROLE_HCP.toString() ) ) {
+            return new ResponseEntity( User.getByRole( Role.ROLE_HCP ), HttpStatus.OK );
+        }
+        else if ( role.equals( Role.ROLE_ER.toString() ) ) {
+            final List<Personnel> allErs = new ArrayList<Personnel>();
+            for ( final User u : User.getByRole( Role.ROLE_ER ) ) {
+                if ( Personnel.getByName( u ) != null ) {
+                    allErs.add( Personnel.getByName( u ) );
+                }
+            }
+            return new ResponseEntity( allErs, HttpStatus.OK );
+        }
+
+        return new ResponseEntity( errorResponse( "Invalid role" ), HttpStatus.BAD_REQUEST );
     }
 
 }

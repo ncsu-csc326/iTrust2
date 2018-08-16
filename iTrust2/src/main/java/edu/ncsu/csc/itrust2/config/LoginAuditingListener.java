@@ -21,7 +21,7 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  * Listens for AuthenticationEvents to Log them and to clear FaieldAttempts on
  * successful authentication.
  *
- * @author Kai ???
+ * @author Kai Presler-Marshall
  *
  */
 @Component

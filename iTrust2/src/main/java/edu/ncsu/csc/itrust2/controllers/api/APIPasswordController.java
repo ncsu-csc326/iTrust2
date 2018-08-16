@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,7 +51,7 @@ public class APIPasswordController extends APIController {
      */
     @PostMapping ( BASE_PATH + "/changePassword" )
     public ResponseEntity changePassword ( @RequestBody final PasswordChangeForm form ) {
-        final String name = SecurityContextHolder.getContext().getAuthentication().getName();
+        final String name = LoggerUtil.currentUser();
         final User user = User.getByName( name );
         if ( user == null ) {
             return new ResponseEntity( errorResponse( "Could not find user with name " + name ),

@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -54,7 +53,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
      */
     public static OfficeVisit getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -70,7 +69,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
      * @return the office visits of the queried patient
      */
     public static List<OfficeVisit> getForPatient ( final String patientName ) {
-        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        return getWhere( eqList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -81,7 +80,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
      * @return the office visits of the queried HCP
      */
     public static List<OfficeVisit> getForHCP ( final String hcpName ) {
-        return getWhere( createCriterionAsList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        return getWhere( eqList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
     }
 
     /**
@@ -95,8 +94,8 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
      */
     public static List<OfficeVisit> getForHCPAndPatient ( final String hcpName, final String patientName ) {
         final Vector<Criterion> criteria = new Vector<Criterion>();
-        criteria.add( createCriterion( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
-        criteria.add( createCriterion( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        criteria.add( eq( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        criteria.add( eq( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
         return getWhere( criteria );
 
     }
@@ -109,12 +108,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
     @SuppressWarnings ( "unchecked" )
     public static List<OfficeVisit> getOfficeVisits () {
         final List<OfficeVisit> visits = (List<OfficeVisit>) getAll( OfficeVisit.class );
-        visits.sort( new Comparator<OfficeVisit>() {
-            @Override
-            public int compare ( final OfficeVisit o1, final OfficeVisit o2 ) {
-                return o1.getDate().compareTo( o2.getDate() );
-            }
-        } );
+        visits.sort( ( x1, x2 ) -> x1.getDate().compareTo( x2.getDate() ) );
         return visits;
     }
 
@@ -204,6 +198,14 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
         if ( ovf.getDiagnoses() != null ) {
             setDiagnoses( ovf.getDiagnoses() );
             for ( final Diagnosis d : diagnoses ) {
+                d.setVisit( this );
+            }
+        }
+
+        // associate all diagnoses with this visit
+        if ( ovf.getLabProcedures() != null ) {
+            setLabProcedures( ovf.getLabProcedures() );
+            for ( final LabProcedure d : labProcedures ) {
                 d.setVisit( this );
             }
         }
@@ -488,6 +490,25 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
     }
 
     /**
+     * Sets the list of Lab Procedures associated with this visit
+     *
+     * @param list
+     *            The List of Lab Procedures
+     */
+    public void setLabProcedures ( final List<LabProcedure> list ) {
+        labProcedures = list;
+    }
+
+    /**
+     * Returns the list of lab procedures for this visit
+     *
+     * @return The list of lab procedures
+     */
+    public List<LabProcedure> getLabProcedures () {
+        return labProcedures;
+    }
+
+    /**
      * Sets the list of prescriptions associated with this visit
      *
      * @param prescriptions
@@ -512,7 +533,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "patient_id", columnDefinition = "varchar(100)" )
-    private User                     patient;
+    private User                         patient;
 
     /**
      * The hcp of this office visit
@@ -520,34 +541,34 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "hcp_id", columnDefinition = "varchar(100)" )
-    private User                     hcp;
+    private User                         hcp;
 
     /**
      * The basic health metric data associated with this office visit.
      */
     @OneToOne
     @JoinColumn ( name = "basichealthmetrics_id" )
-    private BasicHealthMetrics       basicHealthMetrics;
+    private BasicHealthMetrics           basicHealthMetrics;
 
     /**
      * The date of this office visit
      */
     @NotNull
-    private Calendar                 date;
+    private Calendar                     date;
 
     /**
      * The id of this office visit
      */
     @Id
     @GeneratedValue ( strategy = GenerationType.AUTO )
-    private Long                     id;
+    private Long                         id;
 
     /**
      * The type of this office visit
      */
     @NotNull
     @Enumerated ( EnumType.STRING )
-    private AppointmentType          type;
+    private AppointmentType              type;
 
     /**
      * The hospital of this office visit
@@ -555,7 +576,7 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "hospital_id", columnDefinition = "varchar(100)" )
-    private Hospital                 hospital;
+    private Hospital                     hospital;
 
     /**
      * The set of diagnoses associated with this visits Marked transient so not
@@ -563,23 +584,29 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
      * loop
      */
     @OneToMany ( mappedBy = "visit" )
-    public transient List<Diagnosis> diagnoses;
+    public transient List<Diagnosis>     diagnoses;
+
+    /**
+     * The list of Lab Procedures associated with this Office Visit
+     */
+    @OneToMany ( mappedBy = "visit" )
+    private transient List<LabProcedure> labProcedures;
 
     /**
      * The notes of this office visit
      */
-    private String                   notes;
+    private String                       notes;
 
     /**
      * The appointment of this office visit
      */
     @OneToOne
     @JoinColumn ( name = "appointment_id" )
-    private AppointmentRequest       appointment;
+    private AppointmentRequest           appointment;
 
     @OneToMany ( fetch = FetchType.EAGER )
     @JoinColumn ( name = "prescriptions_id" )
-    private List<Prescription>       prescriptions = Collections.emptyList();
+    private List<Prescription>           prescriptions = Collections.emptyList();
 
     /**
      * Overrides the basic domain object save in order to save basic health
@@ -686,14 +713,70 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
                     }
                 }
             }
+
+            // get list of ids associated with this visit if this visit already
+            // exists
+            final Set<Long> prev = LabProcedure.getByVisit( id ).stream().map( LabProcedure::getId )
+                    .collect( Collectors.toSet() );
+            if ( getLabProcedures() != null ) {
+                for ( final LabProcedure d : getLabProcedures() ) {
+                    if ( d == null ) {
+                        continue;
+                    }
+
+                    final boolean had = prev.remove( d.getId() );
+                    try {
+                        if ( !had ) {
+                            // new Lab Procedure
+                            LoggerUtil.log( TransactionType.HCP_CREATE_PROC, getHcp().getUsername(),
+                                    d.getAssignedTech().getUsername(),
+                                    getHcp() + " created a Lab Procedure for " + getPatient() );
+                        }
+                        else {
+                            // already had - check if edited
+                            final LabProcedure old = LabProcedure.getById( d.getId() );
+                            if ( !old.getLoinc().getCode().equals( d.getLoinc().getCode() )
+                                    || !old.getComments().equals( d.getComments() )
+                                    || !old.getAssignedTech().equals( d.getAssignedTech() )
+                                    || !old.getPriority().equals( d.getPriority() )
+                                    || !old.getStatus().equals( d.getStatus() ) ) {
+                                // was edited:
+                                LoggerUtil.log( TransactionType.HCP_EDIT_PROC, getHcp().getUsername(),
+                                        d.getAssignedTech().getUsername(),
+                                        getHcp() + " edited a Lab Procedure for " + getPatient() );
+
+                            }
+                        }
+                    }
+                    catch ( final Exception e ) {
+                        e.printStackTrace();
+                    }
+                    d.save();
+
+                }
+            }
+            // delete any previous associations - they were deleted by user.
+            for ( final Long oldId : previous ) {
+                final LabProcedure dDie = LabProcedure.getById( oldId );
+                if ( dDie != null ) {
+                    dDie.delete();
+                    try {
+                        LoggerUtil.log( TransactionType.HCP_DELETE_PROC, getHcp().getUsername(),
+                                dDie.getAssignedTech().getUsername(),
+                                getHcp().getUsername() + " deleted a Lab Procedure for " + getPatient().getUsername() );
+                    }
+                    catch ( final Exception e ) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
         catch ( final Exception ex ) {
             // we don't want to save the bhm if an error occurs
             // but we also don't want to delete a valid copy if it was an
             // invalid edit
-            this.basicHealthMetrics.delete();
             if ( oldBhm != null ) {
-                oldBhm.save();
+                this.basicHealthMetrics.copyFrom( oldBhm, true );
             }
             throw ex;
         }
@@ -718,16 +801,39 @@ public class OfficeVisit extends DomainObject<OfficeVisit> {
                 }
             }
         }
+        if ( labProcedures != null ) {
+            for ( final LabProcedure d : labProcedures ) {
+                d.delete();
+                try {
+                    LoggerUtil.log( TransactionType.HCP_DELETE_PROC, getHcp().getUsername(),
+                            d.getAssignedTech().getUsername(),
+                            getHcp().getUsername() + " deleted a Lab Procedure for " + getPatient().getUsername() );
+                }
+                catch ( final Exception e ) {
+                    e.printStackTrace();
+                }
+            }
+        }
         super.delete();
     }
 
     /**
-     * Deletes all Office visits, and all Diagnoses (No diagnoses without an
-     * office visit)
+     * Deletes all Office visits, and all Diagnoses and Lab Procedure (No
+     * diagnoses without an office visit)
      */
     public static void deleteAll () {
         DomainObject.deleteAll( Diagnosis.class );
+        DomainObject.deleteAll( LabProcedure.class );
         DomainObject.deleteAll( OfficeVisit.class );
+    }
+
+    @Override
+    public boolean equals ( final Object o ) {
+        if ( o instanceof OfficeVisit ) {
+            final OfficeVisit v = (OfficeVisit) o;
+            return id.equals( v.getId() );
+        }
+        return false;
     }
 
 }

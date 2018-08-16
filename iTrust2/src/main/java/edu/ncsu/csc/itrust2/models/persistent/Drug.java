@@ -157,7 +157,7 @@ public class Drug extends DomainObject<Drug> {
      */
     public static Drug getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -174,7 +174,7 @@ public class Drug extends DomainObject<Drug> {
      */
     public static Drug getByCode ( final String code ) {
         try {
-            return getWhere( createCriterionAsList( "code", code ) ).get( 0 );
+            return getWhere( eqList( "code", code ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;

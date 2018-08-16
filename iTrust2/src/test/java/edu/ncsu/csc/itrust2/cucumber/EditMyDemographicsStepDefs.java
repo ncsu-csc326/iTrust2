@@ -7,25 +7,24 @@ import java.util.logging.Level;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.Select;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
-public class EditMyDemographicsStepDefs {
+public class EditMyDemographicsStepDefs extends CucumberTest {
     static {
         java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
     }
 
-    private final WebDriver driver  = new HtmlUnitDriver( true );
-    private final String    baseUrl = "http://localhost:8080/iTrust2";
+    private final String baseUrl = "http://localhost:8080/iTrust2";
 
     @Given ( "A patient exists in the system" )
     public void patientExists () {
+        attemptLogout();
+
         // All tests can safely assume the existence of the 'hcp', 'admin', and
         // 'patient' users
     }
@@ -100,6 +99,24 @@ public class EditMyDemographicsStepDefs {
 
     }
 
+    @When ( "I fill in a bad phone number" )
+    public void fillBadPhone () {
+
+        final WebElement phone = driver.findElement( By.id( "phone" ) );
+        phone.clear();
+        phone.sendKeys( "111111111111" );
+
+        final WebElement submit = driver.findElement( By.className( "btn" ) );
+        submit.click();
+
+    }
+
+    @Then ( "An error message occurs for my phone number" )
+    public void errorPhone () {
+        assertTrue( driver.getPageSource()
+                .contains( "phone can not be empty and must have correct format (e.g. 123-456-7890)" ) );
+    }
+
     @Then ( "The demographics are updated" )
     public void updatedSuccessfully () {
         assertTrue( driver.getPageSource().contains( "Your demographics were updated successfully" ) );
@@ -109,10 +126,10 @@ public class EditMyDemographicsStepDefs {
     public void viewDemographics () {
 
         driver.get( baseUrl );
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics-patient').click();" );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics-patient').click()" );
+        waitForAngular();
         final WebElement firstName = driver.findElement( By.id( "firstName" ) );
         assertEquals( firstName.getAttribute( "value" ), "Karl" );
-
         final WebElement address = driver.findElement( By.id( "address1" ) );
         assertEquals( address.getAttribute( "value" ), "Karl Liebknecht Haus. Alexanderplatz" );
     }

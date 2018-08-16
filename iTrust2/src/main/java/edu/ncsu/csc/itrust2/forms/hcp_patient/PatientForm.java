@@ -1,7 +1,11 @@
 package edu.ncsu.csc.itrust2.forms.hcp_patient;
 
 import java.text.SimpleDateFormat;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
+
+import javax.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -71,99 +75,119 @@ public class PatientForm {
 
         setSelf( patient.getSelf().getUsername() );
 
+        final Set<String> reps = new HashSet<String>();
+        for ( final Patient pat : patient.getRepresentatives() ) {
+            reps.add( pat.getSelf().getUsername() );
+        }
+        setRepresentatives( reps );
+
+        final Set<String> repd = new HashSet<String>();
+        for ( final Patient pat : patient.getRepresented() ) {
+            repd.add( pat.getSelf().getUsername() );
+        }
+        setRepresenting( repd );
+
     }
 
     /** The username of the patient **/
     @Length ( max = 20 )
-    private String self;
+    private String      self;
 
     /** The mother of the patient **/
     @Length ( max = 20 )
-    private String mother;
+    private String      mother;
 
     /** The father of the patient **/
     @Length ( max = 20 )
-    private String father;
+    private String      father;
+
+    /** Representatives of the patient **/
+    private Set<String> representatives;
+
+    /** Represented by the patient **/
+    private Set<String> representing;
 
     /** The first name of the patient **/
     @NotEmpty
     @Length ( max = 20 )
-    private String firstName;
+    private String      firstName;
 
     /** The preferred name of the patient **/
     @Length ( max = 20 )
-    private String preferredName;
+    private String      preferredName;
 
     /** The last name of the patient **/
     @NotEmpty
     @Length ( max = 30 )
-    private String lastName;
+    private String      lastName;
 
     /** The email of the patient **/
     @NotEmpty
     @Length ( max = 30 )
-    private String email;
+    private String      email;
 
     /** The address line 1 of the patient **/
     @NotEmpty
     @Length ( max = 50 )
-    private String address1;
+    private String      address1;
 
     /** The address line 2 of the patient **/
     @Length ( max = 50 )
-    private String address2;
+    private String      address2;
 
     /** The city of residence of the patient **/
     @NotEmpty
     @Length ( max = 15 )
-    private String city;
+    private String      city;
 
     /** The state of residence of the patient **/
     @NotEmpty
     @Length ( min = 2, max = 2 )
-    private String state;
+    private String      state;
 
     /** The zipcode of the patient **/
     @NotEmpty
     @Length ( min = 5, max = 10 )
-    private String zip;
+    private String      zip;
 
     /** The phone number of the patient **/
     @NotEmpty
-    @Length ( min = 12, max = 12 )
-    private String phone;
+    @Pattern ( regexp = "(^[0-9]{3}-[0-9]{3}-[0-9]{4}$)", message = "Phone number must be formatted as xxx-xxx-xxxx" )
+    private String      phone;
 
     /** The date of birth of the patient **/
     @NotEmpty
     @Length ( min = 10, max = 10 )
-    private String dateOfBirth;
+    private String      dateOfBirth;
 
     /** The date of death of the patient **/
-    private String dateOfDeath;
+    private String      dateOfDeath;
 
     /** The cause of death of the patient **/
     @Length ( max = 50 )
-    private String causeOfDeath;
+    private String      causeOfDeath;
 
     /** The blood type of the patient **/
     @NotEmpty
-    private String bloodType;
+    private String      bloodType;
 
     /** The ethnicity of the patient **/
     @NotEmpty
-    private String ethnicity;
+    private String      ethnicity;
 
     /** The gender of the patient **/
     @NotEmpty
-    private String gender;
+    private String      gender;
 
     /** The id of the patient **/
-    private Long   id;
+    private Long        id;
 
     /**
-     * Empty constructor
+     * Constructor generates empty sets.
      */
     public PatientForm () {
+        representatives = new HashSet<String>();
+        representing = new HashSet<String>();
     }
 
     /**
@@ -202,6 +226,44 @@ public class PatientForm {
      */
     public void setFather ( final String father ) {
         this.father = father;
+    }
+
+    /**
+     * Get the representatives for this patient
+     *
+     * @return the representatives for this patient
+     */
+    public Set<String> getRepresentatives () {
+        return representatives;
+    }
+
+    /**
+     * Get the patients represented by this patient
+     *
+     * @return the patients represented by this patient
+     */
+    public Set<String> getRepresented () {
+        return representing;
+    }
+
+    /**
+     * Sets the list of representatives for this patient.
+     *
+     * @param reps
+     *            the list of representatives
+     */
+    private void setRepresentatives ( final Set<String> reps ) {
+        this.representatives = reps;
+    }
+
+    /**
+     * Sets the list of patients represented by this patient.
+     *
+     * @param representing
+     *            the list of represented
+     */
+    private void setRepresenting ( final Set<String> representing ) {
+        this.representing = representing;
     }
 
     /**

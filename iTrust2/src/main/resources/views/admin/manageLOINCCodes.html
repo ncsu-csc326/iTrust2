@@ -1,0 +1,183 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Manage LOINC Codes</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("manageLOINCCodesApp", []);
+			app.controller('manageLOINCCodesCtrl', function($scope, $http) {
+				$scope.editMode = false;
+				$scope.codes = [];
+				$scope.loadTable = function() {
+					// get list of icd codes from rest api
+					$http.get("/iTrust2/api/v1/loinccodes").then(
+							function(response) {
+								$scope.codes = response.data; // or just response?
+										
+								$scope.message = "";
+							}, function(rejection) {
+								$scope.codes = [];
+								$scope.codes = "Could not display LOINC Codes";
+							});
+				}
+				
+				// handle add code button click
+				$scope.addCode = function() {
+					$scope.oldcode = angular.copy($scope.code);
+					if (/^[0-9]{1,5}[\-][0-9]$/.test($scope.code.code) == false){
+						$scope.errorAdding = "Code doesn't meet format specifications";
+						$scope.success = "";
+						$scope.resetAll();
+ 					} else {
+						if($scope.editMode) {
+							$scope.editMode = false;
+							$http.put("/iTrust2/api/v1/loinccode/" + $scope.currentlyEditing, $scope.code).then(
+									function(response) {
+										$scope.success = "Successfully edited code"
+										$scope.errorAdding = "";
+										$scope.resetAll();
+									}, function(rejection) {
+										$scope.errorAdding = "Could not edit code";
+										$scope.success = "";
+										$scope.resetAll();
+									})
+							
+							
+						} else {
+							$http.post("/iTrust2/api/v1/loinccodes", $scope.code).then(
+									function(response) {
+										$scope.errorAdding = "";
+										$scope.success = "Successfully added code";
+										$scope.resetAll();
+									}, function(rejection) {
+										$scope.errorAdding = "Could not add code";
+										$scope.success = "";
+										$scope.resetAll();
+									})
+						}
+					}
+				}
+				
+				$scope.editRow = function(code) {
+					$scope.code = code;
+					$scope.currentlyEditing = code.id;
+					$scope.editMode = true;
+				} 
+				
+				$scope.removeRow = function(code) {
+					$http.delete('/iTrust2/api/v1/loinccode/' + code.id).then(
+							function(response) {
+								$scope.loadTable();
+								$scope.message = "";
+								$scope.success = "Successfully removed code";
+								$scope.errorAdding = "";
+							}, function(rejection) {
+								$scope.message = "Could not remove LOINC code";
+								$scope.success = "";
+								$scope.errorAdding = "";
+							})
+				}
+				
+				$scope.resetAll = function() {
+					$scope.editMode = false;
+					$scope.currentlyEditing = "";
+					$scope.code.id = null;
+					$scope.code.code = "";
+					$scope.code.commonName = "";
+					$scope.code.component = "";
+					$scope.code.property = "";
+					$scope.currentlyEditing = "";
+					$scope.loadTable();
+				}
+				
+				// load table upon page loading
+				$scope.loadTable();
+				
+			});
+			/*]]>*/
+		</script>
+		
+		<div ng-app="manageLOINCCodesApp" ng-controller="manageLOINCCodesCtrl">
+		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
+			<h4 style="color:red" ng-model="message"></h4>
+			
+			<h1>Manage LOINC Codes
+				<div style="display:inline-block; padding-left:500px" ng-show="editMode" ng-hide="!editMode">
+					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button> 
+				</div>
+			</h1>
+			<table style="width:100%">
+				<tr>
+					<td style="vertical-align: top">
+						<table class="table">
+							<tr>
+								<th>LOINC Code</th>
+								<th>Common Name</th>
+								<th>Component</th>
+								<th>Property</th>
+								<th>Action</th>
+							</tr>
+							 <tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'" codeId={{c.id}}>
+								<td name="codeCell">{{c.code}}</td>
+								<td name="comNameCell">{{c.commonName}}</td>
+								<td name="componentCell">{{c.component}}</td>
+								<td name="property">{{c.property}}</td>
+								<td>
+									<input type="button" value="Edit" class="btn btn-primary" ng-click="editRow(c)"/>
+									<input type="button" value="Remove" class="btn btn-danger" ng-click="removeRow(c)"/>
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td style="width:35%;vertical-align: top">
+						<div style="padding: 0px 0px 20px 30px">
+							<h3 ng-hide="editMode" ng-show="!editMode">Add a LOINC Code</h3>
+							<h3 ng-hide="!editMode" ng-show="editMode">Edit LOINC Code</h3>
+						</div>
+						<form class="form-horizontal" role="form" name="addCodeForm" ng-submit="">
+							<div class="form-group" style="padding-left:30px">
+								<label>LOINC Code</label>
+								<input type="text" class="form-control" name="iCode" ng-model="code.code" required/>
+							</div>
+							<div class="form-group" style="padding-left:30px">
+								<label>Common Name</label>
+								<input type="text" class="form-control" name="iComName" ng-model="code.commonName" required/>
+<!-- 								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
+ -->							</div>
+ 							<div class="form-group" style="padding-left:30px">
+								<label>Component</label>
+								<input type="text" class="form-control" name="iComponent" ng-model="code.component" required/>
+							</div>
+							<div class="form-group" style="padding-left:30px">
+								<label>Property</label>
+								<input type="text" class="form-control" name="iProperty" ng-model="code.property" required/>
+							</div>
+							<div class="form-group" style="padding-left:30px">								
+								<div style="padding-left:170px">
+									<button class="btn btn-primary" name="submit" id="submitLOINC" ng-click="addCode()">{{ editMode ? "Edit Code" : "Add Code" }}</button> 
+								</div>
+							</div>
+						</form>
+						<div>
+							<p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+							<p style="color:green" ng-model="success" id="succP">{{success}}</p>
+						</div>	
+						<div>
+							<!-- Formate guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
+							<h4>LOINC Code Format:</h4>
+							<ul>
+								<li>(Up to 5 digits) - 1 digit</li>
+								<li> Numeric values only </li>
+							</ul>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		</div>
+	</body>
+</html>

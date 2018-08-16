@@ -11,3 +11,10 @@ When I log in to iTrust2 as a HCP
 When I navigate to the Document Office Visit page
 When I fill in information on the office visit
 Then The office visit is documented successfully
+
+Scenario: Document an Office Visit
+Given The required facilities exist
+When I log in to iTrust2 as a HCP
+When I navigate to the Document Office Visit page
+When I fill in information on the office visit with leading zeroes
+Then The office visit is documented successfully

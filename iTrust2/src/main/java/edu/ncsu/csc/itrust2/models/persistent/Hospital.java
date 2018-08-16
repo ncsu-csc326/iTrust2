@@ -72,7 +72,7 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      */
     public static Hospital getByName ( final String name ) {
         try {
-            return getWhere( createCriterionAsList( "name", name ) ).get( 0 );
+            return getWhere( eqList( "name", name ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;

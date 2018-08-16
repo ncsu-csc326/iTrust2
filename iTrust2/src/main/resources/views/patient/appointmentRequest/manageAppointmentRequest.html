@@ -1,0 +1,224 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Request Appointment</title>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("manageAppointmentRequestApp", []);
+			app.controller('manageAppointmentRequestCtrl', function($scope, $http) {
+				$scope.appointment = {};
+				$scope.hcps = [];
+				$http.get("/iTrust2/api/v1/personnel/getbyroles/ROLE_HCP").then(
+						function(response) {
+							$scope.hcps = response.data;
+							$scope.message = "";
+						}, function(rejection) {
+							$scope.hcps = [];
+							$scope.message = "HCP not found";
+						});
+				
+				$http.get("/iTrust2/api/v1/appointmenttype")
+	              .then(function (response) {
+	                $scope.types = response.data;
+	              });
+				
+				$scope.submit = function() {
+					$scope.errorMsg = "";
+					$scope.appointment.patient = /*[[${#httpServletRequest.remoteUser}]]*/null;
+					if (/(\d{1,2})\/(\d{1,2})\/(\d{4})/.test($scope.appointment.date) == false) {
+		                $scope.errorMsg += "Please input a valid date as MM/dd/yyyy\n"
+		                $scope.message = "";
+		                $scope.message1 = "";
+		            }
+		            if (/(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.test($scope.appointment.time) == false) {
+		                $scope.errorMsg += "Please input a valid time as hh:mm aa\n"
+		                $scope.message = "";
+		                $scope.message1 = "";
+		            }
+		            
+		            if ($scope.appointment.comments != null && $scope.appointment.comments.length > 50) {
+		            	$scope.errorMsg += "Comments should be upto 50 characters\n";
+		            	$scope.message = "";
+		                $scope.message1 = "";
+		            }
+		            
+		            if ($scope.appointment.hcp == null) {
+		            	$scope.errorMsg += "Please select an HCP\n";
+		            	$scope.message = "";
+		                $scope.message1 = "";
+		            }
+		            
+		            //info on date usage comes from here: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date
+		            var dateInput = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec($scope.appointment.date);
+		            dateInput[1] = (parseInt(dateInput[1]) - 1) + '';//months are 0 indexed
+		            var timeInput = /(\d{1,2}):(\d{1,2}) (am|pm|AM|PM)/.exec($scope.appointment.time);
+		            if ((timeInput[3] == 'pm' || timeInput[3] == 'PM') && parseInt(timeInput[1]) < 12) { //add 12 for check
+		            	timeInput[1] = (parseInt(timeInput[1]) + 12) + '';
+		            }
+		            var date = new Date(dateInput[3], dateInput[1], dateInput[2], timeInput[1], timeInput[2]);
+		            if (!(date.getFullYear() == dateInput[3] && date.getMonth() == dateInput[1] && date.getDate() == dateInput[2] && date.getHours() == timeInput[1] && date.getMinutes() == timeInput[2])) {
+		            	$scope.errorMsg += "Please input a valid date and time\n";
+		            	$scope.message = "";
+		            	$scope.message1 = "";
+		            }
+		            
+					$http.post("/iTrust2/api/v1/appointmentrequests", $scope.appointment).then( 
+							function(response) {
+								$scope.loadAppointments();
+								$scope.message = "Your appointment has been requested successfully."
+								$scope.message1 = "";
+								$scope.appointment = {};
+								$scope.errorMsg1 = "";
+								$scope.selectedAppointment = {};
+							}, function(rejection) {
+								$scope.errorMsg += "Cannot request an appointment before the current time"
+				    			$scope.message = "";
+				                $scope.message1 = "";
+							});
+				}
+				
+				function twoDigit(num) {
+		              if (num < 10) {
+		            	  return "0" + num;
+		              }
+		              return num;
+		            }
+				
+				$scope.getTime = function getTime(date) {
+		              var hour = date.hourOfDay;
+		              var suffix;
+		              if (hour > 12) {
+		            	  hour = hour - 12;
+		            	  suffix = "PM";
+		              } else {
+		            	  suffix = "AM";
+		              }
+		              return twoDigit(hour) + ":" + twoDigit(date.minute) + " " + suffix;
+		        }
+				
+				$scope.getDate = function getDate(date) {
+		              /* The months start at 0... only the months.  So we have to add 1 to get the correct input.*/
+		              month = date.month + 1;
+		              return twoDigit(month) + "/" + twoDigit(date.dayOfMonth) + "/" + date.year;
+		        }
+				
+				$scope.selectedAppointment = {};
+				$scope.appointments = [];
+				$scope.patient = /*[[${#httpServletRequest.remoteUser}]]*/null;
+				$scope.loadAppointments = function() {
+					$http.get("/iTrust2/api/v1/appointmentrequest").then(
+							function(response) {
+								$scope.appointments = response.data;
+								var length = $scope.appointments.length;
+								if ($scope.appointments != null && $scope.appointments.length == 0 ) {
+									$scope.errorMsg1 = "No appointment requests found."
+								}
+							});	
+				}
+				
+				$scope.deleteAppointment = function() {
+					$http.delete("/iTrust2/api/v1/appointmentrequests/" + $scope.selectedAppointment.id).then(
+						function (response) {
+							$scope.message1 = "Your appointment request was successfully deleted"
+							$scope.message = "";
+			                $scope.loadAppointments();
+			                $scope.errorMsg1 = "";
+			                $scope.selectedAppointment = {};
+			              }, function (rejection) {
+			                $scope.errorMsg1 = "Could not remove appointment";
+			              });
+				} 
+				
+				$scope.loadAppointments();
+				
+			});
+			/*]]>*/
+		</script>
+
+		<div ng-app="manageAppointmentRequestApp"
+			ng-controller="manageAppointmentRequestCtrl">
+			<table style="width: 100%">
+				<tr>
+					<td style="vertical-align: top">
+						<h3>Delete Medical Appointment</h3>
+						<div class="col-xs-6 radio-box">
+							<div class="form-check">
+								<ul style="list-style: none;">
+									<li ng-repeat="appt in appointments"><label> <input
+											type="radio" ng-model="selectedAppointment.id" name="appt"
+											value="{{appt.id}}" required="true" /> Type: {{appt.type}} </br>
+											Date: {{getDate(appt.date)}} </br> Time: {{getTime(appt.date)}}
+									</label></li>
+								</ul>
+							</div>
+
+							<button class="btn btn-danger" ng-if="appointments.length > 0"
+								ng-click="deleteAppointment()" name="submit">Delete</button>
+
+							<div name="success" class="text-success">{{message1}}</div>
+							<div name="errorMsg" class="text-danger">{{errorMsg1}}</div>
+						</div>
+					</td>
+
+					<td style="width: 35%; vertical-align: top">
+						<h3>Request Medical Appointment</h3>
+
+						<table>
+							<tr>
+								<td>HCP:</td>
+								<td><select ng-model="appointment.hcp" name="hcp" id="hcp">
+										<option ng-repeat="hcp in hcps">{{hcp.username}}</option>
+								</select></td>
+							</tr>
+
+							<tr>
+								<td>Date:</td>
+								<td><input id="date" type="text"
+									ng-model="appointment.date" name="date" required="true" /></td>
+							</tr>
+
+							<tr>
+								<td>Time:</td>
+								<td><input id="time" type="text" name="time"
+									ng-model="appointment.time" required="true" /></td>
+							</tr>
+
+							<tr>
+								<td>Comments:</td>
+								<td><input id="comments" type="text"
+									ng-model="appointment.comments" name="comments" /></td>
+							</tr>
+
+							<tr>
+								<td>Type:</td>
+								<td><select ng-model="appointment.type" name="type">
+										<option ng-repeat="type in types">{{type}}</option>
+								</select></td>
+							</tr>
+
+							<tr>
+								<td></br>
+									<button type="submit" class="btn btn-primary" ng-click=submit()
+										name="submit">Submit Request</button></td>
+							</tr>
+
+						</table>
+
+						<div name="success" class="text-success">{{message}}</div>
+						<div name="errorMsg" class="text-danger">{{errorMsg}}</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+</body>
+</html>

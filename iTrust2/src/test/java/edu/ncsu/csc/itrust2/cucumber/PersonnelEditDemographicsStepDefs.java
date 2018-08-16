@@ -5,22 +5,21 @@ import static org.junit.Assert.assertTrue;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.Select;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
-public class PersonnelEditDemographicsStepDefs {
+public class PersonnelEditDemographicsStepDefs extends CucumberTest {
 
-    private final WebDriver driver  = new HtmlUnitDriver( true );
-    private final String    baseUrl = "http://localhost:8080/iTrust2";
+    private final String baseUrl = "http://localhost:8080/iTrust2";
 
     @Given ( "An admin exists in the system" )
     public void personnelExists () {
+        attemptLogout();
+
         // All tests can safely assume the existence of the 'hcp', 'admin', and
         // 'patient' users
     }
@@ -28,6 +27,8 @@ public class PersonnelEditDemographicsStepDefs {
     @When ( "I log in as a personnel admin" )
     public void loginAsHCP () {
         driver.get( baseUrl );
+        waitForAngular();
+
         final WebElement username = driver.findElement( By.name( "username" ) );
         username.clear();
         username.sendKeys( "admin" );
@@ -40,11 +41,16 @@ public class PersonnelEditDemographicsStepDefs {
 
     @When ( "I navigate to the Personnel Edit My Demographics page" )
     public void editDemographicsP () {
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
+        waitForAngular();
+        ( (JavascriptExecutor) driver )
+                .executeScript( "document.getElementById('editdemographics-personnel').click();" );
+        waitForAngular();
     }
 
     @When ( "I fill in new, updated personnel demographics" )
     public void fillDemographicsP () {
+        waitForAngular();
+
         final WebElement firstName = driver.findElement( By.id( "firstName" ) );
         firstName.clear();
         firstName.sendKeys( "Gregor" );
@@ -84,21 +90,30 @@ public class PersonnelEditDemographicsStepDefs {
         final WebElement submit = driver.findElement( By.className( "btn" ) );
         submit.click();
 
+        waitForAngular();
+
     }
 
     @Then ( "The personnel demographics are updated" )
     public void updatedSuccessfullyP () {
+        waitForAngular();
         assertTrue( driver.getPageSource().contains( "Your demographics were updated successfully" ) );
     }
 
     @Then ( "The admin can view new demographics" )
     public void viewDemographicsP () {
         driver.get( baseUrl );
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editdemographics').click();" );
+        waitForAngular();
+
+        ( (JavascriptExecutor) driver )
+                .executeScript( "document.getElementById('editdemographics-personnel').click();" );
+
+        waitForAngular();
+
         final WebElement firstName = driver.findElement( By.id( "firstName" ) );
-        assertEquals( firstName.getAttribute( "value" ), "Gregor" );
+        assertEquals( "Gregor", firstName.getAttribute( "value" ) );
 
         final WebElement address = driver.findElement( By.id( "address1" ) );
-        assertEquals( address.getAttribute( "value" ), "Platz der Republik 1" );
+        assertEquals( "Platz der Republik 1", address.getAttribute( "value" ) );
     }
 }

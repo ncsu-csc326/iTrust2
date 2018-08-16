@@ -1,7 +1,9 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -75,6 +77,49 @@ public abstract class DomainObject <D extends DomainObject<D>> {
         }
 
         return results;
+    }
+
+    /**
+     * When we want to perform an update, rather than deleting and re-creating,
+     * we can perform a copyFrom instead. This is advantageous because it's
+     * faster and won't break references.
+     *
+     * @param other
+     *            Object to copy from
+     * @param includeId
+     *            Whether to copy the ID
+     */
+    public void copyFrom ( final DomainObject other, final Boolean includeId ) {
+        if ( !this.getClass().equals( other.getClass() ) ) {
+            throw new IllegalArgumentException( "Cannot copy between different types!" );
+        }
+        final List<Field> fields = Arrays.asList( this.getClass().getDeclaredFields() );
+        try {
+            for ( final Field f : fields ) {
+                final Integer modifiers = f.getModifiers();
+                if ( Modifier.isFinal( modifiers ) ) {
+                    continue;
+                }
+
+                f.setAccessible( true );
+                boolean id = false;
+                final List<Annotation> annotations = Arrays.asList( f.getAnnotations() );
+                for ( final Annotation annotation : annotations ) {
+                    if ( annotation.annotationType().equals( javax.persistence.Id.class ) ) {
+                        id = true;
+                    }
+                }
+                if ( ( id && includeId ) || !id ) {
+                    f.set( this, f.get( other ) );
+                }
+
+            }
+
+        }
+        catch ( final Exception e ) {
+            throw new IllegalArgumentException( e );
+        }
+
     }
 
     /**
@@ -207,21 +252,12 @@ public abstract class DomainObject <D extends DomainObject<D>> {
      */
     @Transactional ( readOnly = true )
     public static DomainObject getBy ( final Class cls, final String field, final String value ) {
-        final List<Field> fields = Arrays.asList( cls.getDeclaredFields() );
-        for ( final DomainObject d : getAll( cls ) ) {
-            for ( final Field f : fields ) {
-                f.setAccessible( true );
-                try {
-                    if ( f.get( d ).equals( value ) ) {
-                        return d;
-                    }
-                }
-                catch ( final Exception e ) {
-                    // Ignore exception
-                }
-            }
+        try {
+            return getWhere( cls, eqList( field, value ) ).get( 0 );
         }
-        return null;
+        catch ( final Exception e ) {
+            return null;
+        }
     }
 
     /**
@@ -261,8 +297,8 @@ public abstract class DomainObject <D extends DomainObject<D>> {
      * @return The List that results from creating a Criterion from these values
      *         and wrapping it
      */
-    protected static List<Criterion> createCriterionAsList ( final String field, final Object value ) {
-        return createCriterionList( createCriterion( field, value ) );
+    protected static List<Criterion> eqList ( final String field, final Object value ) {
+        return createCriterionList( eq( field, value ) );
     }
 
     /**
@@ -279,14 +315,14 @@ public abstract class DomainObject <D extends DomainObject<D>> {
      *            The value to compare against
      * @return The Criterion to create from these values
      */
-    protected static Criterion createCriterion ( final String field, final Object value ) {
+    protected static Criterion eq ( final String field, final Object value ) {
         return Restrictions.eq( field, value );
     }
 
     /**
      * Creates a between-relation Criterion between the field and two values
      * provided.
-     * 
+     *
      * @param field
      *            Field to check equivalence on
      * @param lbound
@@ -295,7 +331,7 @@ public abstract class DomainObject <D extends DomainObject<D>> {
      *            Upper bound for the range
      * @return Criterion created
      */
-    protected static Criterion createBetween ( final String field, final Object lbound, final Object ubound ) {
+    protected static Criterion bt ( final String field, final Object lbound, final Object ubound ) {
         return Restrictions.between( field, lbound, ubound );
     }
 

@@ -45,7 +45,7 @@ public enum TransactionType {
     /**
      * New User created
      */
-    CREATE_USER ( 100, "New user created", false ),
+    CREATE_USER ( 100, "New user created", true ),
     /**
      * User was viewed
      */
@@ -223,7 +223,10 @@ public enum TransactionType {
      * User viewed an existing prescription
      */
     PRESCRIPTION_VIEW ( 913, "User viewed an existing prescription", true ),
-
+    /**
+     * Patient viewed their list of prescriptions
+     */
+    PATIENT_PRESCRIPTION_VIEW ( 914, "Patient viewed their list of prescriptions", true ),
     /**
      * Attempt to update password fails
      */
@@ -266,7 +269,75 @@ public enum TransactionType {
     /**
      * An email would be sent but email address is missing.
      */
-    CREATE_MISSING_EMAIL_LOG ( 1404, "Email notification could not be sent due to missing email address", true );
+    CREATE_MISSING_EMAIL_LOG ( 1404, "Email notification could not be sent due to missing email address", true ),
+    /**
+     * HCP pulls up a patient's emergency record.
+     */
+    HCP_VIEW_ER ( 1501, "HCP Viewed An Emergency Health Record", true ),
+    /**
+     * Emergency Responder pulls up a patient's emergency record.
+     */
+    ER_VIEW_ER ( 1502, "ER Viewed An Emergency Health Record", true ),
+    /**
+     * Declare a user as a personal representative.
+     */
+    DECLARE_PR ( 1601, "Declare a personal representative", true ),
+    /**
+     * HCP declares a user as a personal representative.
+     */
+    HCP_DECLARE_PR ( 1602, "HCP declares a personal representative", true ),
+    /**
+     * Remove a user as a personal representative.
+     */
+    REMOVE_PR ( 1603, "Undeclare a personal representative", true ),
+    /**
+     * Remove a user as a personal representative.
+     */
+    REMOVE_SELF_AS_PR ( 1604, "Undeclare self as personal representative", true ),
+    /**
+     * Admin creates new LOINC code.
+     */
+    LOINC_CREATE ( 1701, "Administrator adds LOINC code", false ),
+    /**
+     * Admin deletes existing LOINC code.
+     */
+    LOINC_DELETE ( 1702, "Administrator deletes LOINC code", false ),
+    /**
+     * Admin updates existing LOINC code.
+     */
+    LOINC_EDIT ( 1703, "Administrator edits LOINC code", false ),
+    /**
+     * LabTech Views Procedures.
+     */
+    LABTECH_VIEW_PROCS ( 1704, "LabTech Views Procedures", false ),
+    /**
+     * LabTech Edits Procedure.
+     */
+    LABTECH_EDIT_PROC ( 1705, "LabTech Edits Procedure", false ),
+    /**
+     * LabTech Reassigns Procedure.
+     */
+    LABTECH_REASSIGN_PROC ( 1706, "LabTech Reassigns Procedure", false ),
+    /**
+     * HCP creates lab procedure.
+     */
+    HCP_CREATE_PROC ( 1707, "HCP creates Lab Procedure", false ),
+    /**
+     * HCP edits lab procedure.
+     */
+    HCP_EDIT_PROC ( 1708, "HCP edits Lab Procedure", false ),
+    /**
+     * HCP deletes lab procedure.
+     */
+    HCP_DELETE_PROC ( 1709, "HCP deletes Lab Procedure", false ),
+    /**
+     * HCP views lab procedures.
+     */
+    HCP_VIEW_PROCS ( 1710, "HCP Views Procedures", false ),
+    /**
+     * Patient views lab procedures.
+     */
+    PATIENT_VIEW_PROCS ( 1711, "Patient Views Procedures", false );
 
     /**
      * Creates a TransactionType for logging events

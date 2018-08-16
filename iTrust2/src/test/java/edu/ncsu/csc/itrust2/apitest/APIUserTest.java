@@ -1,16 +1,20 @@
 package edu.ncsu.csc.itrust2.apitest;
 
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.UnsupportedEncodingException;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -102,6 +106,24 @@ public class APIUserTest {
         sven.setUsername( "sven_badname" );
         mvc.perform( put( "/api/v1/users/sven_badname" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( sven ) ) ).andExpect( status().isNotFound() );
+
+    }
+
+    @Test
+    @WithMockUser ( username = "admin", roles = { "USER", "ADMIN" } )
+    public void testAdminRole () throws UnsupportedEncodingException, Exception {
+        final String content = mvc.perform( get( "/api/v1/role" ).contentType( MediaType.APPLICATION_JSON ) )
+                .andReturn().getResponse().getContentAsString();
+        assertTrue( content.contains( "ROLE_ADMIN" ) );
+
+    }
+
+    @Test
+    @WithMockUser ( username = "admin", roles = { "USER", "NIL" } )
+    public void testNoRole () throws UnsupportedEncodingException, Exception {
+        final String content = mvc.perform( get( "/api/v1/role" ).contentType( MediaType.APPLICATION_JSON ) )
+                .andReturn().getResponse().getContentAsString();
+        assertTrue( content.contains( "UNAUTHORIZED" ) );
 
     }
 

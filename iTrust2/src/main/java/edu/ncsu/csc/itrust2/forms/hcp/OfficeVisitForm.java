@@ -2,7 +2,6 @@ package edu.ncsu.csc.itrust2.forms.hcp;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -13,6 +12,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
+import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 
@@ -146,6 +146,10 @@ public class OfficeVisitForm implements Serializable {
      * Diagnoses associated with this visit
      */
     private List<Diagnosis>        diagnoses;
+    /**
+     * Lab Procedures associated with this visit
+     */
+    private List<LabProcedure>     labProcedures;
 
     private List<PrescriptionForm> prescriptions;
 
@@ -158,6 +162,7 @@ public class OfficeVisitForm implements Serializable {
     public OfficeVisitForm ( final OfficeVisit ov ) {
         setPatient( ov.getPatient().getUsername() );
         setHcp( ov.getHcp().getUsername() );
+        setHospital( ov.getHospital().getName() );
         final SimpleDateFormat tempDate = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
         setDate( tempDate.format( ov.getDate().getTime() ) );
         final SimpleDateFormat tempTime = new SimpleDateFormat( "hh:mm aaa", Locale.ENGLISH );
@@ -165,9 +170,20 @@ public class OfficeVisitForm implements Serializable {
         setNotes( ov.getNotes() );
         setId( ov.getId().toString() );
         setPreScheduled( ( (Boolean) ( ov.getAppointment() != null ) ).toString() );
-        setDiagnoses( new ArrayList<Diagnosis>() );
-        setPrescriptions( ov.getPrescriptions().stream().map( ( Prescription p ) -> new PrescriptionForm( p ) )
+        setDiagnoses( ov.getDiagnoses() );
+        setLabProcedures( ov.getLabProcedures() );
+        setPrescriptions( ov.getPrescriptions().stream().map( ( final Prescription p ) -> new PrescriptionForm( p ) )
                 .collect( Collectors.toList() ) );
+        setDiastolic( ov.getBasicHealthMetrics().getDiastolic() );
+        setHdl( ov.getBasicHealthMetrics().getHdl() );
+        setLdl( ov.getBasicHealthMetrics().getLdl() );
+        setSystolic( ov.getBasicHealthMetrics().getSystolic() );
+        setHeight( ov.getBasicHealthMetrics().getHeight() );
+        setHouseSmokingStatus( ov.getBasicHealthMetrics().getHouseSmokingStatus() );
+        setPatientSmokingStatus( ov.getBasicHealthMetrics().getPatientSmokingStatus() );
+        setWeight( ov.getBasicHealthMetrics().getWeight() );
+        setHeadCircumference( ov.getBasicHealthMetrics().getHeadCircumference() );
+        setTri( ov.getBasicHealthMetrics().getTri() );
     }
 
     /**
@@ -548,6 +564,25 @@ public class OfficeVisitForm implements Serializable {
      */
     public List<Diagnosis> getDiagnoses () {
         return diagnoses;
+    }
+
+    /**
+     * Sets the Lab Procedure list for this visit.
+     *
+     * @param list
+     *            The list of Lab Procedures.
+     */
+    public void setLabProcedures ( final List<LabProcedure> list ) {
+        labProcedures = list;
+    }
+
+    /**
+     * Returns the list of lab procedures associated with this office visit.
+     *
+     * @return The list of Lab Procedures
+     */
+    public List<LabProcedure> getLabProcedures () {
+        return labProcedures;
     }
 
     /**

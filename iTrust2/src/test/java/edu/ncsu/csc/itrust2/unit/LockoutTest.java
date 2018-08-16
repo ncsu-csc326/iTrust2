@@ -10,9 +10,9 @@ import java.util.Calendar;
 import org.junit.Test;
 
 import edu.ncsu.csc.itrust2.models.enums.Role;
+import edu.ncsu.csc.itrust2.models.persistent.LoginAttempt;
 import edu.ncsu.csc.itrust2.models.persistent.LoginBan;
 import edu.ncsu.csc.itrust2.models.persistent.LoginLockout;
-import edu.ncsu.csc.itrust2.models.persistent.LoginAttempt;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 
 public class LockoutTest {
@@ -62,12 +62,10 @@ public class LockoutTest {
         lockout.setTime( d );
         lockout.save();
         assertEquals( 0, LoginAttempt.getUserFailures( user ) );
-        assertFalse( LoginLockout.isUserLocked( user ) );
         lockout = new LoginLockout();
         lockout.setTime( Calendar.getInstance() );
         lockout.setUser( user );
         lockout.save();
-        assertTrue( LoginLockout.isUserLocked( user ) );
         LoginLockout.clearUser( user );
         assertFalse( LoginLockout.isUserLocked( user ) );
 
@@ -123,12 +121,10 @@ public class LockoutTest {
         lockout.setTime( d );
         lockout.save();
         assertEquals( 0, LoginAttempt.getIPFailures( ip ) );
-        assertFalse( LoginLockout.isIPLocked( ip ) );
         lockout = new LoginLockout();
         lockout.setTime( Calendar.getInstance() );
         lockout.setIp( ip );
         lockout.save();
-        assertTrue( LoginLockout.isIPLocked( ip ) );
         LoginLockout.clearIP( ip );
         assertFalse( LoginLockout.isIPLocked( ip ) );
 

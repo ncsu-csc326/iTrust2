@@ -144,6 +144,7 @@
 
             $scope.populateVisit = function () {
               $scope.prescriptions = [];
+              $scope.procedures = [];
               $scope.diagnoses = [];
               var visitsLength = $scope.visits.length;
               $scope.noVisitSelected = false;
@@ -199,6 +200,24 @@
                     });
                   }
                   
+                  $http.get("/iTrust2/api/v1//labprocedures/byVisit/" + $scope.selectedVisitID).then(
+                          function (response) {
+                            $scope.proceduresResponse = response.data;
+                            var pLength = $scope.proceduresResponse.length;
+                            if(pLength > 0){
+                              $scope.showLabProcedures = true;  
+                            }
+                            for (var i = 0; i < pLength; i++) {
+                              $scope.procedures.push({
+                                code: $scope.proceduresResponse[i].loinc.code,
+                                commonName: $scope.proceduresResponse[i].loinc.commonName,
+                                priority: $scope.proceduresResponse[i].priority,
+                                comments: $scope.proceduresResponse[i].comments,
+                                status: $scope.proceduresResponse[i].status,
+                                id: $scope.proceduresResponse[i].id
+                              });
+                            }
+                          });
 
                   $scope.three = false;
                   $scope.threeAndUp = false;
@@ -263,23 +282,23 @@
                 $scope.errorMsg += "Please input a valid date and time\n";
               }
 
-              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.height) == false) {
+              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test(String($scope.selectedVisit.height).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Height/length can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.weight) == false) {
+              if (/^[0-9]{1,3}(\.[1-9]?)?$/.test(String($scope.selectedVisit.weight).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Weight can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if ($scope.three && /^[0-9]{1,3}(\.[1-9]?)?$/.test($scope.selectedVisit.headCircumference) == false) {
+              if ($scope.three && /^[0-9]{1,3}(\.[1-9]?)?$/.test(String($scope.selectedVisit.headCircumference).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Head circumference can be up to a 3-digit positive number and potentially one digit of decimal precision\n"
               }
-              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.systolic) == false) {
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test(String($scope.selectedVisit.systolic).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Systolic blood pressure can be up to a 3-digit positive number\n"
               }
-              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.diastolic) == false) {
+              if ($scope.threeAndUp && /^[0-9]{1,3}$/.test(String($scope.selectedVisit.diastolic).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Diastolic blood pressure can be up to a 3-digit positive number\n"
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test($scope.selectedVisit.hdl) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,2}$/.test(String($scope.selectedVisit.hdl).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "HDL cholesterol can be a number between 0 and 90\n"
               } else if ($scope.twelveAndUp) {
                 var hdlInt = parseInt($scope.selectedVisit.hdl);
@@ -288,7 +307,7 @@
                 }
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.ldl) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test(String($scope.selectedVisit.ldl).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "LDL cholesterol can be a number between 0 and 600\n"
               } else if ($scope.twelveAndUp) {
                 var ldlInt = parseInt($scope.selectedVisit.ldl);
@@ -297,7 +316,7 @@
                 }
               }
               //handle invalid and outside of range
-              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test($scope.selectedVisit.tri) == false) {
+              if ($scope.twelveAndUp && /^[0-9]{1,3}$/.test(String($scope.selectedVisit.tri).replace(/^0+/, '')) == false) {
                 $scope.errorMsg += "Triglycerides can be a number between 100 and 600\n"
               } else if ($scope.twelveAndUp) {
                 var triInt = parseInt($scope.selectedVisit.tri);
@@ -384,6 +403,13 @@
             $scope.removePrescription = function ($index) {
               $scope.prescriptions.splice($index, 1);
             }
+            
+            $scope.removeProcedure = function($index) {
+            	$http.delete('/iTrust2/api/v1/labprocedures/' + $scope.procedures[$index].id).then(function(response) {
+            		$scope.message = "Lab procedure successfully deleted";
+            	})
+            	$scope.procedures.splice($index, 1);
+            }
 
             //call initally 
             resetPrescriptionForm();
@@ -398,48 +424,6 @@
 
 
       <div ng-app="myApp" ng-controller="editOfficeVisitCtrl">
-        <nav class="navbar navbar-default">
-          <div class="container-fluid">
-            <ul class="nav navbar-nav">
-              <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Patient
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a href="/iTrust2/hcp/viewAppointmentRequests" id="viewrequests">View Appointment Requests</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/viewAppointments" id="upcomingrequests">View Upcoming Appointments</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/editPatientDemographics" id="editPatientDemographics">Edit Patient</a>
-                  </li>
-                  <li>
-                    <a href="#">Add Patient -- Not Implemented</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/documentOfficeVisit.html" id="documentOfficeVisit">Document Office Visit</a>
-                  </li>
-                </ul>
-              </li>
-              <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown" href="#">Edit
-                  <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <a href="/iTrust2/personnel/editDemographics" id="editdemographics">Edit Demographics</a>
-                  </li>
-                  <li>
-                    <a href="/iTrust2/hcp/editOfficeVisit" id="editOfficeVisit">Edit Office Visit</a>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </nav>
-
         <div class="row">
 
           <div class="col-md-12">
@@ -822,7 +806,47 @@
                       </div>
                     </div>
                   </div>
+                  
+                  <!-- Procedures panel -->
+				<div class="row">
+					<div class="col-md-8">
+                    <div class="panel panel-info">
+                      <div class="panel-heading">
+                        <h4>Lab Procedures</h4>
+                      </div>
+                      <div class="panel-body">
+                        <div class="form-group row">
+                          <div class="col-md-12">
+                            <table class="table">
+                            	<tr>
+                            		<th>LOINC Code</th>
+                            		<th>Priority</th>
+                            		<th>Comments</th>
+                            		<th>Status</th>
+                            		<th>Delete</th>
+                            	</tr>
+                            	<tr ng-repeat="procedure in procedures">
+                            		<td>{{procedure.code}}</td>
+                            		<td>{{procedure.priority}}</td>
+                            		<td>{{procedure.comments}}</td>
+                            		<td>{{procedure.status}}</td>
+                            		<td><button class="btn btn-danger btn-xs"  ng-click="removeProcedure($index)" ng-show="procedure.status == 'ASSIGNED'">Delete</button></td>
+                            	</tr>
+                            </table>
+                          </div>
+                          
+                        </div>
+                        
+                        
+                        
+                        
+                        
+                      </div>
+                    </div>
+                  </div>
 
+				</div>
+                <!-- Notes and Error Messages -->
                   <!-- Notes and Error Messages -->
                   <div class="row">
                     <div class="form-group col-md-6">

@@ -12,6 +12,7 @@ local.properties
 src/main/java/db.properties
 src/main/java/email.properties
 src/main/resources/hibernate.properties
+/src/main/resources/ClassDiagramTester.*
 target/
 WebRoot/
 .classpath

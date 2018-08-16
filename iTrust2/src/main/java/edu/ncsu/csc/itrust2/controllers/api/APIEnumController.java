@@ -15,13 +15,13 @@ import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.State;
+import edu.ncsu.csc.itrust2.models.enums.Status;
 
 /**
  * This class provides GET endpoints for all of the Enums, so that they can be
  * used for creating proper DomainObjects
  *
  * @author Kai Presler-Marshall
- *
  */
 @RestController
 public class APIEnumController extends APIController {
@@ -34,6 +34,16 @@ public class APIEnumController extends APIController {
     @GetMapping ( BASE_PATH + "/appointmenttype" )
     public List<AppointmentType> getAppointmentTypes () {
         return Arrays.asList( AppointmentType.values() );
+    }
+
+    /**
+     * Gets appointment statuses
+     *
+     * @return appointment statuses
+     */
+    @GetMapping ( BASE_PATH + "/appointmentstatus" )
+    public List<Status> getAppointmentStatuses () {
+        return Arrays.asList( Status.values() );
     }
 
     /**

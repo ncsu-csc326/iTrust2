@@ -1,20 +1,12 @@
 package edu.ncsu.csc.itrust2.controllers.patient;
 
-import javax.validation.Valid;
-
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -26,6 +18,19 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  */
 @Controller
 public class PatientController {
+	
+    /**
+     * Retrieves the page for the Patient to request an Appointment
+     *
+     * @param model
+     *            Data for the front end
+     * @return The page the patient should see
+     */
+    @GetMapping ( "/patient/appointmentRequest/manageAppointmentRequest" )
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public String requestAppointmentForm ( final Model model ) {
+        return "/patient/appointmentRequest/manageAppointmentRequest";
+    }
 
     /**
      * Returns the form page for a patient to view all OfficeVisits
@@ -34,10 +39,10 @@ public class PatientController {
      *            The data for the front end
      * @return Page to display to the user
      */
-    @GetMapping ( "/patient/viewOfficeVisits" )
+    @GetMapping ( "/patient/officeVisit/viewOfficeVisits" )
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
     public String viewOfficeVisits ( final Model model ) {
-        return "/patient/viewOfficeVisits";
+        return "/patient/officeVisit/viewOfficeVisits";
     }
 
     /**
@@ -47,10 +52,10 @@ public class PatientController {
      *            The data for the front end
      * @return Page to display to the user
      */
-    @GetMapping ( "/patient/viewPrescriptions" )
+    @GetMapping ( "/patient/officeVisit/viewPrescriptions" )
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
     public String viewPrescriptions ( final Model model ) {
-        return "/patient/viewPrescriptions";
+        return "/patient/officeVisit/viewPrescriptions";
     }
 
     /**
@@ -73,56 +78,39 @@ public class PatientController {
      *            The data for the front end
      * @return The page to show the user so they can edit demographics
      */
-    @GetMapping ( value = "patient/editDemographics" )
+    @GetMapping ( value = "patient/demographics/editDemographics" )
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
     public String viewDemographics ( final Model model ) {
-        final User self = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
-        final PatientForm form = new PatientForm( Patient.getPatient( self ) );
-        model.addAttribute( "PatientForm", form );
+        final User self = User.getByName( LoggerUtil.currentUser() );
         LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, self );
-        return "/patient/editDemographics";
+        return "/patient/demographics/editDemographics";
     }
+
 
     /**
-     * Processes the Edit Demographics form for a Patient
+     * Returns the page for a patient to view Personal
+     * Representatives
      *
-     * @param form
-     *            Form from the user to parse and validate
-     * @param result
-     *            The validation result on the firm
-     * @param model
-     *            Data from the front end
-     * @return Page to show to the user
+     * @return Page to display to the user
      */
-    @PostMapping ( "/patient/editDemographics" )
+    @GetMapping ( value = "/patient/personalRepresentative/personalRepresentatives" )
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
-    public String demographicsSubmit ( @Valid @ModelAttribute ( "PatientForm" ) final PatientForm form,
-            final BindingResult result, final Model model ) {
-        Patient p = null;
-        try {
-            p = new Patient( form );
-            p.setSelf( User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() ) );
-        }
-        catch ( final Exception e ) {
-            e.printStackTrace( System.out );
-            result.rejectValue( "dateOfBirth", "dateOfBirth.notvalid", "Expected format: MM/DD/YYYY" );
-        }
-
-        if ( result.hasErrors() ) {
-            model.addAttribute( "PatientForm", form );
-            return "/patient/editDemographics";
-        }
-        else {
-            // Delete the patient so that the cache has to refresh.
-            final Patient oldPatient = Patient.getByName( p.getSelf().getUsername() );
-            if ( oldPatient != null ) {
-                oldPatient.delete();
-            }
-            p.save();
-            LoggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS,
-                    SecurityContextHolder.getContext().getAuthentication().getName() );
-            return "patient/editDemographicsResult";
-        }
+    public String viewPersonalReps () {
+        return "/patient/personalRepresentative/personalRepresentatives";
     }
+    
+    /**
+     * Create a page for the patient to view all diagnoses
+     *
+     * @param model
+     *            data for front end
+     * @return The page for the patient to view their diagnoses
+     */
+    @GetMapping ( value = "patient/officeVisit/viewDiagnoses" )
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public String viewDiagnoses ( final Model model ) {
+        return "/patient/officeVisit/viewDiagnoses";
+    }
+
 
 }

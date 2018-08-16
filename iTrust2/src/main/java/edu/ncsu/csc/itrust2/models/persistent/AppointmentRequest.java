@@ -3,7 +3,6 @@ package edu.ncsu.csc.itrust2.models.persistent;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -48,7 +47,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      */
     public static AppointmentRequest getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -65,12 +64,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
     @SuppressWarnings ( "unchecked" )
     public static List<AppointmentRequest> getAppointmentRequests () {
         final List<AppointmentRequest> requests = (List<AppointmentRequest>) getAll( AppointmentRequest.class );
-        requests.sort( new Comparator<AppointmentRequest>() {
-            @Override
-            public int compare ( final AppointmentRequest o1, final AppointmentRequest o2 ) {
-                return o1.getDate().compareTo( o2.getDate() );
-            }
-        } );
+        requests.sort( (x1, x2) -> x1.getDate().compareTo(x2.getDate()));
         return requests;
     }
 
@@ -101,7 +95,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return All of their AppointmentRequests
      */
     public static List<AppointmentRequest> getAppointmentRequestsForPatient ( final String patientName ) {
-        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        return getWhere( eqList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -112,7 +106,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return All AppointmentRequests involving this HCP
      */
     public static List<AppointmentRequest> getAppointmentRequestsForHCP ( final String hcpName ) {
-        return getWhere( createCriterionAsList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        return getWhere( eqList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
     }
 
     /**
@@ -129,8 +123,8 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
     public static List<AppointmentRequest> getAppointmentRequestsForHCPAndPatient ( final String hcpName,
             final String patientName ) {
         final Vector<Criterion> criteria = new Vector<Criterion>();
-        criteria.add( createCriterion( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
-        criteria.add( createCriterion( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        criteria.add( eq( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        criteria.add( eq( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
         return getWhere( criteria );
     }
 
@@ -207,8 +201,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @param id
      *            The new ID of the AppointmentRequest. For Hibernate.
      */
-    @SuppressWarnings ( "unused" )
-    private void setId ( final Long id ) {
+    public void setId ( final Long id ) {
         this.id = id;
     }
 

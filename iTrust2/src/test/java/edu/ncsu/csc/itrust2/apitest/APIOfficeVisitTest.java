@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -139,13 +140,6 @@ public class APIOfficeVisitTest {
         visit.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         visit.setHospital( "iTrust Test Hospital 2" );
 
-        mvc.perform( post( "/api/v1/officevisits" ).contentType( MediaType.APPLICATION_JSON )
-                .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isOk() );
-
-        mvc.perform( get( "/api/v1/officevisits" ) ).andExpect( status().isOk() )
-                .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
-
-        mvc.perform( delete( "/api/v1/officevisits" ) );
         visit.setDate( "12/20/2031" );
         // setting a pre-scheduled appointment that doesn't match should not
         // work.
@@ -160,6 +154,7 @@ public class APIOfficeVisitTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "patient", roles = { "PATIENT" } )
     public void testOfficeVisitAPI () throws Exception {
 
         /*

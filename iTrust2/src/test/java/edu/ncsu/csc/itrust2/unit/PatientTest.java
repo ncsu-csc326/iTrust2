@@ -1,6 +1,7 @@
 package edu.ncsu.csc.itrust2.unit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
@@ -183,6 +184,72 @@ public class PatientTest {
         p.setZip( "27607" );
         p.setZip( "27607-1234" );
         p.setPhone( "123-456-7890" );
+    }
+
+    /**
+     * Tests Personal Representative functionality.
+     *
+     * @throws ParseException
+     */
+    @Test
+    public void personalRepresentatives () throws ParseException {
+        final User patient = new User( "patientTestPatient", "123456", Role.ROLE_PATIENT, 1 );
+        patient.save();
+        PatientForm form = new PatientForm();
+        form.setFirstName( "patient" );
+        form.setPreferredName( "patient" );
+        form.setLastName( "mcpatientface" );
+        form.setAddress1( "Some town" );
+        form.setCity( "placecity" );
+        form.setState( State.AL.getName() );
+        form.setZip( "27606" );
+        form.setPhone( "111-111-1111" );
+        form.setDateOfBirth( "01/01/1901" );
+        form.setSelf( patient.getUsername() );
+        final Patient testPatient = new Patient( form );
+        testPatient.save();
+
+        final User rep = new User( "patientTestRep", "123456", Role.ROLE_PATIENT, 1 );
+        rep.save();
+        form = new PatientForm();
+        form.setFirstName( "rep" );
+        form.setPreferredName( "rep" );
+        form.setLastName( "mcrepface" );
+        form.setAddress1( "Some town" );
+        form.setCity( "placecity" );
+        form.setState( State.AL.getName() );
+        form.setZip( "27606" );
+        form.setPhone( "111-222-1111" );
+        form.setDateOfBirth( "01/01/1901" );
+        form.setSelf( rep.getUsername() );
+        final Patient testRep = new Patient( form );
+        testRep.save();
+
+        testPatient.addRepresentative( testRep );
+        testPatient.save();
+        testRep.save();
+
+        assertTrue( testPatient.getRepresentatives().contains( testRep ) );
+        assertTrue( testRep.getRepresented().contains( testPatient ) );
+        assertTrue( testPatient.getRepresented().isEmpty() );
+        assertTrue( testRep.getRepresentatives().isEmpty() );
+
+        testPatient.removeRepresentative( testRep );
+        testPatient.save();
+        testRep.save();
+
+        assertTrue( testPatient.getRepresentatives().isEmpty() );
+        assertTrue( testPatient.getRepresented().isEmpty() );
+        assertTrue( testRep.getRepresented().isEmpty() );
+        assertTrue( testRep.getRepresentatives().isEmpty() );
+
+        try {
+            testPatient.removeRepresentative( testRep );
+            fail();
+        }
+        catch ( final IllegalArgumentException e ) {
+            assertTrue( testPatient.getRepresentatives().isEmpty() );
+        }
     }
 
     private void expectFailure ( final Consumer<String> setter, final String value ) {

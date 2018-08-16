@@ -31,6 +31,7 @@ public class LogTest {
                 "test log entry with patient and hcp" );
         LoggerUtil.log( TransactionType.CREATE_HOSPITAL, "logAdmin" );
         LoggerUtil.log( TransactionType.LOGIN_SUCCESS, "logPatient", "login succeeded for logPatient." );
+        LoggerUtil.log( TransactionType.LOGIN_SUCCESS, "dupUser", "dupUser", "login succeeded for dupUser." );
         int hcpEntries = LoggerUtil.getAllForUser( "logHcp" ).size();
 
         // Test that searching by name and user object works.
@@ -57,5 +58,11 @@ public class LogTest {
         assertEquals( "logHcp", twoUserEntry.getSecondaryUser() );
         assertNotNull( twoUserEntry.getTime() );
         assertEquals( "test log entry with patient and hcp", twoUserEntry.getMessage() );
+
+        // Test of Bug Fixe Issue #107
+        final LogEntry sameUserEntry = LogEntry.getAllForUser( "dupUser" ).get( 0 );
+        assertEquals( "dupUser", sameUserEntry.getPrimaryUser() );
+        assertEquals( null, sameUserEntry.getSecondaryUser() );
+
     }
 }

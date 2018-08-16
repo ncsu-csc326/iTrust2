@@ -1,6 +1,6 @@
 #Author kpresle
 
-Feature: Edit demographics
+Feature: Personnel edit demographics
 	As an iTrust Personnel
 	I want to edit my demographics
 	So that my information is stored for regulatory purposes

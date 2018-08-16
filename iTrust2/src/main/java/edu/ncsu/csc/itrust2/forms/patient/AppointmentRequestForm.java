@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -46,18 +47,20 @@ public class AppointmentRequestForm {
     private String patient;
 
     /** The hcp of the appt request */
-    @NotNull
+    @NotNull ( message = "Invalid HCP" )
     private String hcp;
 
     /** The date of the appt request */
-    @NotEmpty
+    @NotEmpty ( message = "Date cannot be empty" )
+    @Pattern ( regexp = "(^$|^[0-9]{2}/[0-9]{2}/[0-9]{4}$)", message = "Invalid date or date format" )
     private String date;
 
     /** The id of the appt request */
     private String id;
 
     /** The time of the appt request */
-    @NotEmpty
+    @NotEmpty ( message = "Time cannot be empty" )
+    @Pattern ( regexp = "(^$|^[0-1][0-9]:[0-5][0-9] (am|pm|AM|PM)$)", message = "Invalid time" )
     private String time;
 
     /** The type of the appt request */

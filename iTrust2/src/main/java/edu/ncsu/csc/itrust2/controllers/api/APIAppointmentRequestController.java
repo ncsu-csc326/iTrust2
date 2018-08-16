@@ -1,11 +1,13 @@
 package edu.ncsu.csc.itrust2.controllers.api;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
+import edu.ncsu.csc.itrust2.models.enums.Status;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.AppointmentRequest;
 import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
@@ -41,6 +44,30 @@ public class APIAppointmentRequestController extends APIController {
     @GetMapping ( BASE_PATH + "/appointmentrequests" )
     public List<AppointmentRequest> getAppointmentRequests () {
         return AppointmentRequest.getAppointmentRequests();
+    }
+
+    /**
+     * Retrieves the AppointmentRequest specified by the username provided
+     *
+     * @return list of appointment requests for the logged in patient
+     */
+    @GetMapping ( BASE_PATH + "/appointmentrequest" )
+    public List<AppointmentRequest> getAppointmentRequestsForPatient () {
+        return AppointmentRequest.getAppointmentRequestsForPatient( LoggerUtil.currentUser() ).stream()
+                .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
+    }
+
+    /**
+     * Retrieves the AppointmentRequest specified by the username provided
+     *
+     * @return list of appointment requests for the logged in hcp
+     */
+    @GetMapping ( BASE_PATH + "/appointmentrequestForHCP" )
+    public List<AppointmentRequest> getAppointmentRequestsForHCP () {
+
+        return AppointmentRequest.getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
+                .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
+
     }
 
     /**
@@ -145,6 +172,7 @@ public class APIAppointmentRequestController extends APIController {
 
         try {
             final AppointmentRequest request = new AppointmentRequest( requestF );
+            request.setId( id );
 
             if ( null != request.getId() && !id.equals( request.getId() ) ) {
                 return new ResponseEntity(
@@ -158,7 +186,13 @@ public class APIAppointmentRequestController extends APIController {
             }
 
             request.save();
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getPatient(), request.getHcp() );
+            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getHcp(), request.getPatient() );
+            if ( request.getStatus().getCode() == Status.APPROVED.getCode() ) {
+                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_APPROVED, request.getHcp(), request.getPatient() );
+            }
+            else {
+                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DENIED, request.getHcp(), request.getPatient() );
+            }
 
             if ( dbRequest.getStatus() != request.getStatus() ) {
                 final String name = request.getPatient().getUsername();
@@ -206,6 +240,25 @@ public class APIAppointmentRequestController extends APIController {
                     errorResponse( "Could not delete one or more AppointmentRequests " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
+    }
+
+    /**
+     * View Appointments will retrieve and display all appointments for the
+     * logged-in HCP that are in "approved" status
+     *
+     *
+     * @return The page to display for the user
+     */
+    @GetMapping ( BASE_PATH + "/viewAppointments" )
+    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    public List<AppointmentRequest> upcomingAppointments () {
+        final List<AppointmentRequest> appointment = AppointmentRequest
+                .getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
+                .filter( e -> e.getStatus().equals( Status.APPROVED ) ).collect( Collectors.toList() );
+        /* Log the event */
+        appointment.stream().map( AppointmentRequest::getPatient ).forEach( e -> LoggerUtil
+                .log( TransactionType.APPOINTMENT_REQUEST_VIEWED, LoggerUtil.currentUser(), e.getUsername() ) );
+        return appointment;
     }
 
 }
