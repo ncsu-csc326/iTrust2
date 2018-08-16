@@ -141,7 +141,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      * @return the number of failures from the given IP
      */
     public static int getIPFailures ( final String addr ) {
-        return getWhere( createCriterionAsList( "ip", addr ) ).size();
+        return getWhere( eqList( "ip", addr ) ).size();
     }
 
     /**
@@ -151,7 +151,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      *            The IP to clear.
      */
     public static void clearIP ( final String addr ) {
-        getWhere( createCriterionAsList( "ip", addr ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "ip", addr ) ).stream().forEach( e -> e.delete() );
     }
 
     /**
@@ -162,7 +162,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      * @return The number of failed attempts for the User.
      */
     public static int getUserFailures ( final User user ) {
-        return getWhere( createCriterionAsList( "user", user ) ).size();
+        return getWhere( eqList( "user", user ) ).size();
     }
 
     /**
@@ -172,7 +172,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      *            The user to clear.
      */
     public static void clearUser ( final User user ) {
-        getWhere( createCriterionAsList( "user", user ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "user", user ) ).stream().forEach( e -> e.delete() );
     }
 
 }

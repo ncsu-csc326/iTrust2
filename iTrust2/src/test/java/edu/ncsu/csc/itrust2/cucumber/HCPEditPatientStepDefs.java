@@ -1,6 +1,8 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -9,14 +11,8 @@ import java.util.Locale;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import cucumber.api.java.After;
-import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -34,24 +30,9 @@ import edu.ncsu.csc.itrust2.models.persistent.User;
  * @author 201-1 Fall 2017
  *
  */
-public class HCPEditPatientStepDefs {
+public class HCPEditPatientStepDefs extends CucumberTest {
 
-    private WebDriver    driver;
     private final String baseUrl = "http://localhost:8080/iTrust2";
-
-    WebDriverWait        wait;
-
-    @Before
-    public void setup () {
-
-        driver = new HtmlUnitDriver( true );
-        wait = new WebDriverWait( driver, 5 );
-    }
-
-    @After
-    public void tearDown () {
-        driver.quit();
-    }
 
     private void setTextField ( final By byval, final String value ) {
         final WebElement elem = driver.findElement( byval );
@@ -61,6 +42,7 @@ public class HCPEditPatientStepDefs {
 
     @Given ( "the required users exist" )
     public void loadRequiredUsers () throws ParseException {
+        attemptLogout();
 
         // make sure the users we need to login exist
 
@@ -114,6 +96,8 @@ public class HCPEditPatientStepDefs {
 
     @Given ( "Dr Shelly Vang has logged in and chosen to edit a patient" )
     public void gotoEditPage () throws Exception {
+        attemptLogout();
+
         driver.get( baseUrl );
         setTextField( By.name( "username" ), "svang" );
         setTextField( By.name( "password" ), "123456" );
@@ -127,35 +111,48 @@ public class HCPEditPatientStepDefs {
         final String username = first.toLowerCase().charAt( 0 ) + last.toLowerCase();
 
         // wait for the patients to load before searching
-        wait.until( ExpectedConditions
-                .visibilityOfElementLocated( By.cssSelector( "input[type=radio][value=" + username + "]" ) ) );
+        waitForAngular();
         driver.findElement( By.cssSelector( "input[type=radio][value=" + username + "]" ) ).click();
     }
 
     @When ( "she changes the zip code to: (.+)" )
     public void changeZipcode ( final String zip ) throws Exception {
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "zip" ) ) );
+        waitForAngular();
         setTextField( By.name( "zip" ), zip );
     }
 
     @When ( "she submits the changes" )
     public void submitChanges () {
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "submit" ) ) );
+        waitForAngular();
         driver.findElement( By.name( "submit" ) ).click();
     }
 
     @Then ( "a success message is displayed" )
     public void checkSuccessMessage () {
-        // this will timeout and fail if the page shows an error message
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "success" ),
-                "Patient demographics updated successfully." ) );
+        waitForAngular();
+
+        // confirm that the message is displayed
+        try {
+            assertTrue( driver.findElement( By.name( "success" ) ).getText()
+                    .contains( "Patient demographics updated successfully." ) );
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
     }
 
     @Then ( "an error message is displayed" )
     public void checkErrorMessage () {
-        // this will timeout and fail if the page shows a success message
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "success" ),
-                "An error occured updating demographics." ) );
+        waitForAngular();
+
+        // confirm that the message is displayed
+        try {
+            assertTrue( driver.findElement( By.name( "success" ) ).getText()
+                    .contains( "An error occured updating demographics." ) );
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
     }
 
     @Then ( "if she changes to patient to (.+) (.+), a popup indicates her changes will be lost" )
@@ -170,8 +167,16 @@ public class HCPEditPatientStepDefs {
 
         selectPatient( first, last );
 
-        // look for the alert message set in the header0 element
-        wait.until( ExpectedConditions.textToBePresentInElementLocated( By.id( "header0" ), "You have made changes" ) );
+        waitForAngular();
+
+        try {
+            // look for the alert message set in the header0 element
+            assertTrue( driver.findElement( By.id( "header0" ) ).getText().contains( "You have made changes" ) );
+
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
     }
 
     @When ( "she chooses to continue" )

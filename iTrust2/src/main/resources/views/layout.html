@@ -100,6 +100,8 @@ a {
 							var admindropdown = document.getElementById('admin-dropdown');
 							var patientdropdown = document.getElementById('patient-dropdown');
 							var hcpdropdown = document.getElementById('hcp-dropdown');
+							var erdropdown = document.getElementById('er-dropdown');
+							var ltdropdown = document.getElementById('labtech-dropdown');
 							if (!role.includes('PATIENT')) {
 								navbarparent.removeChild(patientdropdown);
 							}
@@ -108,7 +110,14 @@ a {
 							}
 							if (!role.includes('HCP')) {
 								navbarparent.removeChild(hcpdropdown);
+							} 
+							if(!role.includes('ER')) {
+								navbarparent.removeChild(erdropdown);
 							}
+							if(!role.includes('LABTECH')) {
+								navbarparent.removeChild(ltdropdown);
+							}
+							
 						});
 				/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
 				/*<![CDATA[*/
@@ -125,20 +134,17 @@ a {
 				<div class="navbar-header">
 					<a class="navbar-brand" th:href="@{/}">iTrust2</a>
 				</div>
+				<!-- Admin navbar -->
 				<ul id="admin-dropdown" class="nav navbar-nav">
 					<li class="dropdown"><a class="dropdown-toggle"
 						data-toggle="dropdown" href="#">Admin<span class="caret"></span></a>
 						<ul class="dropdown-menu">
-							<li><a href="/iTrust2/admin/addHospital" id="addhospital">Add
-									Hospital</a></li>
-							<li><a href="/iTrust2/admin/deleteHospital"
-								id="deletehospital">Delete Hospital</a></li>
-							<li><a href="/iTrust2/admin/addUser" id="addnewuser">Add
-									User</a></li>
-							<li><a href="/iTrust2/admin/deleteUser" id="deleteuser">Delete
-									User</a></li>
+							<li><a href="/iTrust2/admin/hospitals"
+								id="deletehospital">Manage Hospitals</a></li>
+							<li><a href="/iTrust2/admin/users" id="users">Manage Users</a></li>
 							<li><a href="/iTrust2/admin/drugs" id="drugs">Manage Drugs</a></li>
 							<li><a href="/iTrust2/admin/manageICDCodes" id="manageICDCodes">Manage ICD-10 Codes</a></li>
+							<li><a href="/iTrust2/admin/manageLOINCCodes" id="manageLOINCCodes">Manage LOINC Codes</a></li>
 						</ul>
 					</li>
 					<li class="dropdown"><a class="dropdown-toggle"
@@ -149,19 +155,22 @@ a {
 						</ul>
 					</li>
 				</ul>
+				<!-- HCP navbar -->
 				<ul id="hcp-dropdown" class="nav navbar-nav">
 					<li class="dropdown"><a class="dropdown-toggle"
 						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
 						<ul class="dropdown-menu">
-														<li><a href="/iTrust2/hcp/viewAppointmentRequests"
-								id="viewrequests">View Appointment Requests</a></li>
-							<li><a href="/iTrust2/hcp/viewAppointments"
-								id="upcomingrequests">View Upcoming Appointments</a></li>
+														<li><a href="/iTrust2/hcp/appointmentRequests"
+								id="viewrequests">View Appointment Requests and Upcoming Appointments</a></li>
 							<li><a href="/iTrust2/hcp/editPatientDemographics"
 								id="editPatientDemographics">Edit Patient</a></li>
 							<li><a href="#">Add Patient -- Not Implemented</a></li>
 							<li><a href="/iTrust2/hcp/documentOfficeVisit.html"
 								id="documentOfficeVisit">Document Office Visit</a></li>
+							<li><a href="/iTrust2/hcp/personalRepresentatives.html"
+								id="HCPpersonalreps">Personal Representatives</a></li>
+							<li><a href="/iTrust2/hcp/records.html"
+								id="HCPrecords">Emergency Records</a></li>
 						</ul>
 					</li>
 					<li class="dropdown"><a class="dropdown-toggle"
@@ -176,24 +185,71 @@ a {
 						</ul>
 					</li>
 				</ul>
-				<ul id="patient-dropdown" class="nav navbar-nav">
+				<!-- ER Dropdown -->
+				<ul id="er-dropdown" class="nav navbar-nav">
 					<li class="dropdown"><a class="dropdown-toggle"
-						data-toggle="dropdown" id="appointments" href="#">Appointments<span
-							class="caret"></span></a>
+						data-toggle="dropdown" href="#">ER<span class="caret"></span></a>
 						<ul class="dropdown-menu">
-							<li><a href="/iTrust2/patient/requestAppointment"
-								id="requestappointment">Request Appointment</a></li>
-							<li><a href="/iTrust2/patient/viewAppointmentRequests"
-								id="viewrequests-patient">View Appointment Requests</a></li>
-							<li><a href="/iTrust2/patient/viewOfficeVisits">Past Office Visits</a></li>
-							<li><a href="/iTrust2/patient/viewDiagnoses" id="viewDiagnoses">Diagnoses</a></li>
-							<li><a href="/iTrust2/patient/viewPrescriptions" id="viewPrescriptions">Prescriptions</a></li>
+							
+							<li><a href="/iTrust2/er/records.html"
+								id="ERrecords">Emergency Records</a></li>
+								
 						</ul>
 					</li>
 					<li class="dropdown"><a class="dropdown-toggle"
 						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
 						<ul class="dropdown-menu">
-							<li><a href="/iTrust2/patient/editDemographics"
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							
+						</ul>
+					</li>
+				</ul>
+				<!-- Labtech dropdown -->
+				<ul id="labtech-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Lab Tech<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							
+							<li><a href="/iTrust2/labtech/procedures"
+								id="LTprocedures">Lab Procedures</a></li>
+								
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							
+						</ul>
+					</li>
+				</ul>
+				
+				<!-- Patient dropdown -->
+				<ul id="patient-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/personalRepresentative/personalRepresentatives"
+								id="personalreps">Personal Representatives</a></li>
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" id="appointments" href="#">Appointments<span
+							class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/appointmentRequest/manageAppointmentRequest"
+								id="requestappointment">Manage Appointment Requests</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewOfficeVisits">Past Office Visits</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewDiagnoses" id="viewDiagnoses">Diagnoses</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewPrescriptions" id="viewPrescriptions">Prescriptions</a></li>
+						</ul>
+					</li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/demographics/editDemographics"
 								id="editdemographics-patient">Edit Demographics</a></li>
 						</ul>
 					</li>
@@ -231,7 +287,7 @@ a {
 
 	<div id="footer">
 		<div class="container">
-			<p class="muted credit">iTrust2-v2</p>
+			<p class="muted credit">iTrust2-v3</p>
 		</div>
 	</div>
 </body>

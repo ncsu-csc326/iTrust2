@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -89,7 +88,7 @@ public class APIICDCodeController extends APIController {
             updatedCode.save();
             User user = null;
             try {
-                user = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
+                user = User.getByName( LoggerUtil.currentUser() );
             }
             catch ( final Exception e ) {
                 // ignore, its was a test that wasn't authenticated properly.
@@ -120,7 +119,7 @@ public class APIICDCodeController extends APIController {
             code.save();
             User user = null;
             try {
-                user = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
+                user = User.getByName( LoggerUtil.currentUser() );
             }
             catch ( final Exception e ) {
                 // ignore, its was a test that wasn't authenticated properly.
@@ -153,7 +152,7 @@ public class APIICDCodeController extends APIController {
             code.delete();
             User user = null;
             try {
-                user = User.getByName( SecurityContextHolder.getContext().getAuthentication().getName() );
+                user = User.getByName( LoggerUtil.currentUser() );
             }
             catch ( final Exception e ) {
                 // ignore, its was a test that wasn't authenticated properly.

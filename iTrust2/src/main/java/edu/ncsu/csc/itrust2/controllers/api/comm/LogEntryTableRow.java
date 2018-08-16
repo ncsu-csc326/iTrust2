@@ -9,19 +9,19 @@ package edu.ncsu.csc.itrust2.controllers.api.comm;
 public class LogEntryTableRow {
 
     /** Name of primary User */
-    public String  primary;
+    private String  primary;
     /** Name of secondary User */
-    public String  secondary;
+    private String  secondary;
     /** Role of accessor */
-    public String  role;
+    private String  role;
     /** Date and time of transaction */
-    public String  dateTime;
+    private String  dateTime;
     /** Transaction type of log event */
-    public String  transactionType;
+    private String  transactionType;
     /** boolean for whether or not being viewed by patient */
-    public boolean isPatient = false;
+    private boolean isPatient = false;
     /** total number of pages in the table */
-    public int     numPages  = 1;
+    private int     numPages  = 1;
 
     /**
      * Empty constructor so that Spring is able to use this class for
@@ -33,7 +33,7 @@ public class LogEntryTableRow {
 
     /**
      * Returns the number of pages in the table
-     * 
+     *
      * @return number of pages
      */
     public int getNumPages () {
@@ -42,7 +42,7 @@ public class LogEntryTableRow {
 
     /**
      * Sets the number of pages in the table
-     * 
+     *
      * @param numPages
      *            number of pages
      */
@@ -156,7 +156,7 @@ public class LogEntryTableRow {
     }
 
     /**
-     * Sets the type of the transcaction in the log entry.
+     * Sets the type of the transaction in the log entry.
      *
      * @param transactionType
      *            type of transaction

@@ -7,9 +7,7 @@ import java.util.Random;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.Select;
 
 import cucumber.api.java.en.Given;
@@ -19,19 +17,22 @@ import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 
 /**
  * Step definitions for AddHosptial feature
+ *
+ * @author kpresle
  */
-public class AddHospitalStepDefs {
+public class AddHospitalStepDefs extends CucumberTest {
 
-    private final WebDriver driver       = new HtmlUnitDriver( true );
-    private final String    baseUrl      = "http://localhost:8080/iTrust2";
+    private final String baseUrl      = "http://localhost:8080/iTrust2";
 
-    private final String    hospitalName = "TimHortons" + ( new Random() ).nextInt();
+    private final String hospitalName = "TimHortons" + ( new Random() ).nextInt();
 
     /**
      * Hospital doesn't exist
      */
     @Given ( "The desired hospital doesn't exist" )
     public void noHospital () {
+        attemptLogout();
+
         final List<Hospital> hospitals = Hospital.getHospitals();
         for ( final Hospital hospital : hospitals ) {
             try {
@@ -65,7 +66,7 @@ public class AddHospitalStepDefs {
      */
     @When ( "I navigate to the Add Hospital page" )
     public void addHospitalPage () {
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('addhospital').click();" );
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('deletehospital').click();" );
     }
 
     /**
@@ -83,13 +84,13 @@ public class AddHospitalStepDefs {
 
         final WebElement state = driver.findElement( By.id( "state" ) );
         final Select dropdown = new Select( state );
-        dropdown.selectByVisibleText( "CA" );
+        dropdown.selectByVisibleText( "California" );
 
         final WebElement zip = driver.findElement( By.id( "zip" ) );
         zip.clear();
         zip.sendKeys( "00912" );
 
-        driver.findElement( By.className( "btn" ) ).click();
+        driver.findElement( By.id( "submit" ) ).click();
     }
 
     /**
@@ -97,6 +98,7 @@ public class AddHospitalStepDefs {
      */
     @Then ( "The hospital is created successfully" )
     public void createdSuccessfully () {
+        waitForAngular();
         assertTrue( driver.getPageSource().contains( "Hospital added successfully" ) );
     }
 

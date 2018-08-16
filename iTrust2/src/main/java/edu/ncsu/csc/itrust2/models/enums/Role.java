@@ -21,8 +21,14 @@ public enum Role {
      * Admin
      */
     ROLE_ADMIN ( 3, "admin/index" ),
-
-    ;
+    /**
+     * Emergency responder
+     */
+    ROLE_ER ( 4, "er/index" ),
+    /**
+     * Lab Tech
+     */
+    ROLE_LABTECH ( 5, "labtech/index" );
 
     /**
      * Numeric code of the Role

@@ -1,6 +1,5 @@
 package edu.ncsu.csc.itrust2.utils;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -111,13 +110,7 @@ public class LoggerUtil {
      */
     static public List<LogEntry> getTopForUser ( final String user, final Integer top ) {
         final List<LogEntry> all = getAllForUser( user );
-        all.sort( new Comparator<Object>() {
-            @Override
-            public int compare ( final Object arg0, final Object arg1 ) {
-                return ( (LogEntry) arg0 ).getTime().compareTo( ( (LogEntry) arg1 ).getTime() );
-            }
-
-        } );
+        all.sort( ( x1, x2 ) -> x1.getTime().compareTo( x2.getTime() ) );
         try {
             return all.subList( 0, top );
         }

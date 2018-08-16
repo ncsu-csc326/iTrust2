@@ -87,7 +87,7 @@ public class LogEntry extends DomainObject<LogEntry> {
      */
     public static LogEntry getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -117,9 +117,9 @@ public class LogEntry extends DomainObject<LogEntry> {
         final String user = LoggerUtil.currentUser();
 
         final List<Criterion> search = new Vector<Criterion>();
-        search.add( createBetween( "time", start, end ) );
+        search.add( bt( "time", start, end ) );
         search.add(
-                Restrictions.or( createCriterion( "primaryUser", user ), createCriterion( "secondaryUser", user ) ) );
+                Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) );
 
         return getWhere( search );
     }
@@ -146,7 +146,7 @@ public class LogEntry extends DomainObject<LogEntry> {
      */
     public static List<LogEntry> getAllForUser ( final String user ) {
         return getWhere( createCriterionList(
-                Restrictions.or( createCriterion( "primaryUser", user ), createCriterion( "secondaryUser", user ) ) ) );
+                Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) ) );
     }
 
     /**
@@ -219,7 +219,10 @@ public class LogEntry extends DomainObject<LogEntry> {
      *            Optional secondary user for the LogEntry
      */
     public void setSecondaryUser ( final String secondaryUser ) {
-        this.secondaryUser = secondaryUser;
+        // Issue #107. Primary user and secondary user should NOT be the same.
+        if ( !this.getPrimaryUser().equals( secondaryUser ) ) {
+            this.secondaryUser = secondaryUser;
+        }
     }
 
     /**

@@ -90,7 +90,7 @@
             $http.put("/iTrust2/api/v1/drugs", $scope.selectedDrug).then(
               function (response) {
                 $scope.loadTable();
-                $scope.resetSelected();
+                $scope.resetSelected();         
               }, function (rejection) {
                 $scope.errorAdding = "Failed to edit drug";
               });

@@ -64,7 +64,7 @@ public class User extends DomainObject<User> implements Serializable {
      */
     public static User getByName ( final String name ) {
         try {
-            return getWhere( createCriterionAsList( "username", name ) ).get( 0 );
+            return getWhere( eqList( "username", name ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -83,8 +83,8 @@ public class User extends DomainObject<User> implements Serializable {
     public static User getByNameAndRole ( final String name, final Role type ) {
 
         final Vector<Criterion> criteria = new Vector<Criterion>();
-        criteria.add( createCriterion( "username", name ) );
-        criteria.add( createCriterion( "role", type ) );
+        criteria.add( eq( "username", name ) );
+        criteria.add( eq( "role", type ) );
         try {
             return getWhere( criteria ).get( 0 );
         }
@@ -136,7 +136,7 @@ public class User extends DomainObject<User> implements Serializable {
      * @return the users with the passed role
      */
     public static List<User> getByRole ( final Role role ) {
-        return getWhere( createCriterionAsList( "role", role ) );
+        return getWhere( eqList( "role", role ) );
     }
 
     /** For Hibernate */
@@ -355,6 +355,14 @@ public class User extends DomainObject<User> implements Serializable {
 
     @Override
     public void delete () {
+        if ( Personnel.getByName( this.username ) != null ) {
+            final Personnel personnel = Personnel.getByName( this.username );
+            personnel.delete();
+        }
+        if ( Patient.getByName( this.username ) != null ) {
+            final Patient patient = Patient.getByName( this.username );
+            patient.delete();
+        }
         try {
             @SuppressWarnings ( "unchecked" )
             final List<PasswordResetToken> list = (List<PasswordResetToken>) DomainObject

@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>edu.ncsu.csc</groupId>
 	<artifactId>iTrust2</artifactId>
-	<version>2.0.0</version>
+	<version>3.0.0</version>
 	<packaging>war</packaging>
 	<name>iTrust2</name>
 	<organization>
@@ -24,12 +24,13 @@
 		<java.version>1.8</java.version>
 		<checkstyle.config.location>src/test/resources/reporting/csc_checkstyle.xml</checkstyle.config.location>
 		<cucumber.options>--plugin json:target/cucumber.json</cucumber.options>
-		<jacoco.version>0.7.5.201505241946</jacoco.version>
-		<surefire.version>2.20</surefire.version>
-	 	<failsafe.version>2.20</failsafe.version>
- 		<maven.compiler.version>3.7.0</maven.compiler.version>
- 		<jetty.version>9.2.2.v20140723</jetty.version>
+		<jacoco.version>0.8.1</jacoco.version>
+		<surefire.version>2.22.0</surefire.version>
+		<failsafe.version>2.22.0</failsafe.version>
+		<maven.compiler.version>3.7.0</maven.compiler.version>
+		<jetty.version>9.2.2.v20140723</jetty.version>
 	</properties>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -42,7 +43,54 @@
 		</dependencies>
 	</dependencyManagement>
 	<dependencies>
-	
+
+        <!-- Java EE stuff for Java 9+ -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.2.11</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<version>2.2.11</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.2.11</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.activation</groupId>
+			<artifactId>activation</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+        <!-- End Java EE -->
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>3.11.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.paulhammant</groupId>
+			<artifactId>ngwebdriver</artifactId>
+			<version>1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-remote-driver</artifactId>
+			<version>3.6.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-htmlunit-driver</artifactId>
+			<version>2.52.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>javax.servlet.jsp.jstl</groupId>
 			<artifactId>javax.servlet.jsp.jstl-api</artifactId>
@@ -190,7 +238,7 @@
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.40</version>
+			<version>8.0.11</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -225,16 +273,8 @@
 			<version>5.0.11.Final</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.seleniumhq.selenium</groupId>
-			<artifactId>selenium-java</artifactId>
-			<version>2.53.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.seleniumhq.selenium</groupId>
-			<artifactId>htmlunit-driver</artifactId>
-			<version>2.21</version>
-		</dependency>
+
+
 		<dependency>
 			<groupId>io.github.bonigarcia</groupId>
 			<artifactId>webdrivermanager</artifactId>
@@ -275,7 +315,7 @@
 			<artifactId>cucumber-junit</artifactId>
 			<version>1.2.4</version>
 		</dependency>
-		
+
 		<!-- Webflow -->
 		<dependency>
 			<groupId>org.springframework.webflow</groupId>
@@ -328,14 +368,14 @@
 			<artifactId>spring-session</artifactId>
 			<version>1.2.1.RELEASE</version>
 		</dependency>
-		
-		
+
+
 		<dependency>
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
 			<version>1.4.7</version>
 		</dependency>
-		 
+
 		<dependency>
 			<groupId>javax.mail</groupId>
 			<artifactId>javax.mail-api</artifactId>
@@ -406,10 +446,10 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin> <groupId>org.apache.tomcat.maven</groupId> <artifactId>tomcat7-maven-plugin</artifactId>
-			<version>2.2</version> <configuration> <server>myserver</server> </configuration>
-			<executions> <execution> <phase>pre-integration-test</phase> <goals> <goal>redeploy</goal>
-			</goals> </execution> </executions> </plugin> -->
+			<!-- <plugin> <groupId>org.apache.tomcat.maven</groupId> <artifactId>tomcat7-maven-plugin</artifactId> 
+				<version>2.2</version> <configuration> <server>myserver</server> </configuration> 
+				<executions> <execution> <phase>pre-integration-test</phase> <goals> <goal>redeploy</goal> 
+				</goals> </execution> </executions> </plugin> -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -466,7 +506,7 @@
 				<version>${surefire.version}</version>
 				<configuration>
 					<argLine>${surefireArgLine}</argLine>
-					<skip>false</skip>
+					<skip>${skipSurefireTests}</skip>
 				</configuration>
 			</plugin>
 			<plugin>

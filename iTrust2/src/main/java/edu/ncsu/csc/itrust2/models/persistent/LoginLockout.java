@@ -129,7 +129,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      */
     public static int getRecentIPLockouts ( final String addr ) {
         final Long now = Calendar.getInstance().getTimeInMillis();
-        return getWhere( createCriterionAsList( "ip", addr ) ).stream()
+        return getWhere( eqList( "ip", addr ) ).stream()
                 .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 1440 * 60 * 1000 )
                 .collect( Collectors.toList() ).size(); // 1440 minutes
     }
@@ -163,7 +163,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      *            The IP to clear
      */
     public static void clearIP ( final String addr ) {
-        getWhere( createCriterionAsList( "ip", addr ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "ip", addr ) ).stream().forEach( e -> e.delete() );
     }
 
     /**
@@ -175,7 +175,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      */
     public static boolean isIPLocked ( final String addr ) {
         final Long now = Calendar.getInstance().getTimeInMillis();
-        return getWhere( createCriterionAsList( "ip", addr ) ).stream()
+        return getWhere( eqList( "ip", addr ) ).stream()
                 .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
                 .size() > 0; // locked if within 60 minutes
 
@@ -191,7 +191,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      */
     public static int getRecentUserLockouts ( final User user ) {
         final Long now = Calendar.getInstance().getTimeInMillis();
-        return getWhere( createCriterionAsList( "user", user ) ).stream()
+        return getWhere( eqList( "user", user ) ).stream()
                 .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 1440 * 60 * 1000 )
                 .collect( Collectors.toList() ).size(); // 1440 minutes
     }
@@ -203,7 +203,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      *            The User to clear.
      */
     public static void clearUser ( final User user ) {
-        getWhere( createCriterionAsList( "user", user ) ).stream().forEach( e -> e.delete() );
+        getWhere( eqList( "user", user ) ).stream().forEach( e -> e.delete() );
     }
 
     /**
@@ -215,7 +215,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      */
     public static boolean isUserLocked ( final User user ) {
         final Long now = Calendar.getInstance().getTimeInMillis();
-        return getWhere( createCriterionAsList( "user", user ) ).stream()
+        return getWhere( eqList( "user", user ) ).stream()
                 .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
                 .size() > 0; // locked if within 60 minutes
     }

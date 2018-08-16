@@ -202,7 +202,7 @@ public class PasswordResetToken extends DomainObject<PasswordResetToken> {
      */
     public static PasswordResetToken getById ( final Long id ) {
         try {
-            return (PasswordResetToken) getWhere( PasswordResetToken.class, createCriterionAsList( ID, id ) ).get( 0 );
+            return (PasswordResetToken) getWhere( PasswordResetToken.class, eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;

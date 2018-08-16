@@ -9,6 +9,17 @@ Then The first ten record should appear on the screen
 Examples:
     |tuser|
     |svang|
+    
+Scenario Outline: Patient Views Prescription (Issue 106)
+Given the required users exist
+When <tuser> has logged in with password and chosen to view the access log
+And The patient goes to the prescriptions page
+And The user goes to the HomePage
+Then The patient sees a PATIENT_PRESCRIPTION_VIEW log
+
+Examples:
+    |tuser  |
+    |patient|
 
 
 Scenario Outline: Choose access log within timeframe

@@ -252,7 +252,7 @@ public class Prescription extends DomainObject<Prescription> {
      * @return The List of records that was found
      */
     public static List<Prescription> getForPatient ( final String patient ) {
-        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patient, Role.ROLE_PATIENT ) ) );
+        return getWhere( eqList( "patient", User.getByNameAndRole( patient, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -276,7 +276,7 @@ public class Prescription extends DomainObject<Prescription> {
      */
     public static Prescription getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final ObjectNotFoundException e ) {
             return null;

@@ -13,6 +13,7 @@ import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.LogEntry;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 
 public class DomainObjectTest {
 
@@ -49,7 +50,7 @@ public class DomainObjectTest {
     @Test
     public void testDelete () {
         final Hospital h = new Hospital();
-        h.setAddress( "2770 Wolf Village Drive, Raleigh" );
+        h.setAddress( "890 Oval Drive, Raleigh" );
         h.setState( State.NC );
         h.setZip( "27607" );
         h.setName( "iTrust Test Hospital 2: Electric Boogaloo" );
@@ -59,6 +60,37 @@ public class DomainObjectTest {
         final Hospital retrieve = Hospital.getByName( "iTrust Test Hospital 2: Electric Boogaloo" );
         assertNull( retrieve );
 
+    }
+
+    @Test
+    public void testCopy () {
+        Hospital h = new Hospital();
+        h.setAddress( "890 Oval Drive, Raleigh" );
+        h.setState( State.NC );
+        h.setZip( "27607" );
+        h.setName( "iTrust Test Hospital 2: Electric Boogaloo" );
+        h.save();
+
+        h = Hospital.getByName( "iTrust Test Hospital 2: Electric Boogaloo" );
+
+        final Hospital h2 = new Hospital();
+
+        h2.copyFrom( h, true );
+
+        assertEquals( h.getAddress(), h2.getAddress() );
+        assertEquals( h.getState(), h2.getState() );
+        assertEquals( h.getZip(), h2.getZip() );
+        assertEquals( h.getName(), h2.getName() );
+        assertEquals( h.getId(), h2.getId() );
+
+        assertEquals( h2.getName(), ( (Hospital) Hospital.getById( Hospital.class, h.getId() ) ).getName() );
+    }
+
+    @Test
+    public void testGetBy () {
+        assertNull( DomainObject.getBy( User.class, "a", "b" ) );
+
+        assertNotNull( DomainObject.getBy( User.class, "username", "hcp" ) );
     }
 
 }

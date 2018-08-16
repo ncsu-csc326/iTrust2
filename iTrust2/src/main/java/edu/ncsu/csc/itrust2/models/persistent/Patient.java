@@ -3,18 +3,24 @@ package edu.ncsu.csc.itrust2.models.persistent;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -57,7 +63,16 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     @SuppressWarnings ( "unchecked" )
     public static List<Patient> getPatients () {
-        return (List<Patient>) getAll( Patient.class );
+        final List<Patient> pats = (List<Patient>) getAll( Patient.class );
+        final List<Patient> rPats = new ArrayList<Patient>();
+        final Set<User> usernames = new HashSet<User>();
+        for ( int i = 0; i < pats.size(); i++ ) {
+            if ( !usernames.contains( pats.get( i ).getSelf() ) ) {
+                usernames.add( pats.get( i ).getSelf() );
+                rPats.add( pats.get( i ) );
+            }
+        }
+        return rPats;
     }
 
     /**
@@ -69,8 +84,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     public static Patient getByName ( final String username ) {
         try {
-            return getWhere( createCriterionAsList( "self", User.getByNameAndRole( username, Role.ROLE_PATIENT ) ) )
-                    .get( 0 );
+            return getWhere( eqList( "self", User.getByNameAndRole( username, Role.ROLE_PATIENT ) ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -185,6 +199,17 @@ public class Patient extends DomainObject<Patient> implements Serializable {
         setGender( Gender.parse( form.getGender() ) );
 
         setId( form.getId() );
+
+        final HashSet<Patient> reps = new HashSet<Patient>();
+        for ( final String pat : form.getRepresentatives() ) {
+            reps.add( Patient.getByName( pat ) );
+        }
+        setRepresentatives( reps );
+        final HashSet<Patient> repd = new HashSet<Patient>();
+        for ( final String pat : form.getRepresented() ) {
+            repd.add( Patient.getByName( pat ) );
+        }
+        setRepresented( repd );
     }
 
     /**
@@ -194,7 +219,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
     @OneToOne
     @JoinColumn ( name = "self_id", columnDefinition = "varchar(100)" )
     @Id
-    private User      self;
+    private User         self;
 
     /**
      * For keeping track of the User who is the mother of this patient.
@@ -202,7 +227,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     @ManyToOne
     @JoinColumn ( name = "mother_id", columnDefinition = "varchar(100)" )
-    private User      mother;
+    private User         mother;
 
     /**
      * For keeping track of the User who is the father of this patient.
@@ -210,106 +235,123 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     @ManyToOne
     @JoinColumn ( name = "father_id", columnDefinition = "varchar(100)" )
-    private User      father;
+    private User         father;
+
+    /**
+     * For keeping track of the patients who are representatives of this
+     * patient. Optional;
+     */
+    @ManyToMany ( fetch = FetchType.EAGER, mappedBy = "representingList" )
+    private Set<Patient> representativeList;
+
+    /**
+     * For keeping track of the patients who are represented by this patient.
+     * Optional;
+     */
+    @ManyToMany ( fetch = FetchType.EAGER )
+    @JoinTable ( name = "PERSONAL_REPRESENTATIVES", joinColumns = { @JoinColumn ( name = "patient_id" ) },
+            inverseJoinColumns = { @JoinColumn ( name = "representative_id" ) } )
+
+    private Set<Patient> representingList;
 
     /**
      * The first name of this patient
      */
     @Length ( max = 20 )
-    private String    firstName;
+    private String       firstName;
 
     /**
      * The preferred name of this patient
      */
     @Length ( max = 20 )
-    private String    preferredName;
+    private String       preferredName;
 
     /**
      * The last name of this patient
      */
     @Length ( max = 30 )
-    private String    lastName;
+    private String       lastName;
 
     /**
      * The email address of this patient
      */
     @Length ( max = 30 )
-    private String    email;
+    private String       email;
 
     /**
      * The address line 1 of this patient
      */
     @Length ( max = 50 )
-    private String    address1;
+    private String       address1;
 
     /**
      * The address line 2 of this patient
      */
     @Length ( max = 50 )
-    private String    address2;
+    private String       address2;
 
     /**
      * The city of residence of this patient
      */
     @Length ( max = 15 )
-    private String    city;
+    private String       city;
 
     /**
      * The state of residence of this patient
      */
     @Enumerated ( EnumType.STRING )
-    private State     state;
+    private State        state;
 
     /**
      * The zip code of this patient
      */
     @Length ( min = 5, max = 10 )
-    private String    zip;
+    private String       zip;
 
     /**
      * The phone number of this patient
      */
     @Length ( min = 12, max = 12 )
-    private String    phone;
+    private String       phone;
 
     /**
      * The birthday of this patient
      */
-    private Calendar  dateOfBirth;
+    private Calendar     dateOfBirth;
 
     /**
      * The date of death of this patient
      */
-    private Calendar  dateOfDeath;
+    private Calendar     dateOfDeath;
 
     /**
      * The cause of death of this patient
      */
-    private String    causeOfDeath;
+    private String       causeOfDeath;
 
     /**
      * The blood type of this patient
      */
     @Enumerated ( EnumType.STRING )
-    private BloodType bloodType;
+    private BloodType    bloodType;
 
     /**
      * The ethnicity of this patient
      */
     @Enumerated ( EnumType.STRING )
-    private Ethnicity ethnicity;
+    private Ethnicity    ethnicity;
 
     /**
      * The gender of this patient
      */
     @Enumerated ( EnumType.STRING )
-    private Gender    gender;
+    private Gender       gender;
 
     /**
      * The id of this patient
      */
     @GeneratedValue ( strategy = GenerationType.AUTO )
-    private Long      id;
+    private Long         id;
 
     /**
      * Set the id of this patient
@@ -726,4 +768,86 @@ public class Patient extends DomainObject<Patient> implements Serializable {
         this.gender = gender;
     }
 
+    /**
+     * Get the representatives for this patient
+     *
+     * @return the representatives for this patient
+     */
+    public Set<Patient> getRepresentatives () {
+        return representativeList;
+    }
+
+    /**
+     * Set the representatives for this patient
+     *
+     * @param representatives
+     *            the representatives to set
+     */
+    public void setRepresentatives ( final Set<Patient> representatives ) {
+        this.representativeList = representatives;
+    }
+
+    /**
+     * Get the patients represented by this patient
+     *
+     * @return the patients represented by this patient
+     */
+    public Set<Patient> getRepresented () {
+        return representingList;
+    }
+
+    /**
+     * Set the patients represented by this patient
+     *
+     * @param represented
+     *            the represented to set
+     */
+    public void setRepresented ( final Set<Patient> represented ) {
+        this.representingList = represented;
+    }
+
+    /**
+     * Add a representative for a patient
+     *
+     * @param rep
+     *            the representative to add
+     */
+    public void addRepresentative ( final Patient rep ) {
+        representativeList.add( rep );
+        rep.representingList.add( this );
+    }
+
+    /**
+     * Remove a representative from a patient
+     *
+     * @param rep
+     *            the representative to remove
+     */
+    public void removeRepresentative ( final Patient rep ) {
+        if ( representativeList.contains( rep ) ) {
+            representativeList.remove( rep );
+            rep.representingList.remove( this );
+        }
+        else {
+            throw new IllegalArgumentException( "Cannot remove a representative that does not exist." );
+        }
+    }
+
+    /**
+     * Returns all prescriptions for this patient.
+     *
+     * @return the prescriptions for this patient.
+     */
+    public List<Prescription> getPrescriptions () {
+        return Prescription.getForPatient( this.self.getUsername() );
+    }
+
+    /**
+     * Returns all diagnoses for this patient.
+     *
+     * @return the diagnoses for this patient.
+     */
+    public List<Diagnosis> getDiagnoses () {
+        return Diagnosis.getForPatient( this.self );
+    }
 }

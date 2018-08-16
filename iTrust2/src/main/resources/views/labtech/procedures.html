@@ -1,0 +1,248 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Lab Procedures</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("proceduresApp", []);
+			app.controller('proceduresCtrl', function($scope, $http) {
+				$scope.procedures = [];				//array to hold all procedures of logged in labtech
+				$scope.viewStatus = false;			//boolean flag for whether user is viewing a status
+				$scope.viewReassign = false;			//boolean flag for whether user is reassigning procedure or not
+				$scope.newcomments = "";				//new comments
+				
+				$scope.loadTable = function() {
+					// get list of LOINC codes from rest api
+					$http.get("/iTrust2/api/v1/labprocedures").then(
+							function(response) {
+								$scope.procedures = response.data; 
+								$scope.message = "Loaded procedures";
+							}, function(rejection) {
+								$scope.procedures = [];
+								$scope.message = "Could not display LOINC Codes";
+								
+							});
+					document.getElementById("commentsID").disabled = true;
+				}
+				
+				$scope.setSelProcVals = function(procedure) {
+					//Makes a form version of the procedure
+					$scope.selectedProcedure = {};
+					$scope.selectedProcedure = angular.copy(procedure);
+					$scope.selectedProcedure.priority = procedure.priority;
+					$scope.selectedProcedure.status = procedure.status;
+					$scope.selectedProcedure.loinc = procedure.loinc.id;
+					$scope.selectedProcedure.patient = procedure.patient.username;
+					$scope.selectedProcedure.visit = procedure.visit.id;
+					$scope.selectedProcedure.labtech = procedure.labtech.username;
+					$scope.labStatusChange = procedure.status;
+				}
+				
+				$scope.trueStatus = function(procedure) {
+					$scope.setSelProcVals(procedure);
+					$scope.viewReassign = false;
+					$scope.viewStatus = true;
+				}
+			
+				$scope.trueReassign = function(procedure) {
+					$scope.setSelProcVals(procedure);
+					$scope.viewStatus = false;
+					$scope.viewReassign = true;
+				}
+				
+				$scope.resetAll = function() {
+					$scope.viewStatus = false;
+					$scope.viewReassign = false;
+					$scope.selectedProcedure = {};
+					$scope.selectedLabtech = {};
+					$scope.errorUpdating = "";
+					$scope.successUpdating = "";
+					$scope.newcomments = "";
+				}
+				
+				//Used for displaying name in search list
+				$scope.displayName = function(lt) {
+					return lt.firstName + " " + lt.lastName + " (" + lt.self.username + ")";
+				}
+				
+				//Returns all Lab Techs
+				$scope.getLabTechs = function() {
+					$http.get("/iTrust2/api/v1/personnel/getbyroles/ROLE_LABTECH").then(
+						function(response) {
+							$scope.labtechs = response.data;
+						}, function(rejection) {
+							$scope.labtechs = [];
+							$scope.message = "Could not retrieve labtechs.";
+							
+						});
+				}
+				
+				// documentation on Angular filters: https://docs.angularjs.org/api/ng/filter/filter
+				$scope.searchFilter = "";
+				$scope.filterSearch = function(patient) {
+					return ($scope.displayName(patient)).toLowerCase().match($scope.searchFilter.toLowerCase());
+				}
+				
+				//Set the selected Lab Tech to the radio button
+				$scope.selectLabtech = function(lt, override) {
+					$scope.selectedLabtech = "";
+					$scope.selectedLabtech = lt.self.username;
+					$scope.selectedProcedure.labtech = lt.self.username;
+				} 
+				
+				//Submit the reassignment
+				$scope.submitReassign = function() {
+					$http.put("/iTrust2/api/v1/labprocedures/" + $scope.selectedProcedure.id, $scope.selectedProcedure).then(
+							function(response) {
+								$scope.loadTable();
+								$scope.errorUpdating = "";
+							}, function(rejection) {
+								$scope.errorUpdating = "Could not update procedure."
+							});
+					$scope.resetAll();
+				}
+				
+				$scope.submitUpdate = function() {
+					if($scope.selectedProcedure.status == "COMPLETED") {
+						$scope.selectedProcedure.comments = $scope.newcomments;
+					}
+					$http.put("/iTrust2/api/v1/labprocedures/" + $scope.selectedProcedure.id, $scope.selectedProcedure).then(
+							function(response) {
+								$scope.loadTable();
+								$scope.errorUpdating = "";
+								$scope.successUpdating = "Successfully updated procedure";
+							}, function(rejection) {
+								$scope.errorUpdating = "Could not update procedure."
+								$scope.successUpdating = "";
+							});
+					$scope.resetAll();
+				}
+				
+				$scope.selectChange = function(change) {
+					$scope.selectedProcedure.status = $scope.labStatusChange;
+					document.getElementById("commentsID").disabled = !(change == "COMPLETED");
+				}
+					
+				//load table upon loading page, then get all labtechs once
+				$scope.loadTable();
+				$scope.getLabTechs();
+			});
+			/*]]>*/
+		</script>
+		
+		<div ng-app="proceduresApp" ng-controller="proceduresCtrl">
+		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
+			<h4 style="color:red" ng-model="message"></h4>
+			
+			<h1>Lab Procedures
+				<div style="display:inline-block; padding-left:800px" ng-show="viewStatus || viewReassign" ng-hide="!viewStatus || !viewReassign">
+					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button> 
+				</div>
+			</h1>
+			
+			
+			<table style="width:100%">
+				<tr>
+					<td style="vertical-align: top">
+						<table class="table">
+							<tr>
+								<th>LOINC Code</th>
+								<th>Common Name</th>
+								<th>Component</th>
+								<th>Property</th>
+								<th>Priority</th>
+								<th>Status</th>
+								<th>Comments</th>
+								<th>Action</th>
+							</tr>
+							<tr name="codeRow" ng-repeat="p in procedures | orderBy:['priority','status']" procId={{p.id}}>
+								<td name="codeCell">{{p.loinc.code}}</td>
+								<td name="comNameCell">{{p.loinc.commonName}}</td>
+								<td name="componentNameCell">{{p.loinc.component}}</td>
+								<td name="propertyCell">{{p.loinc.property}}</td>
+								<td name="priorityCell">{{p.priority}}</td>
+								<td name="statusCell">{{p.status}}</td>
+								<td name="commentsCell">{{p.comments}}</td>
+								<td name="actionCell"> 
+									<input type="button" value="Update" class="btn btn-primary" id="update-{{p.loinc.code}}" 
+										ng-hide="p.status == 'COMPLETED'" ng-click="trueStatus(p)"/>
+									<input type="button" value="Reassign" class="btn btn-danger" id="reassign-{{p.loinc.code}}"
+										ng-hide="p.status == 'COMPLETED'" ng-click="trueReassign(p)"/>  
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td style="width:20%;vertical-align: top">
+						<!-- Update Lab Procedure part -->
+						<div ng-show="viewStatus" ng-hide="!viewStatus">
+							<div style="margin: 0 auto;text-align:center">
+								<h3>Update Lab Procedure</h3>
+							</div>
+							<form class="form-horizontal" role="form" name="editStatusForm" ng-submit="submitUpdate(editStatusForm.$valid)">
+								<div class="form-group" style="text-align:center; margin: 0 auto;" ng-controller="proceduresCtrl">
+									<label>Status:</label>
+										<select id="selectStatus" ng-model="labStatusChange" ng-change="selectChange(labStatusChange)">
+											<option
+											th:each="labstatus : ${T(edu.ncsu.csc.itrust2.models.enums.LabStatus).values()}"
+											th:value="${labstatus}" th:text="${labstatus}" th:id="labstatus + ${labstatus}"></option>
+										</select>
+								</div>
+								<div class="form-group" style="padding-left:30px">
+									<label>Comments</label>
+									<!-- Info on graying out until certain selection taken from here: 
+										https://stackoverflow.com/questions/43961403/grey-out-a-field-until-a-certain-drop-down-option-is-selected -->
+	 								<textarea class="form-control" rows="5" id="commentsID" name="commentsInput" ng-model="newcomments" 
+	 									required ng-minlength="1"></textarea>
+	 						</div>
+								<div class="form-group">								
+									<div style="margin: 0 auto;text-align:center">
+										<button class="btn btn-primary" id="updateStatus" name="submit">Update Status</button> 
+									</div>
+								</div>
+							</form>
+						</div>
+						<div>
+							<!-- Error message if cannot reassign -->
+							<p style="color:red" ng-model="errorUpdating" ng-show="errorUpdating.length > 0" ng-hide="errorUpdating.length == 0" id="errR">
+								{{errorUpdating}}</p>
+							<p style="color:green" ng-model="successUpdating" ng-show="successUpdating.length > 0" ng-hide="errorUpdating.length == 0" id="succUpd">
+								{{successUpdating}}</p>
+						</div>
+						<div ng-show="viewReassign" ng-hide="!viewReassign">
+							<div style="margin: 0 auto;text-align:center">
+								<h3>Reassign Procedure</h3>
+							</div>
+							<form class="form-horizontal" role="form" name="reassignForm" ng-submit="submitReassign(reassignForm.$valid)">
+								<div class="form-group" style="text-align:center; margin: 0 auto;">
+									<label>Lab Tech:</label>
+ 										<h4>Search: <input type="text" name="search" ng-model="searchFilter" id="labTechSearch" /></h4>
+ 										<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+											<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+											<ul style="overflow:auto" class="list-unstyled">
+											<!-- Information on how labels work from here: 
+												https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+												<li ng-repeat="lt in labtechs | filter:searchFilter"><h4><label>
+														<input type="radio" ng-model="$parent.selectedLabtech"
+														name="labtech" value="{{lt.self.username}}" id="{{lt.self.username}}-declare"
+														ng-click='$parent.selectLabtech(lt)' />&nbsp;{{$parent.displayName(lt)}}</label>
+												</h4></li>
+											</ul>
+								</div>
+								<div class="form-group">								
+									<div style="margin: 0 auto;text-align:center">
+										<button class="btn btn-primary" name="submit">Submit Reassign</button> 
+									</div>
+								</div>
+							</form>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		</div>
+	</body>
+</html>

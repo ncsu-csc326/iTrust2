@@ -26,7 +26,15 @@ public class HibernateUtil {
     private static SessionFactory buildSessionFactory () {
         try {
             // Create the SessionFactory from hibernate.cfg.xml
-            return new Configuration().configure().buildSessionFactory();
+            final Configuration c = new Configuration();
+            c.configure();
+
+            c.setProperty( "hibernate.connection.url", DBUtil.getUrl() );
+            c.setProperty( "hibernate.connection.username", DBUtil.getUsername() );
+            c.setProperty( "hibernate.connection.password", DBUtil.getPassword() );
+
+            return c.buildSessionFactory();
+            // return new Configuration().configure().buildSessionFactory();
         }
         catch ( final HibernateException ex ) {
             // Make sure you log the exception, as it might be swallowed
@@ -60,7 +68,7 @@ public class HibernateUtil {
      */
     public static void shutdown () {
         // Close caches and connection pools
-        if ( sessionFactory != null ) {
+        if ( null != sessionFactory ) {
             sessionFactory.close();
         }
     }

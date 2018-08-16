@@ -8,9 +8,8 @@ import java.util.Locale;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.support.ui.Select;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
@@ -22,13 +21,14 @@ import edu.ncsu.csc.itrust2.models.persistent.AppointmentRequest;
 import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 
-public class AppointmentRequestStepDefs {
+public class AppointmentRequestStepDefs extends CucumberTest {
 
-    private final WebDriver driver  = new HtmlUnitDriver( true );
-    private final String    baseUrl = "http://localhost:8080/iTrust2";
+    private final String baseUrl = "http://localhost:8080/iTrust2";
 
     @Given ( "There is a sample HCP and sample Patient in the database" )
     public void startingUsers () {
+        attemptLogout();
+
         final User hcp = new User( "hcp", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.", Role.ROLE_HCP,
                 1 );
         hcp.save();
@@ -58,6 +58,10 @@ public class AppointmentRequestStepDefs {
 
     @When ( "I fill in values in the Appointment Request Fields" )
     public void fillFields () {
+        waitForAngular();
+        final Select hcp = new Select( driver.findElement( By.id( "hcp" ) ) );
+        hcp.selectByVisibleText( "hcp" );
+
         final WebElement date = driver.findElement( By.id( "date" ) );
         date.clear();
         final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
@@ -72,32 +76,78 @@ public class AppointmentRequestStepDefs {
         final WebElement comments = driver.findElement( By.id( "comments" ) );
         comments.clear();
         comments.sendKeys( "Test appointment please ignore" );
+        driver.findElement( By.name( "submit" ) ).click();
+
+    }
+
+    /**
+     * Fields filled with bad values
+     */
+    @When ( "I improperly fill in values in the Appointment Request Fields" )
+    public void fillFieldsWrong () {
+        waitForAngular();
+        final WebElement date = driver.findElement( By.id( "date" ) );
+        date.clear();
+        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
+        final Long value = Calendar.getInstance().getTimeInMillis()
+                - 1000 * 60 * 60 * 24 * 14; /* Two weeks */
+        final Calendar future = Calendar.getInstance();
+        future.setTimeInMillis( value );
+        date.sendKeys( sdf.format( future.getTime() ) );
+        final WebElement time = driver.findElement( By.id( "time" ) );
+        time.clear();
+        time.sendKeys( "11:59 PM" );
+        final WebElement comments = driver.findElement( By.id( "comments" ) );
+        comments.clear();
+        comments.sendKeys( "Test appointment please ignore" );
         driver.findElement( By.className( "btn" ) ).click();
 
     }
 
+    /**
+     * Testing the bug where the message "'s on at" is displayed.
+     */
+    @Then ( "The page does not say quote s on at" )
+    public void noSOnAt () {
+        assertTrue( !driver.getPageSource().contains( "'s on at" ) );
+    }
+
     @Then ( "The appointment is requested successfully" )
     public void requestedSuccessfully () {
+        waitForAngular();
         assertTrue( driver.getPageSource().contains( "Your appointment has been requested successfully" ) );
+        waitForAngular();
+    }
+
+    /**
+     * An error message for a date gone by
+     */
+    @Then ( "An error message appears telling me what is wrong" )
+    public void requestedUnsucessfully () {
+        assertTrue( driver.getPageSource().contains( "Cannot request an appointment before the current time" ) );
     }
 
     @Then ( "The appointment can be found in the list" )
     public void findAppointment () {
-        driver.findElement( By.linkText( "iTrust2" ) ).click();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('viewrequests-patient').click();" );
+        waitForAngular();
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('requestappointment').click();" );
 
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
+        final SimpleDateFormat sdf = new SimpleDateFormat( "yyyy", Locale.ENGLISH );
         final Long value = Calendar.getInstance().getTimeInMillis()
                 + 1000 * 60 * 60 * 24 * 14; /* Two weeks */
         final Calendar future = Calendar.getInstance();
         future.setTimeInMillis( value );
         final String dateString = sdf.format( future.getTime() );
+        waitForAngular();
+
         assertTrue( driver.getPageSource().contains( dateString ) );
 
     }
 
     @Given ( "An appointment request exists" )
     public void createAppointmentRequest () {
+        attemptLogout();
+
         DomainObject.deleteAll( AppointmentRequest.class );
 
         final AppointmentRequest ar = new AppointmentRequest();
@@ -133,8 +183,13 @@ public class AppointmentRequestStepDefs {
 
     @When ( "I approve the Appointment Request" )
     public void approveRequest () {
+        waitForAngular();
         driver.findElement( By.name( "appointment" ) ).click();
-        driver.findElement( By.className( "btn" ) ).click();
+
+        final Select role = new Select( driver.findElement( By.id( "status" ) ) );
+        role.selectByVisibleText( "APPROVED" );
+
+        driver.findElement( By.name( "submit" ) ).click();
     }
 
     @Then ( "The request is successfully updated" )
@@ -144,9 +199,6 @@ public class AppointmentRequestStepDefs {
 
     @Then ( "The appointment is in the list of upcoming events" )
     public void upcomingEvents () {
-        driver.findElement( By.linkText( "iTrust2" ) ).click();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('upcomingrequests').click();" );
-
         final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
         final Long value = Calendar.getInstance().getTimeInMillis()
                 + 1000 * 60 * 60 * 24 * 14; /* Two weeks */
@@ -155,5 +207,13 @@ public class AppointmentRequestStepDefs {
         final String dateString = sdf.format( future.getTime() );
         assertTrue( driver.getPageSource().contains( dateString ) );
         assertTrue( driver.getPageSource().contains( "patient" ) );
+    }
+
+    /**
+     * Navigate the user to the view appointment requests page
+     */
+    @When ( "I navigate to the View Appointment Requests page" )
+    public void requestViewAppointmentPage () {
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('requestappointment').click();" );
     }
 }

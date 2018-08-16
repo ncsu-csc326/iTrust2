@@ -51,4 +51,42 @@ public class HCPController {
         return "/hcp/editPrescriptions";
     }
 
+    /**
+     * Returns the page allowing HCPs to view and add reps for a patient
+     *
+     * @return The page to display
+     */
+    @GetMapping ( "/hcp/personalRepresentatives" )
+    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    public String personalReps () {
+        return "/hcp/personalRepresentatives";
+    }
+    
+    /**
+     * Returns the ER for the given model
+     * 
+     * @param model
+     *            model to check
+     * @return role
+     */
+    @RequestMapping ( value = "hcp/records" )
+    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    public String emergencyRecords ( final Model model ) {
+        return "personnel/records";
+    }
+    
+    /**
+     * Method responsible for HCP's Accept/Reject requested appointment
+     * functionality. This prepares the page.
+     *
+     * @param model
+     *            Data for the front end
+     * @return The page to display to the user
+     */
+    @GetMapping ( "/hcp/appointmentRequests" )
+    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    public String requestAppointmentForm ( final Model model ) {
+        return "hcp/appointmentRequests";
+    }
+
 }

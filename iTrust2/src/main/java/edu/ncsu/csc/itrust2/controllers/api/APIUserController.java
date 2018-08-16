@@ -4,10 +4,12 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +42,12 @@ public class APIUserController extends APIController {
     /** constant for hcp role */
     private static final String ROLE_HCP     = "ROLE_HCP";
 
+    /** constant for ER role */
+    private static final String ROLE_ER      = "ROLE_ER";
+
+    /** constant for lab role */
+    private static final String ROLE_LABTECH = "ROLE_LABTECH";
+
     /**
      * Retrieves and returns a list of all Users in the system, regardless of
      * their classification (including all Patients, all Personnel, and all
@@ -58,7 +66,7 @@ public class APIUserController extends APIController {
      *
      * @param id
      *            The username of the user to be retrieved
-     * @return reponse
+     * @return response
      */
     @GetMapping ( BASE_PATH + "/users/{id}" )
     public ResponseEntity getUser ( @PathVariable ( "id" ) final String id ) {
@@ -85,7 +93,7 @@ public class APIUserController extends APIController {
         }
         try {
             user.save();
-            LoggerUtil.log( TransactionType.CREATE_USER, LoggerUtil.currentUser() );
+            LoggerUtil.log( TransactionType.CREATE_USER, LoggerUtil.currentUser(), user.getUsername(), null );
             return new ResponseEntity( user, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -132,6 +140,38 @@ public class APIUserController extends APIController {
     }
 
     /**
+     * Deletes the user with the id matching the given id. Requires admin
+     * permissions.
+     *
+     * @param id
+     *            the id of the user to delete
+     * @return the id of the deleted user
+     */
+    @PreAuthorize ( "hasRole('ROLE_ADMIN')" )
+    @DeleteMapping ( BASE_PATH + "/users/{id}" )
+    public ResponseEntity deleteUser ( @PathVariable final String id ) {
+        final User user = User.getByName( id );
+        try {
+            if ( null == user ) {
+                return new ResponseEntity( errorResponse( "No user found for id " + id ), HttpStatus.NOT_FOUND );
+            }
+            user.delete();
+            LoggerUtil.log( TransactionType.DELETE_USER, LoggerUtil.currentUser() );
+            return new ResponseEntity( id, HttpStatus.OK );
+        }
+        catch ( final Exception e ) {
+            try {
+                user.delete();
+                return new ResponseEntity( id, HttpStatus.OK );
+            }
+            catch ( final Exception f ) {
+                return new ResponseEntity( errorResponse( "Could not delete " + id + " because of " + f.getMessage() ),
+                        HttpStatus.BAD_REQUEST );
+            }
+        }
+    }
+
+    /**
      * Gets the current logged in role.
      *
      * @return role of the currently logged in user.
@@ -146,6 +186,13 @@ public class APIUserController extends APIController {
         }
         else if ( hasRole( ROLE_ADMIN ) ) {
             return new ResponseEntity( successResponse( ROLE_ADMIN ), HttpStatus.OK );
+        }
+        else if ( hasRole( ROLE_ER ) ) {
+            return new ResponseEntity( successResponse( ROLE_ER ), HttpStatus.OK );
+
+        }
+        else if ( hasRole( ROLE_LABTECH ) ) {
+            return new ResponseEntity( successResponse( ROLE_LABTECH ), HttpStatus.OK );
         }
         else {
             return new ResponseEntity( errorResponse( "UNAUTHORIZED" ), HttpStatus.UNAUTHORIZED );

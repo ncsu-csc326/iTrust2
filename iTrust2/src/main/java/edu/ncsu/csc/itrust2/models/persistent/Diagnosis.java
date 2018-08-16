@@ -134,7 +134,7 @@ public class Diagnosis extends DomainObject<Diagnosis> {
      */
     public static Diagnosis getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -149,7 +149,7 @@ public class Diagnosis extends DomainObject<Diagnosis> {
      * @return The list of Diagnoses
      */
     public static List<Diagnosis> getByVisit ( final Long id ) {
-        return getWhere( createCriterionAsList( "visit", OfficeVisit.getById( id ) ) );
+        return getWhere( eqList( "visit", OfficeVisit.getById( id ) ) );
     }
 
     /**

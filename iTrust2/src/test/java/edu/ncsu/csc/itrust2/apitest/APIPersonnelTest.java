@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -67,6 +68,7 @@ public class APIPersonnelTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "hcp", roles = { "HCP" } )
     public void testPersonnelAPI () throws Exception {
         mvc.perform( delete( "/api/v1/personnel" ) );
 
@@ -117,6 +119,22 @@ public class APIPersonnelTest {
 
         mvc.perform( delete( "/api/v1/personnel" ) );
 
+    }
+
+    /**
+     * Tests getting personnel by their roles.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testGetByRole () throws Exception {
+        // Valid get requests
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_LABTECH" ) ).andExpect( status().isOk() );
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_ER" ) ).andExpect( status().isOk() );
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_HCP" ) ).andExpect( status().isOk() );
+
+        // Invalid get request
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_SCHMOO" ) ).andExpect( status().is4xxClientError() );
     }
 
 }

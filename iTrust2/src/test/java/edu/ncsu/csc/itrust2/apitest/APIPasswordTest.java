@@ -131,7 +131,8 @@ public class APIPasswordTest {
                 .content( TestUtils.asJsonString( personnel ) ) );
 
         assertTrue( pe.matches( "123456", user.getPassword() ) );
-        mvc.perform( post( "/api/v1/requestReset" ).contentType( MediaType.APPLICATION_JSON ).content( "patientPW" ) );
+        mvc.perform( post( "/api/v1/requestPasswordReset" ).contentType( MediaType.APPLICATION_JSON )
+                .content( "patientPW" ) );
         user = User.getByName( "patientPW" ); // reload so changes are visible
 
         final Personnel p = Personnel.getByName( user );
@@ -160,8 +161,8 @@ public class APIPasswordTest {
         mvc.perform( post( "/api/v1/changePassword" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isBadRequest() );
 
-        mvc.perform( post( "/api/v1/requestReset" ).contentType( MediaType.APPLICATION_JSON ).content( "patientPW" ) )
-                .andExpect( status().is4xxClientError() );
+        mvc.perform( post( "/api/v1/requestPasswordReset" ).contentType( MediaType.APPLICATION_JSON )
+                .content( "patientPW" ) ).andExpect( status().is4xxClientError() );
 
     }
 

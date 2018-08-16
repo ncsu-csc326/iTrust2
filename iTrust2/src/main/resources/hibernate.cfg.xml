@@ -15,9 +15,9 @@
 
 		<!-- JDBC connection pool (use the built-in) -->
 		<property name="hibernate.connection.pool_size">100</property>
-
+		
 		<!-- Echo all executed SQL to stdout -->
-		<property name="show_sql">true</property>
+		<property name="show_sql">false</property>
 
 		<!-- List of persistent classes -->
 		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LogEntry" />
@@ -36,6 +36,8 @@
 		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LoginAttempt"/>
 		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LoginLockout"/>
 		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LoginBan"/>
+		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LabProcedure"/>
+		<mapping class="edu.ncsu.csc.itrust2.models.persistent.LOINC"/>
 
 	</session-factory>
 </hibernate-configuration>

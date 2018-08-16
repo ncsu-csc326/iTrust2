@@ -1,7 +1,6 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.text.ParseException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -43,7 +42,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      */
     public static BasicHealthMetrics getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -60,12 +59,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
     @SuppressWarnings ( "unchecked" )
     public static List<BasicHealthMetrics> getBasicHealthMetrics () {
         final List<BasicHealthMetrics> requests = (List<BasicHealthMetrics>) getAll( BasicHealthMetrics.class );
-        requests.sort( new Comparator<BasicHealthMetrics>() {
-            @Override
-            public int compare ( final BasicHealthMetrics o1, final BasicHealthMetrics o2 ) {
-                return o1.getId().compareTo( o2.getId() );
-            }
-        } );
+        requests.sort( ( x1, x2 ) -> x1.getId().compareTo( x2.getId() ) );
         return requests;
     }
 
@@ -96,7 +90,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * @return All of their BasicHealthMetrics
      */
     public static List<BasicHealthMetrics> getBasicHealthMetricsForPatient ( final String patientName ) {
-        return getWhere( createCriterionAsList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        return getWhere( eqList( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
     }
 
     /**
@@ -107,7 +101,7 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      * @return All BasicHealthMetrics involving this HCP
      */
     public static List<BasicHealthMetrics> getBasicHealthMetricsForHCP ( final String hcpName ) {
-        return getWhere( createCriterionAsList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        return getWhere( eqList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
     }
 
     /**
@@ -125,8 +119,8 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
             final String patientName ) {
 
         final Vector<Criterion> criteria = new Vector<Criterion>();
-        criteria.add( createCriterion( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
-        criteria.add( createCriterion( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
+        criteria.add( eq( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        criteria.add( eq( "patient", User.getByNameAndRole( patientName, Role.ROLE_PATIENT ) ) );
         return getWhere( criteria );
     }
 

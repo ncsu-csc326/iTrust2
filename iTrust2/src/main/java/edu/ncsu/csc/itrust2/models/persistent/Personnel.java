@@ -51,7 +51,7 @@ public class Personnel extends DomainObject<Personnel> {
      */
     public static Personnel getByName ( final User self ) {
         try {
-            return getWhere( createCriterionAsList( "self", self ) ).get( 0 );
+            return getWhere( eqList( "self", self ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;
@@ -99,7 +99,7 @@ public class Personnel extends DomainObject<Personnel> {
     /**
      * Whether or not the personnel is enabled
      */
-    private Integer enabled;
+    private boolean enabled;
 
     /**
      * The first name of the personnel
@@ -178,7 +178,8 @@ public class Personnel extends DomainObject<Personnel> {
      */
     public Personnel ( final PersonnelForm form ) {
         setSelf( User.getByName( form.getSelf() ) );
-        setEnabled( form.getEnabled() != null ? 1 : 0 );
+        setEnabled( form.getEnabled() );
+
         setFirstName( form.getFirstName() );
         setLastName( form.getLastName() );
         setAddress1( form.getAddress1() );
@@ -248,7 +249,7 @@ public class Personnel extends DomainObject<Personnel> {
      *
      * @return whether or not this personnel is enabled
      */
-    public Integer getEnabled () {
+    public boolean getEnabled () {
         return enabled;
     }
 
@@ -258,12 +259,12 @@ public class Personnel extends DomainObject<Personnel> {
      * @param enabled
      *            whether or not this personnel is enabled
      */
-    public void setEnabled ( final Integer enabled ) {
+    public void setEnabled ( final boolean enabled ) {
         this.enabled = enabled;
     }
 
     /**
-     * Get the first name of this personnel
+     * ======= >>>>>>> master Get the first name of this personnel
      *
      * @return the first name of this personnel
      */

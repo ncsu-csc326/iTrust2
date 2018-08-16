@@ -49,7 +49,6 @@ public class ICDCode extends DomainObject<Diagnosis> {
 
     }
 
-
     /**
      * Construct from a form
      *
@@ -174,7 +173,7 @@ public class ICDCode extends DomainObject<Diagnosis> {
      */
     public static ICDCode getById ( final Long id ) {
         try {
-            return getWhere( createCriterionAsList( ID, id ) ).get( 0 );
+            return getWhere( eqList( ID, id ) ).get( 0 );
         }
         catch ( final Exception e ) {
             return null;

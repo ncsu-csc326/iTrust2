@@ -1,5 +1,6 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
@@ -15,14 +16,8 @@ import javax.mail.Store;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import cucumber.api.java.After;
-import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -30,34 +25,17 @@ import edu.ncsu.csc.itrust2.models.persistent.PasswordResetToken;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.Personnel;
 import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.HibernateDataGenerator;
 
-public class PasswordChangeStepDefs {
+public class PasswordChangeStepDefs extends CucumberTest {
 
     static {
         java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
     }
 
-    private WebDriver          driver;
     private final String       baseUrl = "http://localhost:8080/iTrust2";
 
     // Token for testing
     private PasswordResetToken token   = null;
-    WebDriverWait              wait;
-
-    @Before
-    public void setup () {
-
-        driver = new HtmlUnitDriver( true );
-        wait = new WebDriverWait( driver, 5 );
-
-        HibernateDataGenerator.generateUsers();
-    }
-
-    @After
-    public void tearDown () {
-        driver.close();
-    }
 
     private void setTextField ( final By byval, final Object value ) {
         final WebElement elem = driver.findElement( byval );
@@ -67,24 +45,28 @@ public class PasswordChangeStepDefs {
 
     @Given ( "I can log in to iTrust as (.+) with password (.+)" )
     public void login ( final String username, final String password ) {
+        attemptLogout();
+
         driver.get( baseUrl );
         setTextField( By.name( "username" ), username );
         setTextField( By.name( "password" ), password );
         final WebElement submit = driver.findElement( By.className( "btn" ) );
         submit.click();
 
-        wait.until( ExpectedConditions.not( ExpectedConditions.titleIs( "iTrust2 :: Login" ) ) );
+        waitForAngular();
     }
 
     @When ( "I navigate to the change password page" )
     public void navigateChange () {
+        waitForAngular();
         ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('changePassword').click();" );
+        waitForAngular();
     }
 
     @When ( "I fill out the form with current password (.+) and new password (.+)" )
     public void fillChangeForm ( final String password, final String newPassword ) {
         // Wait until page loads
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "currentPW" ) ) );
+        waitForAngular();
 
         setTextField( By.name( "currentPW" ), password );
         setTextField( By.name( "newPW" ), newPassword );
@@ -97,7 +79,7 @@ public class PasswordChangeStepDefs {
     @When ( "I fill out the form with current password (.+), new password (.+), and re-entry (.+)" )
     public void fillChangeForm ( final String currentPassword, final String newPassword, final String newPassword2 ) {
         // Wait until page loads
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "currentPW" ) ) );
+        waitForAngular();
 
         setTextField( By.name( "currentPW" ), currentPassword );
         setTextField( By.name( "newPW" ), newPassword );
@@ -109,22 +91,29 @@ public class PasswordChangeStepDefs {
 
     @Then ( "My password is updated sucessfully" )
     public void verifyUpdate () {
+        waitForAngular();
+
         try {
-            Thread.sleep( 5000 );
-            wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "message" ),
-                    "Password changed successfully" ) );
+            assertTrue(
+                    driver.findElement( By.name( "message" ) ).getText().contains( "Password changed successfully" ) );
+
         }
         catch ( final Exception e ) {
             fail( driver.findElement( By.name( "message" ) ).getText() + "\n" + token.getId() + "\n"
                     + token.getTempPasswordPlaintext() );
         }
-        // driver.findElement( By.id( "logout" ) ).click();
+
+        // set password back when done for repeat testing
+        fillChangeForm( "654321", "123456", "123456" );
+
     }
 
     @Then ( "My password is not updated because (.*)" )
     public void verifyNoUpdate ( final String message ) {
+        waitForAngular();
+
         try {
-            wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "message" ), message ) );
+            assertTrue( driver.findElement( By.name( "message" ) ).getText().contains( message ) );
         }
         catch ( final Exception e ) {
             fail( driver.findElement( By.name( "message" ) ).getText() + "\n"
@@ -134,6 +123,8 @@ public class PasswordChangeStepDefs {
 
     @Given ( "The user (.+) exists with email (.+)" )
     public void userExistsWithEmail ( final String username, final String email ) throws InterruptedException {
+        attemptLogout();
+        waitForAngular();
 
         final User user = User.getByName( username );
         switch ( user.getRole() ) {
@@ -166,7 +157,7 @@ public class PasswordChangeStepDefs {
                 dbPersonnel.setCity( "city" );
                 dbPersonnel.setZip( "12345" );
                 dbPersonnel.setPhone( "123-456-7890" );
-                dbPersonnel.setEnabled( 1 );
+                dbPersonnel.setEnabled( true );
                 dbPersonnel.save();
                 break;
         }
@@ -176,13 +167,15 @@ public class PasswordChangeStepDefs {
     @When ( "I navigate to the Forgot Password page" )
     public void navigateForgot () {
         driver.get( baseUrl );
+        waitForAngular();
         ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('passwordResetRequest').click();" );
+        waitForAngular();
     }
 
     @When ( "I enter the temporary password wrong, new password (.+) and reentry (.+)" )
     public void wrongTemp ( final String newPassword, final String newPassword2 ) {
         // Wait until page loads
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "tempPW" ) ) );
+        waitForAngular();
 
         setTextField( By.name( "tempPW" ), "this is wrong" );
         setTextField( By.name( "newPW" ), newPassword );
@@ -194,7 +187,7 @@ public class PasswordChangeStepDefs {
 
     @When ( "I fill out the request for with the username (.+)" )
     public void fillResetRequest ( final String username ) throws InterruptedException {
-        Thread.sleep( 100 );
+        waitForAngular();
         final WebElement un = driver.findElement( By.name( "username" ) );
         un.clear();
         un.sendKeys( username );
@@ -204,17 +197,20 @@ public class PasswordChangeStepDefs {
 
     @When ( "I receive an email with a link and temporary password" )
     public void getEmail () throws InterruptedException {
+        waitForAngular();
+
         // wait for the email to be sent
         try {
-            new WebDriverWait( driver, 30 ).until( ExpectedConditions.textToBePresentInElementLocated(
-                    By.name( "message" ), "Password reset request successfully sent" ) );
+            assertTrue( driver.findElement( By.name( "message" ) ).getText()
+                    .contains( "Password reset request successfully sent" ) );
+
         }
         catch ( final Exception e ) {
             fail( e.getMessage() + "\n" + driver.findElement( By.name( "message" ) ).getText() );
         }
 
         // wait for the email to be delivered
-        Thread.sleep( 5 * 1000 );
+        waitForAngular();
         token = getTokenFromEmail();
         if ( token == null ) {
             fail( "Failed to receive email" );
@@ -223,6 +219,7 @@ public class PasswordChangeStepDefs {
 
     @When ( "I follow the link to the password reset page" )
     public void followLink () {
+        waitForAngular();
         // NOTE: can host be localhost always?
         // Token should not be null at this point
         final String link = "http://localhost:8080/iTrust2/resetPassword?tkid=" + token.getId();
@@ -232,7 +229,7 @@ public class PasswordChangeStepDefs {
     @When ( "I enter the temporary password and new password (.+)" )
     public void fillResetForm ( final String newPassword ) {
         // Wait until page loads
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "tempPW" ) ) );
+        waitForAngular();
 
         setTextField( By.name( "tempPW" ), token.getTempPasswordPlaintext() );
         setTextField( By.name( "newPW" ), newPassword );
@@ -244,6 +241,9 @@ public class PasswordChangeStepDefs {
 
     @Given ( "The user (.+) does not exist in the system" )
     public void noUser ( final String username ) {
+        attemptLogout();
+        waitForAngular();
+
         final User user = User.getByName( username );
         if ( null != user ) {
             try {
@@ -257,9 +257,12 @@ public class PasswordChangeStepDefs {
 
     @Then ( "I see an error message on the password page" )
     public void resetError () {
+        waitForAngular();
+
         try {
-            wait.until( ExpectedConditions.textToBePresentInElementLocated( By.name( "message" ),
-                    "Password reset request could not be sent" ) );
+            assertTrue( driver.findElement( By.name( "message" ) ).getText()
+                    .contains( "Password reset request could not be sent" ) );
+
         }
         catch ( final Exception e ) {
             fail( driver.findElement( By.name( "message" ) ).getText() );
@@ -269,7 +272,7 @@ public class PasswordChangeStepDefs {
     @When ( "I enter the temporary password, new password (.+) and reentry (.+)" )
     public void fillResetForm ( final String newPassword, final String newPassword2 ) {
         // Wait until page loads
-        wait.until( ExpectedConditions.visibilityOfElementLocated( By.name( "tempPW" ) ) );
+        waitForAngular();
 
         setTextField( By.name( "tempPW" ), token.getTempPasswordPlaintext() );
         setTextField( By.name( "newPW" ), newPassword );

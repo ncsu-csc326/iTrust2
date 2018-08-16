@@ -1,0 +1,194 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Appointment Requests</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+			var app = angular.module("viewAppointmentRequestHCPApp", []);
+			app
+					.controller(
+							'viewAppointmentRequestHCPCtrl',
+							function($scope, $http) {
+								function twoDigit(num) {
+									if (num < 10) {
+										return "0" + num;
+									}
+									return num;
+								}
+
+								$scope.getTime = function getTime(date) {
+									var hour = date.hourOfDay;
+									var suffix;
+									if (hour > 12) {
+										hour = hour - 12;
+										suffix = "PM";
+									} else {
+										suffix = "AM";
+									}
+									return twoDigit(hour) + ":"
+											+ twoDigit(date.minute) + " "
+											+ suffix;
+								}
+
+								$scope.getDate = function getDate(date) {
+									/* The months start at 0... only the months.  So we have to add 1 to get the correct input.*/
+									month = date.month + 1;
+									return twoDigit(month) + "/"
+											+ twoDigit(date.dayOfMonth) + "/"
+											+ date.year;
+								}
+
+								$scope.selectedAppointment = {};
+								$scope.appointments = [];
+								$scope.hcp = /*[[${#httpServletRequest.remoteUser}]]*/null;
+								$scope.loadAppointments = function() {
+									$http
+											.get(
+													"/iTrust2/api/v1/appointmentrequestForHCP")
+											.then(
+													function(response) {
+														$scope.appointments = response.data;
+														if ($scope.appointments.length == 0) {
+															$scope.errorMsg = "No appointment requests found."
+														}
+													});
+								}
+
+								$http
+										.get(
+												"/iTrust2/api/v1/appointmentstatus")
+										.then(
+												function(response) {
+													$scope.statuses = response.data;
+													for (var i = 0; i < $scope.statuses.length; i++) {
+														$scope.statuses[i] = $scope.statuses[i + 1];
+													}
+													$scope.statuses[2] = "";
+												});
+
+								$scope.incomingAppointments = [];
+								$scope.loadIncomingAppointments = function() {
+									$http
+											.get(
+													"/iTrust2/api/v1/viewAppointments")
+											.then(
+													function(response) {
+														$scope.incomingAppointments = response.data;
+														if ($scope.incomingAppointments.length == 0) {
+															$scope.errorMsg1 = "No appointment found."
+														} else {
+															$scope.errorMsg1 = ""
+														}
+													});
+								}
+
+								$scope.appointmentByID = {};
+								$scope.updateAppointment = function() {
+									$scope.errorMsg = "";
+									if ($scope.selectedAppointment.status == null) {
+										$scope.errorMsg = "Could not update appointment as no status is selected\n";
+									} else {
+										$http
+												.get(
+														"/iTrust2/api/v1/appointmentrequests/"
+																+ $scope.selectedAppointment.id)
+												.then(
+														function(response) {
+															$scope.appointmentByID = response.data;
+
+															$scope.selectedAppointment.patient = $scope.appointmentByID.patient.username;
+															$scope.selectedAppointment.hcp = $scope.hcp;
+															$scope.selectedAppointment.date = $scope
+																	.getDate($scope.appointmentByID.date);
+															$scope.selectedAppointment.time = $scope
+																	.getTime($scope.appointmentByID.date);
+															$scope.selectedAppointment.type = $scope.appointmentByID.type;
+															$scope.selectedAppointment.comments = $scope.appointmentByID.comments;
+															$scope.selectedAppointment.id = $scope.appointmentByID.id;
+
+															$http
+																	.put(
+																			"/iTrust2/api/v1/appointmentrequests/"
+																					+ $scope.selectedAppointment.id,
+																			$scope.selectedAppointment)
+																	.then(
+																			function(
+																					response) {
+																				$scope.message = "Appointment request was successfully updated"
+																				$scope
+																						.loadAppointments();
+																				$scope.selectedAppointment = {};
+																				$scope
+																						.loadIncomingAppointments();
+																			},
+																			function(
+																					rejection) {
+																				$scope.errorMsg = "Could not update appointment";
+																			});
+														},
+														function(rejection) {
+															scope.errorMsg = "none";
+														});
+									}
+								}
+
+								$scope.loadAppointments();
+								$scope.loadIncomingAppointments();
+
+							});
+			/*]]>*/
+		</script>
+
+		<div ng-app="viewAppointmentRequestHCPApp"
+			ng-controller="viewAppointmentRequestHCPCtrl">
+			<table style="width: 100%">
+				<tr>
+					<td style="vertical-align: top">
+						<h3>Upcoming Medical Appointment</h3>
+						<ul style="list-style: none;">
+							<li ng-repeat="appt in incomingAppointments"><label>
+									Type: {{appt.type}} </br> Date: {{getDate(appt.date)}} </br> Time:
+									{{getTime(appt.date)}} </br> Patient: {{appt.patient.username}} </br>
+							</label></li>
+						</ul>
+						<div name="errorMsg1" class="text-danger">{{errorMsg1}}</div>
+					</td>
+
+					<td style="width: 40%; vertical-align: top">
+						<h3>Update Medical Appointment Requests</h3>
+						<div class="col-xs-6 radio-box">
+							<div class="form-check">
+								<ul style="list-style: none;">
+									<li ng-repeat="appt in appointments"><label> <input
+											type="radio" ng-model="selectedAppointment.id"
+											name="appointment" value="{{appt.id}}" required="true" />
+											Type: {{appt.type}} </br> Date: {{getDate(appt.date)}} </br> Time:
+											{{getTime(appt.date)}} </br> Patient: {{appt.patient.username}}
+									</label></li>
+								</ul>
+							</div>
+
+							<select ng-model="selectedAppointment.status" name="status"
+								ng-if="appointments.length > 0" required="true" id="status">
+								<option ng-repeat="status in statuses">{{status}}</option>
+							</select>
+
+							<button class="btn btn-primary" ng-if="appointments.length > 0"
+								ng-click="updateAppointment()" name="submit">Submit</button>
+
+							<div name="success" class="text-success">{{message}}</div>
+							<div name="errorMsg" class="text-danger">{{errorMsg}}</div>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

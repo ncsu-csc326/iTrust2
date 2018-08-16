@@ -1,5 +1,7 @@
 package edu.ncsu.csc.itrust2.forms.personnel;
 
+import javax.validation.constraints.Pattern;
+
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -31,85 +33,85 @@ public class PersonnelForm {
     /**
      * Username of the iTrust2 personnel to make a Personnel object for
      */
-    private String self;
+    private String  self;
 
     /**
-     * Whether the Personnel is enabled or not
+     * <<<<<<< HEAD Whether the Personnel is enabled or not
      */
-    private String enabled;
+    private boolean enabled;
 
     /**
      * First name of the Personnel
      */
     @NotEmpty
     @Length ( max = 20 )
-    private String firstName;
+    private String  firstName;
 
     /**
      * Last name of the Personnel
      */
     @NotEmpty
     @Length ( max = 30 )
-    private String lastName;
+    private String  lastName;
 
     /**
      * Address1 of the Personnel
      */
     @NotEmpty
     @Length ( max = 50 )
-    private String address1;
+    private String  address1;
 
     /**
      * Address2 of the Personnel
      */
     @Length ( max = 50 )
-    private String address2;
+    private String  address2;
 
     /**
      * City of the Personnel
      */
     @NotEmpty
     @Length ( max = 15 )
-    private String city;
+    private String  city;
 
     /**
      * State of the Personnel
      */
     @NotEmpty
     @Length ( min = 2, max = 2 )
-    private String state;
+    private String  state;
 
     /**
      * Zip of the Personnel
      */
     @NotEmpty
     @Length ( min = 5, max = 10 )
-    private String zip;
+    private String  zip;
 
     /**
      * Phone of the Personnel
      */
     @NotEmpty
-    @Length ( min = 12, max = 12 )
-    private String phone;
+    @Pattern ( regexp = "(^[0-9]{3}-[0-9]{3}-[0-9]{4}$)", message = "Phone number must be formatted as xxx-xxx-xxxx" )
+    private String  phone;
 
     /**
      * Specialty of the Personnel
      */
     @Length ( max = 30 )
-    private String specialty;
+    private String  specialty;
 
     /**
      * Email of the Personnel
      */
     @NotEmpty
     @Length ( max = 30 )
-    private String email;
+    private String  email;
 
     /**
      * ID of the Personnel
      */
-    private String id;
+    private String  id;
 
     /**
      * Creates a PersonnelForm object. For initializing a blank form
@@ -131,8 +133,8 @@ public class PersonnelForm {
         if ( null != p.getSelf() ) {
             setSelf( p.getSelf().getUsername() );
         }
-        if ( null != p.getEnabled() ) {
-            setEnabled( p.getEnabled().toString() );
+        if ( p.getEnabled() ) {
+            setEnabled( p.getEnabled() );
         }
         setFirstName( p.getFirstName() );
         setLastName( p.getLastName() );
@@ -171,9 +173,9 @@ public class PersonnelForm {
     /**
      * Get whether the Personnel is enabled
      *
-     * @return If the perosnnel is enabled or not
+     * @return If the personnel is enabled or not
      */
-    public String getEnabled () {
+    public boolean getEnabled () {
         return enabled;
     }
 
@@ -183,7 +185,7 @@ public class PersonnelForm {
      * @param enabled
      *            New enabled value
      */
-    public void setEnabled ( final String enabled ) {
+    public void setEnabled ( final boolean enabled ) {
         this.enabled = enabled;
     }
 
@@ -388,7 +390,7 @@ public class PersonnelForm {
 
     /**
      * Set the database ID of the Personnel object
-     * 
+     *
      * @param id
      *            The new DB ID of the Personnel
      */

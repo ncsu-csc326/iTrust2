@@ -133,7 +133,10 @@ public class APIPrescriptionController extends APIController {
             return Prescription.getPrescriptions();
         }
         else {
+            // Issue #106
             // Return only prescriptions assigned to the patient
+            LoggerUtil.log( TransactionType.PATIENT_PRESCRIPTION_VIEW, LoggerUtil.currentUser(),
+                    "Patient viewed a list of their prescriptions" );
             return Prescription.getForPatient( LoggerUtil.currentUser() );
         }
     }

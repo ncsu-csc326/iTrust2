@@ -15,13 +15,26 @@ Scenario Outline: Document an Office Visit with a Diagnosis
 Given The required diagnosis facilities exist
 And A patient exists with the name: <first> <last> and DOB: <dob>
 When I log into iTrust2 as an HCP
-When I navigate to the Document Offive Visit Page
+When I navigate to the Document Office Visit Page
 When I fill in information on the office visit with date: <date>, weight: <weight>, height: <height>, systolic blood pressure: <sys>, diastolic blood pressure: <dia>, household smoking status: <houseSmoking>, patient smoking status: <patientSmoking>, HDL cholesterol: <HDL>, LDL cholesterol: <LDL>, triglycerides: <triglycerides>, diagnosis: <diagnosis>, diagnosis note: <diagnosisNote>, and visit note: <note>
 Then The office visit is documented sucessfully
 
 	Examples:
 	| first    | last     | dob      | date     | weight  | height  | sys  | dia  | houseSmoking | patientSmoking | HDL | LDL | triglycerides | diagnosis |diagnosisNote     |note                |
 	| Nellie   | Sanderson|04/24/1993|10/17/2017|125      |62.3     |110   |75    |1             |3               |65   |102  |147            |Pneumonia  |Patient should avoid contact with others for first 24 hours and take prescribed antibiotics| Nellie has been experiencing symptoms of a cold or flu|
+	
+#Add invalid diagnosis to 24 year old during an office visit
+Scenario Outline: Document an Office Visit with an invalid Diagnosis
+Given The required diagnosis facilities exist
+And A patient exists with the name: <first> <last> and DOB: <dob>
+When I log into iTrust2 as an HCP
+When I navigate to the Document Office Visit Page
+When I add a diagnosis without a code
+Then A message is shown that indicates that the code was invalid
+
+	Examples:
+	| first    | last     | dob      |
+	| Nellie   | Sanderson|04/24/1993|
 
 #View current and previous diagnoses
 Scenario Outline: View current and previous diagnoses
