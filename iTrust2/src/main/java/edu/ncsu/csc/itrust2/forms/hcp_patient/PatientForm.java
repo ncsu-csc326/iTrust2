@@ -1,8 +1,6 @@
 package edu.ncsu.csc.itrust2.forms.hcp_patient;
 
-import java.text.SimpleDateFormat;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 import javax.validation.constraints.Pattern;
@@ -49,12 +47,11 @@ public class PatientForm {
         setZip( patient.getZip() );
         setPhone( patient.getPhone() );
 
-        final SimpleDateFormat date = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
         if ( null != patient.getDateOfBirth() ) {
-            setDateOfBirth( date.format( patient.getDateOfBirth().getTime() ) );
+            setDateOfBirth( patient.getDateOfBirth().toString() );
         }
         if ( null != patient.getDateOfDeath() ) {
-            setDateOfDeath( date.format( patient.getDateOfDeath().getTime() ) );
+            setDateOfDeath( patient.getDateOfDeath().toString() );
         }
 
         setCauseOfDeath( patient.getCauseOfDeath() );

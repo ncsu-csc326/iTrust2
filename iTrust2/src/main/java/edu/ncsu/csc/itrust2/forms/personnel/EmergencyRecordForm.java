@@ -1,15 +1,13 @@
 package edu.ncsu.csc.itrust2.forms.personnel;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -178,13 +176,9 @@ public class EmergencyRecordForm implements Serializable {
      */
     void setAge () {
         try {
-            final Calendar dob = this.patient.getDateOfBirth();
-            final LocalDate birthDate = dob.toInstant().atZone( ZoneId.systemDefault() ).toLocalDate();
-            final Date date = new Date();
-            final LocalDate now = date.toInstant().atZone( ZoneId.systemDefault() ).toLocalDate();
-            this.age = Integer.toString( Period.between( birthDate, now ).getYears() );
-        }
-        catch ( final NullPointerException e ) {
+            final LocalDate dob = this.patient.getDateOfBirth();
+            this.age = Integer.toString( Period.between( dob, LocalDate.now() ).getYears() );
+        } catch ( final NullPointerException e ) {
             this.age = "NA";
         }
     }
@@ -204,11 +198,9 @@ public class EmergencyRecordForm implements Serializable {
      * Sets the date of birth of the patient on the EmergencyRecordForm
      */
     void setDateOfBirth () {
-        final SimpleDateFormat dob = new SimpleDateFormat( "EEE MMM dd yyyy", Locale.ENGLISH );
         try {
-            this.dateOfBirth = dob.format( this.patient.getDateOfBirth().getTime() );
-        }
-        catch ( final NullPointerException e ) {
+            this.dateOfBirth = this.patient.getDateOfBirth().toString();
+        } catch ( final NullPointerException e ) {
             this.dateOfBirth = "NA";
         }
     }
@@ -283,7 +275,7 @@ public class EmergencyRecordForm implements Serializable {
             final Date date = new Date();
             final LocalDate now = date.toInstant().atZone( ZoneId.systemDefault() ).toLocalDate();
             for ( final Diagnosis diag : allDiagnoses ) {
-                final Calendar officeVisitDate = diag.getVisit().getDate();
+                final ZonedDateTime officeVisitDate = diag.getVisit().getDate();
                 final LocalDate diagnosisDate = officeVisitDate.toInstant().atZone( ZoneId.systemDefault() )
                         .toLocalDate();
                 if ( Period.between( diagnosisDate, now ).getDays() <= 60 ) {
@@ -319,8 +311,7 @@ public class EmergencyRecordForm implements Serializable {
             final Date date = new Date();
             final LocalDate now = date.toInstant().atZone( ZoneId.systemDefault() ).toLocalDate();
             for ( final Prescription drug : allPrescriptions ) {
-                final Calendar drugEndDate = drug.getEndDate();
-                final LocalDate endDate = drugEndDate.toInstant().atZone( ZoneId.systemDefault() ).toLocalDate();
+                final LocalDate endDate = drug.getEndDate();
                 if ( Period.between( endDate, now ).getDays() <= 90 || now.isBefore( endDate ) ) {
                     recentPrescriptions.add( drug );
                 }

@@ -1,9 +1,11 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
-import java.util.Calendar;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,7 +14,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.criterion.Criterion;
+
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAdapter;
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAttributeConverter;
 
 /**
  * Class that holds a lockout for a user or ip. It contains a timestamp used to
@@ -38,7 +45,11 @@ public class LoginLockout extends DomainObject<LoginLockout> {
     @JoinColumn ( name = "user_id", columnDefinition = "varchar(100)" )
     private User     user;
 
-    private Calendar time;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert( converter = ZonedDateTimeAttributeConverter.class )
+    @JsonAdapter( ZonedDateTimeAdapter.class )
+    private ZonedDateTime time;
 
     /**
      * Retunrns the ID of the LoginLockout for hibernate.
@@ -105,7 +116,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      *
      * @return the time
      */
-    public Calendar getTime () {
+    public ZonedDateTime getTime () {
         return time;
     }
 
@@ -115,7 +126,7 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      * @param time
      *            the time to set
      */
-    public void setTime ( final Calendar time ) {
+    public void setTime ( final ZonedDateTime time ) {
         this.time = time;
     }
 
@@ -128,9 +139,9 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      * @return The number of lockouts for the given IP
      */
     public static int getRecentIPLockouts ( final String addr ) {
-        final Long now = Calendar.getInstance().getTimeInMillis();
+        final long now = ZonedDateTime.now().toEpochSecond();
         return getWhere( eqList( "ip", addr ) ).stream()
-                .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 1440 * 60 * 1000 )
+                .filter( e -> ( now - e.getTime().toEpochSecond() ) < 1440 * 60 * 1000 )
                 .collect( Collectors.toList() ).size(); // 1440 minutes
     }
 
@@ -174,9 +185,9 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      * @return true if IP is locked out, flase otherwise
      */
     public static boolean isIPLocked ( final String addr ) {
-        final Long now = Calendar.getInstance().getTimeInMillis();
+        final long now = ZonedDateTime.now().toEpochSecond();
         return getWhere( eqList( "ip", addr ) ).stream()
-                .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
+                .filter( e -> ( now - e.getTime().toEpochSecond() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
                 .size() > 0; // locked if within 60 minutes
 
     }
@@ -190,9 +201,9 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      * @return The number of lockouts for the user
      */
     public static int getRecentUserLockouts ( final User user ) {
-        final Long now = Calendar.getInstance().getTimeInMillis();
+        final long now = ZonedDateTime.now().toEpochSecond();
         return getWhere( eqList( "user", user ) ).stream()
-                .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 1440 * 60 * 1000 )
+                .filter( e -> ( now - e.getTime().toEpochSecond() ) < 1440 * 60 * 1000 )
                 .collect( Collectors.toList() ).size(); // 1440 minutes
     }
 
@@ -214,9 +225,9 @@ public class LoginLockout extends DomainObject<LoginLockout> {
      * @return true if the user is locked out, false otherwise
      */
     public static boolean isUserLocked ( final User user ) {
-        final Long now = Calendar.getInstance().getTimeInMillis();
+        final long now = ZonedDateTime.now().toEpochSecond();
         return getWhere( eqList( "user", user ) ).stream()
-                .filter( e -> ( now - e.getTime().getTimeInMillis() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
+                .filter( e -> ( now - e.getTime().toEpochSecond() ) < 60 * 60 * 1000 ).collect( Collectors.toList() )
                 .size() > 0; // locked if within 60 minutes
     }
 

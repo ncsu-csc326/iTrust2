@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,15 +32,15 @@ import com.google.gson.reflect.TypeToken;
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.forms.admin.ICDCodeForm;
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
-import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
+import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.ICDCode;
-import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
 
@@ -63,8 +62,8 @@ public class APIDiagnosisTest {
     }
 
     @Test
-    @WithMockUser ( username = "admin", roles = { "USER", "ADMIN" } )
-    public void testDiagnoses () throws UnsupportedEncodingException, Exception {
+    @WithMockUser ( username = "admin", roles = { "USER", "ADMIN", "HCP" } )
+    public void testDiagnoses () throws Exception {
         /*
          * Create a HCP, admin and a Patient to use. If they already exist, this
          * will do nothing
@@ -111,9 +110,8 @@ public class APIDiagnosisTest {
         mvc.perform( delete( "/api/v1/officevisits" ) );
 
         // Create an office visit with two diagnoses
-        final OfficeVisitForm form = new OfficeVisitForm();
-        form.setDate( "4/16/2048" );
-        form.setTime( "9:50 AM" );
+        final GeneralCheckupForm form = new GeneralCheckupForm();
+        form.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
         form.setHcp( "hcp" );
         form.setPatient( "patient" );
         form.setNotes( "Test office visit" );
@@ -140,12 +138,12 @@ public class APIDiagnosisTest {
         d2.setNote( "Second Diagnosis" );
         list.add( d2 );
 
-        content = mvc.perform( post( "/api/v1/officevisits" ).contentType( MediaType.APPLICATION_JSON )
+        content = mvc.perform( post( "/api/v1/generalcheckups" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andReturn().getResponse().getContentAsString();
-        OfficeVisit visit = null;
+        GeneralCheckup visit = null;
 
         try {
-            visit = gson.fromJson( content, OfficeVisit.class );
+            visit = gson.fromJson( content, GeneralCheckup.class );
         }
         catch ( final Exception e ) {
             fail( "Received response : " + content );
@@ -201,7 +199,7 @@ public class APIDiagnosisTest {
         // work.
         form.setId( visit.getId() + "" );
         d.setNote( "Edited" );
-        content = mvc.perform( put( "/api/v1/officevisits/" + visit.getId() ).contentType( MediaType.APPLICATION_JSON )
+        content = mvc.perform( put( "/api/v1/generalcheckups/" + visit.getId() ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andReturn().getResponse().getContentAsString();
 
         content = mvc.perform( get( "/api/v1/diagnosesforvisit/" + visit.getId() )
@@ -229,7 +227,7 @@ public class APIDiagnosisTest {
         // edit the office visit and remove a diagnosis
 
         list.remove( d );
-        content = mvc.perform( put( "/api/v1/officevisits/" + visit.getId() ).contentType( MediaType.APPLICATION_JSON )
+        content = mvc.perform( put( "/api/v1/generalcheckups/" + visit.getId() ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andReturn().getResponse().getContentAsString();
 
         // check that the removed one is gone

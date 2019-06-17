@@ -55,6 +55,9 @@ public class APILOINCTest {
     @Test
     @WithMockUser ( username = "admin", roles = { "USER", "ADMIN" } )
     public void testCodeAPI () throws Exception {
+        LOINC.getAll().stream().filter( e -> ( e.getCode().equals( "46272-8" ) || e.getCode().equals( "55555-5" ) ) )
+                .forEach( e -> e.delete() );
+
         final LOINCForm form = new LOINCForm();
         form.setCode( "46272-8" );
         form.setCommonName( "Probe of Adamantium Skeleton" );

@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -32,7 +33,7 @@ import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
  * Test for the API functionality for interacting with appointment requests
  *
  * @author Kai Presler-Marshall
- *
+ * @author Matt Dzwonczyk
  */
 @RunWith ( SpringJUnit4ClassRunner.class )
 @ContextConfiguration ( classes = { RootConfiguration.class, WebMvcConfiguration.class } )
@@ -59,6 +60,7 @@ public class APIAppointmentRequestTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser( username = "robortOPH", roles = { "OPH" } )
     public void testGetNonExistentAppointment () throws Exception {
         mvc.perform( get( "/api/v1/appointmentrequests/-1" ) ).andExpect( status().isNotFound() );
     }
@@ -68,6 +70,7 @@ public class APIAppointmentRequestTest {
      * status.
      */
     @Test
+    @WithMockUser( username = "robortOPH", roles = { "OPH" } )
     public void testDeleteNonExistentAppointment () throws Exception {
         mvc.perform( delete( "/api/v1/appointmentrequests/-1" ) ).andExpect( status().isNotFound() );
     }
@@ -79,6 +82,7 @@ public class APIAppointmentRequestTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser( username = "patient", roles = { "PATIENT" } )
     public void testCreateBadAppointmentRequest () throws Exception {
         /*
          * Create a HCP and a Patient to use. If they already exist, this will
@@ -95,8 +99,7 @@ public class APIAppointmentRequestTest {
         mvc.perform( delete( "/api/v1/appointmentrequests" ) );
 
         final AppointmentRequestForm appointmentForm = new AppointmentRequestForm();
-        appointmentForm.setDate( "aa/19/2030" );
-        appointmentForm.setTime( "aa:50 AM" );
+        appointmentForm.setDate( "0" );
         appointmentForm.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         appointmentForm.setStatus( Status.PENDING.toString() );
         appointmentForm.setHcp( "hcp" );
@@ -114,6 +117,7 @@ public class APIAppointmentRequestTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "patient", roles = { "PATIENT" } )
     public void testAppointmentRequestAPI () throws Exception {
 
         /*
@@ -131,8 +135,7 @@ public class APIAppointmentRequestTest {
         mvc.perform( delete( "/api/v1/appointmentrequests" ) );
 
         final AppointmentRequestForm appointmentForm = new AppointmentRequestForm();
-        appointmentForm.setDate( "11/19/2030" );
-        appointmentForm.setTime( "4:50 AM" );
+        appointmentForm.setDate( "2030-11-19T04:50:00.000-05:00" ); // 2030-11-19 4:50 AM EST
         appointmentForm.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         appointmentForm.setStatus( Status.PENDING.toString() );
         appointmentForm.setHcp( "hcp" );
@@ -155,7 +158,7 @@ public class APIAppointmentRequestTest {
         mvc.perform( get( "/api/v1/appointmentrequests/" + id ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
-        appointmentForm.setTime( "3:30 AM" );
+        appointmentForm.setDate( "2030-11-19T03:30:00.000-05:00" ); // 2030-11-19 3:30 AM
 
         mvc.perform( put( "/api/v1/appointmentrequests/" + id ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( appointmentForm ) ) ).andExpect( status().isOk() )

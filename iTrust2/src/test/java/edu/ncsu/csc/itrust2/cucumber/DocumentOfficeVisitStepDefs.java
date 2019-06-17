@@ -5,10 +5,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 import java.util.logging.Level;
 
@@ -24,8 +23,8 @@ import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
-import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 
@@ -35,7 +34,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
     }
 
-    private final String baseUrl      = "http://localhost:8080/iTrust2";
+    private final String baseUrl      = "http:localhost:8080/iTrust2";
 
     private final String hospitalName = "Office Visit Hospital" + ( new Random() ).nextInt();
     BasicHealthMetrics   expectedBhm;
@@ -44,7 +43,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
     public void personnelExists () throws Exception {
         attemptLogout();
 
-        OfficeVisit.deleteAll();
+        GeneralCheckup.deleteAll();
         DomainObject.deleteAll( BasicHealthMetrics.class );
 
         // All tests can safely assume the existence of the 'hcp', 'admin', and
@@ -67,15 +66,45 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         patient.setState( State.DE );
         patient.setZip( "91505" );
         patient.setPhone( "123-456-7890" );
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/DD/YYYY", Locale.ENGLISH );
-
-        final Calendar time = Calendar.getInstance();
-        time.setTime( sdf.parse( "08/13/1871" ) );
-
-        patient.setDateOfBirth( time );
+        patient.setDateOfBirth( LocalDate.parse( "1871-08-13" ) );
 
         patient.save();
 
+    }
+
+    /**
+     * Fills in the date and time fields with the specified date and time.
+     * @param date The date to enter.
+     * @param time The time to enter.
+     */
+    private void fillInDateTime(String dateField, String date, String timeField, String time) {
+        fillInDate(dateField, date);
+        fillInTime(timeField, time);
+    }
+
+    /**
+     * Fills in the date field with the specified date.
+     * @param date The date to enter.
+     */
+    private void fillInDate(String dateField, String date) {
+        driver.findElement( By.name( dateField ) ).clear();
+        final WebElement dateElement = driver.findElement( By.name( dateField ) );
+        dateElement.sendKeys( date.replace( "/", "" ) );
+    }
+
+    /**
+     * Fills in the time field with the specified time.
+     * @param time The time to enter.
+     */
+    private void fillInTime(String timeField, String time) {
+        // Zero-pad the time for entry
+        if ( time.length() == 7 ) {
+            time = "0" + time;
+        }
+
+        driver.findElement( By.name( timeField ) ).clear();
+        final WebElement timeElement = driver.findElement( By.name( timeField ) );
+        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
     }
 
     @When ( "I log in to iTrust2 as a HCP" )
@@ -108,69 +137,53 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
 
         final WebElement patient = driver.findElement( By.name( "name" ) );
         patient.click();
-        final WebElement type = driver.findElement( By.name( "type" ) );
+        final WebElement type = driver.findElement( By.name( "GENERAL_CHECKUP" ) );
         type.click();
 
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
 
-        final WebElement date = driver.findElement( By.name( "date" ) );
-        date.clear();
-        date.sendKeys( "12/19/2027" );
-
-        final WebElement time = driver.findElement( By.name( "time" ) );
-        time.clear();
-        time.sendKeys( "9:30 AM" );
+        fillInDateTime( "date", "12/19/2027", "time", "9:30 AM" );
 
         waitForAngular();
+
         final WebElement heightElement = driver.findElement( By.name( "height" ) );
         heightElement.clear();
         heightElement.sendKeys( "120" );
 
-        waitForAngular();
         final WebElement weightElement = driver.findElement( By.name( "weight" ) );
         weightElement.clear();
         weightElement.sendKeys( "120" );
 
-        waitForAngular();
         final WebElement systolicElement = driver.findElement( By.name( "systolic" ) );
         systolicElement.clear();
         systolicElement.sendKeys( "100" );
 
-        waitForAngular();
         final WebElement diastolicElement = driver.findElement( By.name( "diastolic" ) );
         diastolicElement.clear();
         diastolicElement.sendKeys( "100" );
 
-        waitForAngular();
         final WebElement hdlElement = driver.findElement( By.name( "hdl" ) );
         hdlElement.clear();
         hdlElement.sendKeys( "90" );
 
-        waitForAngular();
         final WebElement ldlElement = driver.findElement( By.name( "ldl" ) );
         ldlElement.clear();
         ldlElement.sendKeys( "100" );
 
-        waitForAngular();
         final WebElement triElement = driver.findElement( By.name( "tri" ) );
         triElement.clear();
         triElement.sendKeys( "100" );
 
-        waitForAngular();
         final WebElement houseSmokeElement = driver.findElement(
                 By.cssSelector( "input[value=\"" + HouseholdSmokingStatus.NONSMOKING.toString() + "\"]" ) );
         houseSmokeElement.click();
 
-        waitForAngular();
         final WebElement patientSmokeElement = driver
                 .findElement( By.cssSelector( "input[value=\"" + PatientSmokingStatus.NEVER.toString() + "\"]" ) );
         patientSmokeElement.click();
 
-        waitForAngular();
-        final WebElement submit = driver.findElement( By.name( "submit" ) );
-        submit.click();
-
+        driver.findElement( By.name( "submit" ) ).click();
     }
 
     @When ( "^I fill in information on the office visit with leading zeroes$" )
@@ -183,69 +196,53 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
 
         final WebElement patient = driver.findElement( By.name( "name" ) );
         patient.click();
-        final WebElement type = driver.findElement( By.name( "type" ) );
+        final WebElement type = driver.findElement( By.name( "GENERAL_CHECKUP" ) );
         type.click();
 
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
 
-        final WebElement date = driver.findElement( By.name( "date" ) );
-        date.clear();
-        date.sendKeys( "12/19/2027" );
-
-        final WebElement time = driver.findElement( By.name( "time" ) );
-        time.clear();
-        time.sendKeys( "9:30 AM" );
+        fillInDateTime( "date", "12/19/2027", "time", "9:30 AM" );
 
         waitForAngular();
+
         final WebElement heightElement = driver.findElement( By.name( "height" ) );
         heightElement.clear();
         heightElement.sendKeys( "0120" );
 
-        waitForAngular();
         final WebElement weightElement = driver.findElement( By.name( "weight" ) );
         weightElement.clear();
         weightElement.sendKeys( "0120" );
 
-        waitForAngular();
         final WebElement systolicElement = driver.findElement( By.name( "systolic" ) );
         systolicElement.clear();
         systolicElement.sendKeys( "0100" );
 
-        waitForAngular();
         final WebElement diastolicElement = driver.findElement( By.name( "diastolic" ) );
         diastolicElement.clear();
         diastolicElement.sendKeys( "0100" );
 
-        waitForAngular();
         final WebElement hdlElement = driver.findElement( By.name( "hdl" ) );
         hdlElement.clear();
         hdlElement.sendKeys( "090" );
 
-        waitForAngular();
         final WebElement ldlElement = driver.findElement( By.name( "ldl" ) );
         ldlElement.clear();
         ldlElement.sendKeys( "0100" );
 
-        waitForAngular();
         final WebElement triElement = driver.findElement( By.name( "tri" ) );
         triElement.clear();
         triElement.sendKeys( "0100" );
 
-        waitForAngular();
         final WebElement houseSmokeElement = driver.findElement(
                 By.cssSelector( "input[value=\"" + HouseholdSmokingStatus.NONSMOKING.toString() + "\"]" ) );
         houseSmokeElement.click();
 
-        waitForAngular();
         final WebElement patientSmokeElement = driver
                 .findElement( By.cssSelector( "input[value=\"" + PatientSmokingStatus.NEVER.toString() + "\"]" ) );
         patientSmokeElement.click();
 
-        waitForAngular();
-        final WebElement submit = driver.findElement( By.name( "submit" ) );
-        submit.click();
-
+        driver.findElement( By.name( "submit" ) ).click();
     }
 
     @Then ( "The office visit is documented successfully" )
@@ -380,11 +377,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         patient.setState( State.CA );
         patient.setZip( "91505" );
         patient.setPhone( "123-456-7890" );
-
-        final Calendar cal = Calendar.getInstance();
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        cal.setTime( sdf.parse( birthday ) );
-        patient.setDateOfBirth( cal );
+        patient.setDateOfBirth( LocalDate.parse( birthday, DateTimeFormatter.ofPattern( "MM/dd/yyyy" ) ) );
 
         patient.save();
 
@@ -422,21 +415,14 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         patient.click();
 
         waitForAngular();
-        final WebElement type = driver.findElement( By.name( "type" ) );
+        final WebElement type = driver.findElement( By.name( "GENERAL_CHECKUP" ) );
         type.click();
 
         waitForAngular();
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
 
-        final WebElement date = driver.findElement( By.name( "date" ) );
-        date.clear();
-        date.sendKeys( dateString );
-        date.click();
-
-        final WebElement time = driver.findElement( By.name( "time" ) );
-        time.clear();
-        time.sendKeys( "9:30 AM" );
+        fillInDateTime( "date", dateString, "time", "9:30 AM" );
 
         expectedBhm = new BasicHealthMetrics();
 
@@ -532,21 +518,14 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         patient.click();
 
         waitForAngular();
-        final WebElement type = driver.findElement( By.name( "type" ) );
+        final WebElement type = driver.findElement( By.name( "GENERAL_CHECKUP" ) );
         type.click();
 
         waitForAngular();
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
 
-        final WebElement date = driver.findElement( By.name( "date" ) );
-        date.clear();
-        date.sendKeys( dateString );
-        date.click();
-
-        final WebElement time = driver.findElement( By.name( "time" ) );
-        time.clear();
-        time.sendKeys( "9:30 AM" );
+        fillInDateTime( "date", dateString, "time", "9:30 AM");
 
         expectedBhm = new BasicHealthMetrics();
 
@@ -664,21 +643,14 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         patient.click();
 
         waitForAngular();
-        final WebElement type = driver.findElement( By.name( "type" ) );
+        final WebElement type = driver.findElement( By.name( "GENERAL_CHECKUP" ) );
         type.click();
 
         waitForAngular();
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
-
-        final WebElement date = driver.findElement( By.name( "date" ) );
-        date.clear();
-        date.sendKeys( dateString );
-        date.click();
-
-        final WebElement time = driver.findElement( By.name( "time" ) );
-        time.clear();
-        time.sendKeys( "9:30 AM" );
+        
+        fillInDateTime( "date", dateString, "time", "9:30 AM");
 
         expectedBhm = new BasicHealthMetrics();
 

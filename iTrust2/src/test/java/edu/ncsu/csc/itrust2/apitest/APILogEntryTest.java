@@ -3,8 +3,10 @@ package edu.ncsu.csc.itrust2.apitest;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+
+import com.google.gson.Gson;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -18,8 +20,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import com.google.gson.Gson;
 
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.controllers.api.comm.LogEntryRequestBody;
@@ -35,13 +35,13 @@ import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
  * @author Kai Presler-Marshall
  *
  */
-@RunWith ( SpringJUnit4ClassRunner.class )
-@ContextConfiguration ( classes = { RootConfiguration.class, WebMvcConfiguration.class } )
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = { RootConfiguration.class, WebMvcConfiguration.class })
 @WebAppConfiguration
 public class APILogEntryTest {
 
-    private MockMvc               mvc;
-    private final Gson            gson = new Gson();
+    private MockMvc mvc;
+    private final Gson gson = new Gson();
     @Autowired
     private WebApplicationContext context;
 
@@ -60,8 +60,8 @@ public class APILogEntryTest {
     @Test
     public void testLogByDate () throws Exception {
         final LogEntryRequestBody temp = new LogEntryRequestBody();
-        temp.setStartDate( "01/01/2017" );
-        temp.setEndDate( "12/31/2018" );
+        temp.setStartDate( "2017-01-01" );
+        temp.setEndDate( "2018-12-31" );
         temp.setPage( 1 );
         temp.setPageLength( 10 );
 
@@ -81,22 +81,17 @@ public class APILogEntryTest {
             final LogEntry le = new LogEntry();
             le.setLogCode( TransactionType.USER_BANNED );
             le.setPrimaryUser( "logapitest" );
-            le.setTime( Calendar.getInstance() );
+            le.setTime( ZonedDateTime.now() );
 
             le.save();
         }
 
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy" );
-
-        final Calendar start = Calendar.getInstance();
-        start.set( Calendar.MONTH, -6 );
-
-        final Calendar end = Calendar.getInstance();
-        end.set( Calendar.MONTH, 6 );
+        final LocalDate start = LocalDate.now().minusMonths( 6 );
+        final LocalDate end = LocalDate.now().plusMonths( 6 );
 
         final LogEntryRequestBody temp = new LogEntryRequestBody();
-        temp.setStartDate( sdf.format( start.getTime() ) );
-        temp.setEndDate( sdf.format( end.getTime() ) );
+        temp.setStartDate( start.toString() );
+        temp.setEndDate( end.toString() );
         temp.setPage( 6 );
         temp.setPageLength( 10 );
 

@@ -48,6 +48,12 @@ public class APIUserController extends APIController {
     /** constant for lab role */
     private static final String ROLE_LABTECH = "ROLE_LABTECH";
 
+    /** constant for lab role */
+    private static final String ROLE_OD = "ROLE_OD";
+
+    /** constant for lab role */
+    private static final String ROLE_OPH = "ROLE_OPH";
+
     /**
      * Retrieves and returns a list of all Users in the system, regardless of
      * their classification (including all Patients, all Personnel, and all
@@ -193,6 +199,12 @@ public class APIUserController extends APIController {
         }
         else if ( hasRole( ROLE_LABTECH ) ) {
             return new ResponseEntity( successResponse( ROLE_LABTECH ), HttpStatus.OK );
+        }
+        else if ( hasRole( ROLE_OD ) ) {
+            return new ResponseEntity( successResponse( ROLE_OD ), HttpStatus.OK );
+        }
+        else if ( hasRole( ROLE_OPH ) ) {
+            return new ResponseEntity( successResponse( ROLE_OPH ), HttpStatus.OK );
         }
         else {
             return new ResponseEntity( errorResponse( "UNAUTHORIZED" ), HttpStatus.UNAUTHORIZED );

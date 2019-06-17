@@ -30,7 +30,7 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  * is the primary key of the appointment request in question
  *
  * @author Kai Presler-Marshall
- *
+ * @author Matt Dzwonczyk
  */
 @RestController
 @SuppressWarnings ( { "unchecked", "rawtypes" } )
@@ -42,6 +42,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public List<AppointmentRequest> getAppointmentRequests () {
         return AppointmentRequest.getAppointmentRequests();
     }
@@ -52,6 +53,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in patient
      */
     @GetMapping ( BASE_PATH + "/appointmentrequest" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public List<AppointmentRequest> getAppointmentRequestsForPatient () {
         return AppointmentRequest.getAppointmentRequestsForPatient( LoggerUtil.currentUser() ).stream()
                 .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
@@ -63,6 +65,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in hcp
      */
     @GetMapping ( BASE_PATH + "/appointmentrequestForHCP" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public List<AppointmentRequest> getAppointmentRequestsForHCP () {
 
         return AppointmentRequest.getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
@@ -79,6 +82,7 @@ public class APIAppointmentRequestController extends APIController {
      *         HttpStatus.NOT_FOUND if no such AppointmentRequest could be found
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity getAppointmentRequest ( @PathVariable ( "id" ) final Long id ) {
         final AppointmentRequest request = AppointmentRequest.getById( id );
         if ( null != request ) {
@@ -94,7 +98,7 @@ public class APIAppointmentRequestController extends APIController {
      * Creates an AppointmentRequest from the RequestBody provided. Record is
      * automatically saved in the database.
      *
-     * @param requestF
+     * @param requestForm
      *            The AppointmentRequestForm to be parsed into an
      *            AppointmentRequest and stored
      * @return The parsed and validated AppointmentRequest created from the Form
@@ -104,9 +108,10 @@ public class APIAppointmentRequestController extends APIController {
      *         provided
      */
     @PostMapping ( BASE_PATH + "/appointmentrequests" )
-    public ResponseEntity createAppointmentRequest ( @RequestBody final AppointmentRequestForm requestF ) {
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public ResponseEntity createAppointmentRequest ( @RequestBody final AppointmentRequestForm requestForm ) {
         try {
-            final AppointmentRequest request = new AppointmentRequest( requestF );
+            final AppointmentRequest request = new AppointmentRequest( requestForm );
             if ( null != AppointmentRequest.getById( request.getId() ) ) {
                 return new ResponseEntity(
                         errorResponse( "AppointmentRequest with the id " + request.getId() + " already exists" ),
@@ -115,13 +120,11 @@ public class APIAppointmentRequestController extends APIController {
             request.save();
             LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_SUBMITTED, request.getPatient(), request.getHcp() );
             return new ResponseEntity( request, HttpStatus.OK );
-
         }
         catch ( final Exception e ) {
-            return new ResponseEntity( errorResponse( "Error occured while validating or saving " + requestF.toString()
-                    + " because of " + e.getMessage() ), HttpStatus.BAD_REQUEST );
+            return new ResponseEntity( errorResponse( "Error occurred while validating or saving "
+                    + requestForm.toString() + " because of " + e.getMessage() ), HttpStatus.BAD_REQUEST );
         }
-
     }
 
     /**
@@ -133,6 +136,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return response
      */
     @DeleteMapping ( BASE_PATH + "/appointmentrequests/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity deleteAppointmentRequest ( @PathVariable final Long id ) {
         final AppointmentRequest request = AppointmentRequest.getById( id );
         if ( null == request ) {
@@ -167,6 +171,7 @@ public class APIAppointmentRequestController extends APIController {
      *         provided
      */
     @PutMapping ( BASE_PATH + "/appointmentrequests/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity updateAppointmentRequest ( @PathVariable final Long id,
             @RequestBody final AppointmentRequestForm requestF ) {
 
@@ -186,12 +191,12 @@ public class APIAppointmentRequestController extends APIController {
             }
 
             request.save();
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getHcp(), request.getPatient() );
+            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getPatient(), request.getHcp() );
             if ( request.getStatus().getCode() == Status.APPROVED.getCode() ) {
-                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_APPROVED, request.getHcp(), request.getPatient() );
+                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_APPROVED, request.getPatient(), request.getHcp() );
             }
             else {
-                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DENIED, request.getHcp(), request.getPatient() );
+                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DENIED, request.getPatient(), request.getHcp() );
             }
 
             if ( dbRequest.getStatus() != request.getStatus() ) {
@@ -229,6 +234,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return reponse
      */
     @DeleteMapping ( BASE_PATH + "/appointmentrequests" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity deleteAppointmentRequests () {
         try {
             DomainObject.deleteAll( AppointmentRequest.class );
@@ -250,7 +256,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return The page to display for the user
      */
     @GetMapping ( BASE_PATH + "/viewAppointments" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public List<AppointmentRequest> upcomingAppointments () {
         final List<AppointmentRequest> appointment = AppointmentRequest
                 .getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()

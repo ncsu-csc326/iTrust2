@@ -5,23 +5,26 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
 import org.junit.Test;
 
-import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
+import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.forms.personnel.LabProcedureForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.LabStatus;
+import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Priority;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
 import edu.ncsu.csc.itrust2.models.persistent.Drug;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.ICDCode;
 import edu.ncsu.csc.itrust2.models.persistent.LOINC;
@@ -109,7 +112,7 @@ public class LabProcedureTest {
         final Hospital hosp = new Hospital( "Dr. Jenkins' Insane Asylum", "123 Main St", "12345", "NC" );
         hosp.save();
 
-        final OfficeVisit visit = new OfficeVisit();
+        final GeneralCheckup visit = new GeneralCheckup();
 
         final BasicHealthMetrics bhm = new BasicHealthMetrics();
 
@@ -128,7 +131,7 @@ public class LabProcedureTest {
         visit.setHospital( hosp );
         visit.setPatient( User.getByName( "AliceThirteen" ) );
         visit.setHcp( User.getByName( "AliceThirteen" ) );
-        visit.setDate( Calendar.getInstance() );
+        visit.setDate( ZonedDateTime.now() );
 
         final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
 
@@ -154,19 +157,14 @@ public class LabProcedureTest {
         drug.setDescription( "Lithium Compounds" );
         drug.setName( "Li2O8" );
         drug.save();
-        
- 
-        
-        
+
         final Prescription pres = new Prescription();
         pres.setDosage( 3 );
         pres.setDrug( drug );
 
-        final Calendar end = Calendar.getInstance();
-        end.add( Calendar.DAY_OF_WEEK, 10 );
-        pres.setEndDate( end );
+        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
         pres.setPatient( User.getByName( "AliceThirteen" ) );
-        pres.setStartDate( Calendar.getInstance() );
+        pres.setStartDate( LocalDate.now() );
         pres.setRenewals( 5 );
 
         pres.save();
@@ -199,15 +197,23 @@ public class LabProcedureTest {
         assignedTech2.save();
         patient3.save();
         assignedTech3.save();
-        final OfficeVisitForm visitForm = new OfficeVisitForm();
-        visitForm.setDate( "4/16/2048" );
-        visitForm.setTime( "9:50 AM" );
+        final GeneralCheckupForm visitForm = new GeneralCheckupForm();
+        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
         visitForm.setHcp( "hcp" );
         visitForm.setPatient( "patient" );
         visitForm.setNotes( "Test office visit" );
         visitForm.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         visitForm.setHospital( "Dr. Jenkins' Insane Asylum" );
-        final OfficeVisit visit = new OfficeVisit( visitForm );
+        visitForm.setDiastolic( 150 );
+        visitForm.setHdl( 75 );
+        visitForm.setLdl( 75 );
+        visitForm.setHeight( 75f );
+        visitForm.setWeight( 130f );
+        visitForm.setTri( 300 );
+        visitForm.setSystolic( 150 );
+        visitForm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+        visitForm.setPatientSmokingStatus( PatientSmokingStatus.NEVER );
+        final GeneralCheckup visit = new GeneralCheckup( visitForm );
         visit.save();
         final LabProcedureForm form = new LabProcedureForm();
         form.setPatient( "patient" );
@@ -299,15 +305,23 @@ public class LabProcedureTest {
         l.save();
         patient.save();
         assignedTech.save();
-        final OfficeVisitForm visitForm = new OfficeVisitForm();
-        visitForm.setDate( "4/16/2048" );
-        visitForm.setTime( "9:50 AM" );
+        final GeneralCheckupForm visitForm = new GeneralCheckupForm();
+        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
         visitForm.setHcp( "hcp" );
         visitForm.setPatient( "patient" );
         visitForm.setNotes( "Test office visit" );
         visitForm.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         visitForm.setHospital( "Dr. Jenkins' Insane Asylum" );
-        final OfficeVisit visit = new OfficeVisit( visitForm );
+        visitForm.setDiastolic( 150 );
+        visitForm.setHdl( 75 );
+        visitForm.setLdl( 75 );
+        visitForm.setHeight( 75f );
+        visitForm.setWeight( 130f );
+        visitForm.setTri( 300 );
+        visitForm.setSystolic( 150 );
+        visitForm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+        visitForm.setPatientSmokingStatus( PatientSmokingStatus.NEVER );
+        final GeneralCheckup visit = new GeneralCheckup( visitForm );
         visit.save();
         final LabProcedureForm form = new LabProcedureForm();
         form.setPatient( "patient" );

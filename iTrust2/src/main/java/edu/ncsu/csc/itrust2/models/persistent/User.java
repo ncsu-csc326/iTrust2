@@ -378,4 +378,12 @@ public class User extends DomainObject<User> implements Serializable {
         super.delete();
     }
 
+    /**
+     * True if the user is an HCP, OD, or OPH
+     * @return true if the user role matches HCP, OD, or OPH
+     */
+    public boolean isDoctor() {
+        return ( role == Role.ROLE_HCP || role ==  Role.ROLE_OD || role == Role.ROLE_OPH );
+    }
+
 }

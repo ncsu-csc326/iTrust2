@@ -92,7 +92,7 @@ public class EditMyDemographicsStepDefs extends CucumberTest {
 
         final WebElement dob = driver.findElement( By.id( "dateOfBirth" ) );
         dob.clear();
-        dob.sendKeys( "08/13/1871" );
+        dob.sendKeys( "08131950" ); // Enter date without slashes
 
         final WebElement submit = driver.findElement( By.className( "btn" ) );
         submit.click();

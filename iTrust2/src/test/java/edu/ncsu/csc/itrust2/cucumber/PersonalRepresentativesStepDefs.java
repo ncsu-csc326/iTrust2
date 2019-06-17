@@ -3,7 +3,7 @@ package edu.ncsu.csc.itrust2.cucumber;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.Calendar;
+import java.time.LocalDate;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -61,9 +61,7 @@ public class PersonalRepresentativesStepDefs extends CucumberTest {
         wario.setSelf( User.getByName( "Wario" ) );
         wario.setFirstName( "wario" );
         wario.setLastName( "Smith" );
-        final Calendar warioBirth = Calendar.getInstance();
-        warioBirth.add( Calendar.YEAR, -13 ); // alice is thirteen years old
-        wario.setDateOfBirth( warioBirth );
+        wario.setDateOfBirth( LocalDate.now().minusYears( 13 ) ); // Thirteen years old
         wario.save();
 
         waitForAngular();
@@ -83,12 +81,9 @@ public class PersonalRepresentativesStepDefs extends CucumberTest {
         waluigi.setSelf( User.getByName( "Waluigi" ) );
         waluigi.setFirstName( "waluigi" );
         waluigi.setLastName( "Smith" );
-        final Calendar waluigiBirth = Calendar.getInstance();
-        waluigiBirth.add( Calendar.YEAR, -13 ); // alice is thirteen years old
-        waluigi.setDateOfBirth( waluigiBirth );
+        waluigi.setDateOfBirth( LocalDate.now().minusYears( 13 ) ); // Thirteen years old
         waluigi.save();
         waitForAngular();
-
     }
 
     /**

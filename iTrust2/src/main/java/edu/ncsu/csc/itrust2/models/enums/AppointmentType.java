@@ -13,6 +13,16 @@ public enum AppointmentType {
      */
     GENERAL_CHECKUP ( 1 ),
 
+    /**
+     * General Ophthalmology Appointment
+     */
+    GENERAL_OPHTHALMOLOGY ( 2 ),
+
+    /**
+     * Ophthalmology Surgery
+     */
+    OPHTHALMOLOGY_SURGERY ( 3 ),
+
     ;
 
     /**
@@ -38,5 +48,4 @@ public enum AppointmentType {
     public int getCode () {
         return code;
     }
-
 }

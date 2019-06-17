@@ -59,13 +59,13 @@
 			});
 			/*]]>*/
 		</script>
-		
+
 		<div ng-app="manageICDCodesApp" ng-controller="manageICDCodesCtrl">
-		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
-			<h4 style="color:red" ng-model="message"></h4>
-			
+			<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->
+			<h4 style="color: red" ng-model="message"></h4>
+
 			<h1>Manage ICD-10 Codes</h1>
-			<table style="width:100%">
+			<table style="width: 100%">
 				<tr>
 					<td style="vertical-align: top">
 						<table class="table">
@@ -74,39 +74,41 @@
 								<th>Description</th>
 								<th>Action</th>
 							</tr>
-							<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'" codeId={{c.id}}>
+							<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'"
+								codeId={{c.id}}>
 								<td name="codeCell">{{c.code}}</td>
 								<td name="descriptionCell">{{c.description}}</td>
-								<td>
-									<input type="button" value="Remove" class="btn btn-primary" ng-click="removeRow(c)"/>
-								</td>
+								<td><input type="button" value="Remove"
+									class="btn btn-primary" ng-click="removeRow(c)" /></td>
 							</tr>
 						</table>
 					</td>
-					<td style="width:35%;vertical-align: top">
+					<td style="width: 35%; vertical-align: top">
 						<div style="padding: 0px 0px 20px 30px">
 							<h3>Add an ICD-10 Code</h3>
 						</div>
-						<form class="form-horizontal" role="form" name="addCodeForm" ng-submit="addCode(addCodeForm.$valid)">
-							<div class="form-group" style="padding-left:30px">
-								<label>ICD-10 Code</label>
-								<input type="text" class="form-control" name="code" ng-model="code.code" required/>
+						<form class="form-horizontal" role="form" name="addCodeForm"
+							ng-submit="addCode(addCodeForm.$valid)">
+							<div class="form-group" style="padding-left: 30px">
+								<label>ICD-10 Code</label> <input type="text"
+									class="form-control" name="code" ng-model="code.code" required />
 							</div>
-							<div class="form-group" style="padding-left:30px">
+							<div class="form-group" style="padding-left: 30px">
 								<label>Description</label>
-								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
+								<textarea class="form-control" rows="5" name="description"
+									ng-model="code.description" required ng-minlength="1"></textarea>
 							</div>
-							<div class="form-group" style="padding-left:30px">								
-								<div style="padding-left:170px">
-									<button class="btn btn-primary" name="submit">Add Code</button> 
+							<div class="form-group" style="padding-left: 30px">
+								<div style="padding-left: 170px">
+									<button class="btn btn-primary" name="submit">Add Code</button>
 									<!-- <input type="submit" value="Add Code" class="btn btn-primary"/>  -->
 								</div>
 							</div>
 						</form>
 						<div>
 							<!-- <h4 style="color: red" ng-show="addCodeForm.$valid">Code doesn't meet specifications</h4>  -->
-							<p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
-						</div>	
+							<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+						</div>
 						<div>
 							<!-- Formate guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
 							<h4 style="color: blue">ICD-10 Code Format:</h4>
@@ -122,6 +124,6 @@
 				</tr>
 			</table>
 		</div>
-		</div>
-	</body>
+	</div>
+</body>
 </html>

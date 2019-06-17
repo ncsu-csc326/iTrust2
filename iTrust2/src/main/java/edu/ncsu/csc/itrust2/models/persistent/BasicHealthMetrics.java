@@ -138,7 +138,8 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      */
     public BasicHealthMetrics ( final OfficeVisitForm ovf ) throws ParseException {
         setPatient( User.getByNameAndRole( ovf.getPatient(), Role.ROLE_PATIENT ) );
-        setHcp( User.getByNameAndRole( ovf.getHcp(), Role.ROLE_HCP ) );
+        setHcp( User.getByName( ovf.getHcp() ) );
+        
 
         setDiastolic( ovf.getDiastolic() );
         setHdl( ovf.getHdl() );
@@ -502,6 +503,9 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      *            the houseSmokingStatus to set
      */
     public void setHouseSmokingStatus ( final HouseholdSmokingStatus houseSmokingStatus ) {
+        if ( houseSmokingStatus == null ) {
+            return;
+        }
         this.houseSmokingStatus = houseSmokingStatus;
     }
 
@@ -641,6 +645,9 @@ public class BasicHealthMetrics extends DomainObject<BasicHealthMetrics> {
      *            the patientSmokingStatus to set
      */
     public void setPatientSmokingStatus ( final PatientSmokingStatus patientSmokingStatus ) {
+        if ( patientSmokingStatus == null ) {
+            return;
+        }
         this.patientSmokingStatus = patientSmokingStatus;
     }
 

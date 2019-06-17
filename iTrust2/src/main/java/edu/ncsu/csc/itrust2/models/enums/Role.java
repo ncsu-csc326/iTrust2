@@ -5,6 +5,7 @@ package edu.ncsu.csc.itrust2.models.enums;
  * Different users have different functionality.
  *
  * @author Kai Presler-Marshall
+ * @author Jack MacDonald
  *
  */
 public enum Role {
@@ -28,7 +29,16 @@ public enum Role {
     /**
      * Lab Tech
      */
-    ROLE_LABTECH ( 5, "labtech/index" );
+    ROLE_LABTECH ( 5, "labtech/index" ),
+    /**
+     * Optometrist
+     */
+    ROLE_OD ( 6, "hcp/index" ),
+    /**
+     * Ophthalmologist
+     */
+    ROLE_OPH ( 7, "hcp/index" );
+
 
     /**
      * Numeric code of the Role

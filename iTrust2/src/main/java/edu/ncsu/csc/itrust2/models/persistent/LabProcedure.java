@@ -38,33 +38,33 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "LOINC_code" )
-    private LOINC       loinc;
+    private LOINC          loinc;
 
     /**
      * The Priority of this LabProcedure
      */
     @NotNull
     @Enumerated ( EnumType.STRING )
-    private Priority    priority;
+    private Priority       priority;
 
     /**
      * Comments on this LabProcedure
      */
-    private String      comments;
+    private String         comments;
 
     /**
      * The Status of this LabProcedure
      */
     @NotNull
     @Enumerated ( EnumType.STRING )
-    private LabStatus   status;
+    private LabStatus      status;
 
     /**
      * The id of this LabProcedure
      */
     @Id
     @GeneratedValue ( strategy = GenerationType.AUTO )
-    private Long        id;
+    private Long           id;
 
     /**
      * The Lab Tech assigned to this LabProcedure
@@ -72,7 +72,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "labtech", columnDefinition = "varchar(100)" )
-    private User        labtech;
+    private User           labtech;
 
     /**
      * The Office Visit of the LabProcedure
@@ -80,7 +80,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "visit", nullable = false )
-    private OfficeVisit visit;
+    private GeneralCheckup visit;
 
     /**
      * The User assigned to this LabProcedure
@@ -88,7 +88,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "patient", columnDefinition = "varchar(100)" )
-    private User        patient;
+    private User           patient;
 
     /**
      * Get a specific lab procedure by the database ID
@@ -115,7 +115,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
      */
     public static List<LabProcedure> getByVisit ( final Long id ) {
         try {
-            return getWhere( eqList( "visit", OfficeVisit.getById( id ) ) );
+            return getWhere( eqList( "visit", GeneralCheckup.getById( id ) ) );
         }
         catch ( final Exception e ) {
             return null;
@@ -138,10 +138,10 @@ public class LabProcedure extends DomainObject<LabProcedure> {
      *
      * @param id
      *            the id of the Office Visit
-     * @return the lab procedures associated with the queried OfficeVisit
+     * @return the lab procedures associated with the queried GeneralCheckup
      */
     public static List<LabProcedure> getForVisit ( final Long id ) {
-        return getWhere( eqList( "visit", OfficeVisit.getById( id ) ) );
+        return getWhere( eqList( "visit", GeneralCheckup.getById( id ) ) );
     }
 
     /**
@@ -236,7 +236,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
             setId( lpf.getId() );
         }
         setAssignedTech( User.getByName( lpf.getAssignedTech() ) );
-        setVisit( OfficeVisit.getById( lpf.getVisitId() ) );
+        setVisit( GeneralCheckup.getById( lpf.getVisitId() ) );
     }
 
     /**
@@ -353,21 +353,21 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     }
 
     /**
-     * Gets the OfficeVisit associated with this LabProcedure
+     * Gets the GeneralCheckup associated with this LabProcedure
      *
-     * @return The OfficeVisit associated with this LabProcedure
+     * @return The GeneralCheckup associated with this LabProcedure
      */
-    public OfficeVisit getVisit () {
+    public GeneralCheckup getVisit () {
         return visit;
     }
 
     /**
-     * Sets the OfficeVisit for this LabProcedure
+     * Sets the GeneralCheckup for this LabProcedure
      *
      * @param visit
-     *            The OfficeVisit to set for this LabProcedure
+     *            The GeneralCheckup to set for this LabProcedure
      */
-    public void setVisit ( final OfficeVisit visit ) {
+    public void setVisit ( final GeneralCheckup visit ) {
         this.visit = visit;
     }
 

@@ -5,9 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
+import java.time.LocalDate;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -57,11 +55,7 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         jbean.setState( State.NC );
         jbean.setZip( "12345" );
         jbean.setPhone( "123-456-7890" );
-
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/DD/YYYY", Locale.ENGLISH );
-        final Calendar time = Calendar.getInstance();
-        time.setTime( sdf.parse( "09/22/1985" ) );
-        jbean.setDateOfBirth( time );
+        jbean.setDateOfBirth( LocalDate.parse( "1985-09-22" ) );
 
         jbean.setBloodType( BloodType.BNeg );
 
@@ -84,8 +78,7 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         nsanderson.setState( State.NC );
         nsanderson.setZip( "27410" );
         nsanderson.setPhone( "946-832-4961" );
-        time.setTime( sdf.parse( "12/25/1986" ) );
-        nsanderson.setDateOfBirth( time );
+        nsanderson.setDateOfBirth( LocalDate.parse( "1986-12-25" ) );
         nsanderson.setBloodType( BloodType.ABPos );
         nsanderson.setEthnicity( Ethnicity.Caucasian );
         nsanderson.setGender( Gender.Female );

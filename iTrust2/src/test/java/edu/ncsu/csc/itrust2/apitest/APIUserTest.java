@@ -7,8 +7,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.UnsupportedEncodingException;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -111,7 +109,7 @@ public class APIUserTest {
 
     @Test
     @WithMockUser ( username = "admin", roles = { "USER", "ADMIN" } )
-    public void testAdminRole () throws UnsupportedEncodingException, Exception {
+    public void testAdminRole () throws Exception {
         final String content = mvc.perform( get( "/api/v1/role" ).contentType( MediaType.APPLICATION_JSON ) )
                 .andReturn().getResponse().getContentAsString();
         assertTrue( content.contains( "ROLE_ADMIN" ) );
@@ -120,7 +118,7 @@ public class APIUserTest {
 
     @Test
     @WithMockUser ( username = "admin", roles = { "USER", "NIL" } )
-    public void testNoRole () throws UnsupportedEncodingException, Exception {
+    public void testNoRole () throws Exception {
         final String content = mvc.perform( get( "/api/v1/role" ).contentType( MediaType.APPLICATION_JSON ) )
                 .andReturn().getResponse().getContentAsString();
         assertTrue( content.contains( "UNAUTHORIZED" ) );

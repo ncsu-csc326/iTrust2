@@ -133,19 +133,22 @@
 			});
 			/*]]>*/
 		</script>
-		
+
 		<div ng-app="proceduresApp" ng-controller="proceduresCtrl">
-		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
-			<h4 style="color:red" ng-model="message"></h4>
-			
-			<h1>Lab Procedures
-				<div style="display:inline-block; padding-left:800px" ng-show="viewStatus || viewReassign" ng-hide="!viewStatus || !viewReassign">
-					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button> 
+			<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->
+			<h4 style="color: red" ng-model="message"></h4>
+
+			<h1>
+				Lab Procedures
+				<div style="display: inline-block; padding-left: 800px"
+					ng-show="viewStatus || viewReassign"
+					ng-hide="!viewStatus || !viewReassign">
+					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button>
 				</div>
 			</h1>
-			
-			
-			<table style="width:100%">
+
+
+			<table style="width: 100%">
 				<tr>
 					<td style="vertical-align: top">
 						<table class="table">
@@ -159,7 +162,9 @@
 								<th>Comments</th>
 								<th>Action</th>
 							</tr>
-							<tr name="codeRow" ng-repeat="p in procedures | orderBy:['priority','status']" procId={{p.id}}>
+							<tr name="codeRow"
+								ng-repeat="p in procedures | orderBy:['priority','status']"
+								procId={{p.id}}>
 								<td name="codeCell">{{p.loinc.code}}</td>
 								<td name="comNameCell">{{p.loinc.commonName}}</td>
 								<td name="componentNameCell">{{p.loinc.component}}</td>
@@ -167,74 +172,95 @@
 								<td name="priorityCell">{{p.priority}}</td>
 								<td name="statusCell">{{p.status}}</td>
 								<td name="commentsCell">{{p.comments}}</td>
-								<td name="actionCell"> 
-									<input type="button" value="Update" class="btn btn-primary" id="update-{{p.loinc.code}}" 
-										ng-hide="p.status == 'COMPLETED'" ng-click="trueStatus(p)"/>
-									<input type="button" value="Reassign" class="btn btn-danger" id="reassign-{{p.loinc.code}}"
-										ng-hide="p.status == 'COMPLETED'" ng-click="trueReassign(p)"/>  
+								<td name="actionCell"><input type="button" value="Update"
+									class="btn btn-primary" id="update-{{p.loinc.code}}"
+									ng-hide="p.status == 'COMPLETED'" ng-click="trueStatus(p)" /> <input
+									type="button" value="Reassign" class="btn btn-danger"
+									id="reassign-{{p.loinc.code}}"
+									ng-hide="p.status == 'COMPLETED'" ng-click="trueReassign(p)" />
 								</td>
 							</tr>
 						</table>
 					</td>
-					<td style="width:20%;vertical-align: top">
+					<td style="width: 20%; vertical-align: top">
 						<!-- Update Lab Procedure part -->
 						<div ng-show="viewStatus" ng-hide="!viewStatus">
-							<div style="margin: 0 auto;text-align:center">
+							<div style="margin: 0 auto; text-align: center">
 								<h3>Update Lab Procedure</h3>
 							</div>
-							<form class="form-horizontal" role="form" name="editStatusForm" ng-submit="submitUpdate(editStatusForm.$valid)">
-								<div class="form-group" style="text-align:center; margin: 0 auto;" ng-controller="proceduresCtrl">
-									<label>Status:</label>
-										<select id="selectStatus" ng-model="labStatusChange" ng-change="selectChange(labStatusChange)">
-											<option
+							<form class="form-horizontal" role="form" name="editStatusForm"
+								ng-submit="submitUpdate(editStatusForm.$valid)">
+								<div class="form-group"
+									style="text-align: center; margin: 0 auto;"
+									ng-controller="proceduresCtrl">
+									<label>Status:</label> <select id="selectStatus"
+										ng-model="labStatusChange"
+										ng-change="selectChange(labStatusChange)">
+										<option
 											th:each="labstatus : ${T(edu.ncsu.csc.itrust2.models.enums.LabStatus).values()}"
-											th:value="${labstatus}" th:text="${labstatus}" th:id="labstatus + ${labstatus}"></option>
-										</select>
+											th:value="${labstatus}" th:text="${labstatus}"
+											th:id="labstatus + ${labstatus}"></option>
+									</select>
 								</div>
-								<div class="form-group" style="padding-left:30px">
+								<div class="form-group" style="padding-left: 30px">
 									<label>Comments</label>
 									<!-- Info on graying out until certain selection taken from here: 
 										https://stackoverflow.com/questions/43961403/grey-out-a-field-until-a-certain-drop-down-option-is-selected -->
-	 								<textarea class="form-control" rows="5" id="commentsID" name="commentsInput" ng-model="newcomments" 
-	 									required ng-minlength="1"></textarea>
-	 						</div>
-								<div class="form-group">								
-									<div style="margin: 0 auto;text-align:center">
-										<button class="btn btn-primary" id="updateStatus" name="submit">Update Status</button> 
+									<textarea class="form-control" rows="5" id="commentsID"
+										name="commentsInput" ng-model="newcomments" required
+										ng-minlength="1"></textarea>
+								</div>
+								<div class="form-group">
+									<div style="margin: 0 auto; text-align: center">
+										<button class="btn btn-primary" id="updateStatus"
+											name="submit">Update Status</button>
 									</div>
 								</div>
 							</form>
 						</div>
 						<div>
 							<!-- Error message if cannot reassign -->
-							<p style="color:red" ng-model="errorUpdating" ng-show="errorUpdating.length > 0" ng-hide="errorUpdating.length == 0" id="errR">
+							<p style="color: red" ng-model="errorUpdating"
+								ng-show="errorUpdating.length > 0"
+								ng-hide="errorUpdating.length == 0" id="errR">
 								{{errorUpdating}}</p>
-							<p style="color:green" ng-model="successUpdating" ng-show="successUpdating.length > 0" ng-hide="errorUpdating.length == 0" id="succUpd">
+							<p style="color: green" ng-model="successUpdating"
+								ng-show="successUpdating.length > 0"
+								ng-hide="errorUpdating.length == 0" id="succUpd">
 								{{successUpdating}}</p>
 						</div>
 						<div ng-show="viewReassign" ng-hide="!viewReassign">
-							<div style="margin: 0 auto;text-align:center">
+							<div style="margin: 0 auto; text-align: center">
 								<h3>Reassign Procedure</h3>
 							</div>
-							<form class="form-horizontal" role="form" name="reassignForm" ng-submit="submitReassign(reassignForm.$valid)">
-								<div class="form-group" style="text-align:center; margin: 0 auto;">
+							<form class="form-horizontal" role="form" name="reassignForm"
+								ng-submit="submitReassign(reassignForm.$valid)">
+								<div class="form-group"
+									style="text-align: center; margin: 0 auto;">
 									<label>Lab Tech:</label>
- 										<h4>Search: <input type="text" name="search" ng-model="searchFilter" id="labTechSearch" /></h4>
- 										<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
-											<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
-											<ul style="overflow:auto" class="list-unstyled">
-											<!-- Information on how labels work from here: 
+									<h4>
+										Search: <input type="text" name="search"
+											ng-model="searchFilter" id="labTechSearch" />
+									</h4>
+									<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+									<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+									<ul style="overflow: auto" class="list-unstyled">
+										<!-- Information on how labels work from here: 
 												https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
-												<li ng-repeat="lt in labtechs | filter:searchFilter"><h4><label>
-														<input type="radio" ng-model="$parent.selectedLabtech"
-														name="labtech" value="{{lt.self.username}}" id="{{lt.self.username}}-declare"
-														ng-click='$parent.selectLabtech(lt)' />&nbsp;{{$parent.displayName(lt)}}</label>
-												</h4></li>
-											</ul>
+										<li ng-repeat="lt in labtechs | filter:searchFilter"><h4>
+												<label> <input type="radio"
+													ng-model="$parent.selectedLabtech" name="labtech"
+													value="{{lt.self.username}}"
+													id="{{lt.self.username}}-declare"
+													ng-click='$parent.selectLabtech(lt)' />&nbsp;{{$parent.displayName(lt)}}
+												</label>
+											</h4></li>
+									</ul>
 								</div>
-								<div class="form-group">								
-									<div style="margin: 0 auto;text-align:center">
-										<button class="btn btn-primary" name="submit">Submit Reassign</button> 
+								<div class="form-group">
+									<div style="margin: 0 auto; text-align: center">
+										<button class="btn btn-primary" name="submit">Submit
+											Reassign</button>
 									</div>
 								</div>
 							</form>
@@ -243,6 +269,6 @@
 				</tr>
 			</table>
 		</div>
-		</div>
-	</body>
+	</div>
+</body>
 </html>

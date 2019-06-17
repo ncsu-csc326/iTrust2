@@ -149,14 +149,18 @@ public class APIPatientController extends APIController {
                                   // demographics, false if hcp edits them
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         try {
-            if ( !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) )
+            if ( ( !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) )
+                    && !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_OD" ) )
+                    && !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_OPH" ) ) )
                     && ( !auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_PATIENT" ) )
                             || !auth.getName().equals( id ) ) ) {
                 return new ResponseEntity( errorResponse( "You do not have permission to edit this record" ),
                         HttpStatus.UNAUTHORIZED );
             }
 
-            userEdit = auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) ) ? true : false;
+            userEdit = auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_HCP" ) )
+                    || auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_OD" ) )
+                    || auth.getAuthorities().contains( new SimpleGrantedAuthority( "ROLE_OPH" ) );
         }
         catch ( final Exception e ) {
             return new ResponseEntity( HttpStatus.UNAUTHORIZED );
@@ -204,7 +208,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/{username}" )
-    @PreAuthorize ( "hasRole('ROLE_PATIENT') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity getRepresentatives ( @PathVariable final String username ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
         if ( me.getRole() == Role.ROLE_PATIENT && !me.getUsername().equals( username ) ) {
@@ -239,7 +243,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representing/{username}" )
-    @PreAuthorize ( "hasRole('ROLE_PATIENT') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity getRepresenting ( @PathVariable final String username ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
         if ( me.getRole() == Role.ROLE_PATIENT && !me.getUsername().equals( username ) ) {
@@ -276,7 +280,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/{patient}/{representative}" )
-    @PreAuthorize ( "hasRole('ROLE_PATIENT') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity addRepresentative ( @PathVariable final String patient,
             @PathVariable final String representative ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
@@ -344,7 +348,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/remove/{patient}/{representative}" )
-    @PreAuthorize ( "hasRole('ROLE_PATIENT') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity removeRepresentative ( @PathVariable final String patient,
             @PathVariable final String representative ) {
         final User me = User.getByName( LoggerUtil.currentUser() );

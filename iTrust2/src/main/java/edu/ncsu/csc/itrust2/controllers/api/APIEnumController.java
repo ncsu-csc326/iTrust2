@@ -11,11 +11,15 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.BloodType;
 import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
+import edu.ncsu.csc.itrust2.models.enums.EyeSurgeryType;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.enums.Status;
+import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
  * This class provides GET endpoints for all of the Enums, so that they can be
@@ -33,7 +37,25 @@ public class APIEnumController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/appointmenttype" )
     public List<AppointmentType> getAppointmentTypes () {
+        final User user = User.getByName( LoggerUtil.currentUser() );
+        final Role role = user.getRole();
+        if ( role.equals( Role.ROLE_HCP ) ) {
+            return Arrays.asList( AppointmentType.GENERAL_CHECKUP );
+        }
+        if ( role.equals( Role.ROLE_OD ) ) {
+            return Arrays.asList( AppointmentType.GENERAL_CHECKUP, AppointmentType.GENERAL_OPHTHALMOLOGY );
+        }
         return Arrays.asList( AppointmentType.values() );
+    }
+
+    /**
+     * Gets ophthalomogy surgery types
+     *
+     * @return ophthalomogy surgery types
+     */
+    @GetMapping ( BASE_PATH + "/ophthalmologysurgerytype" )
+    public List<EyeSurgeryType> getOphthalmologySurgeryTypes () {
+        return Arrays.asList( EyeSurgeryType.values() );
     }
 
     /**

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-import java.util.Calendar;
+import java.time.ZonedDateTime;
 
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class DomainObjectTest {
         le.setLogCode( TransactionType.LOGIN_SUCCESS );
         le.setMessage( "User has logged in" );
         le.setPrimaryUser( "test" );
-        le.setTime( Calendar.getInstance() );
+        le.setTime( ZonedDateTime.now() );
         le.save();
 
         final LogEntry retrieve = (LogEntry) DomainObject.getBy( LogEntry.class, "primaryUser", "test" );

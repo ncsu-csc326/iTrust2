@@ -100,17 +100,19 @@
 			});
 			/*]]>*/
 		</script>
-		
+
 		<div ng-app="manageLOINCCodesApp" ng-controller="manageLOINCCodesCtrl">
-		<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->			
-			<h4 style="color:red" ng-model="message"></h4>
-			
-			<h1>Manage LOINC Codes
-				<div style="display:inline-block; padding-left:500px" ng-show="editMode" ng-hide="!editMode">
-					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button> 
+			<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->
+			<h4 style="color: red" ng-model="message"></h4>
+
+			<h1>
+				Manage LOINC Codes
+				<div style="display: inline-block; padding-left: 500px"
+					ng-show="editMode" ng-hide="!editMode">
+					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button>
 				</div>
 			</h1>
-			<table style="width:100%">
+			<table style="width: 100%">
 				<tr>
 					<td style="vertical-align: top">
 						<table class="table">
@@ -121,63 +123,69 @@
 								<th>Property</th>
 								<th>Action</th>
 							</tr>
-							 <tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'" codeId={{c.id}}>
+							<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'"
+								codeId={{c.id}}>
 								<td name="codeCell">{{c.code}}</td>
 								<td name="comNameCell">{{c.commonName}}</td>
 								<td name="componentCell">{{c.component}}</td>
 								<td name="property">{{c.property}}</td>
-								<td>
-									<input type="button" value="Edit" class="btn btn-primary" ng-click="editRow(c)"/>
-									<input type="button" value="Remove" class="btn btn-danger" ng-click="removeRow(c)"/>
-								</td>
+								<td><input type="button" value="Edit"
+									class="btn btn-primary" ng-click="editRow(c)" /> <input
+									type="button" value="Remove" class="btn btn-danger"
+									ng-click="removeRow(c)" /></td>
 							</tr>
 						</table>
 					</td>
-					<td style="width:35%;vertical-align: top">
+					<td style="width: 35%; vertical-align: top">
 						<div style="padding: 0px 0px 20px 30px">
 							<h3 ng-hide="editMode" ng-show="!editMode">Add a LOINC Code</h3>
 							<h3 ng-hide="!editMode" ng-show="editMode">Edit LOINC Code</h3>
 						</div>
-						<form class="form-horizontal" role="form" name="addCodeForm" ng-submit="">
-							<div class="form-group" style="padding-left:30px">
-								<label>LOINC Code</label>
-								<input type="text" class="form-control" name="iCode" ng-model="code.code" required/>
+						<form class="form-horizontal" role="form" name="addCodeForm"
+							ng-submit="">
+							<div class="form-group" style="padding-left: 30px">
+								<label>LOINC Code</label> <input type="text"
+									class="form-control" name="iCode" ng-model="code.code" required />
 							</div>
-							<div class="form-group" style="padding-left:30px">
-								<label>Common Name</label>
-								<input type="text" class="form-control" name="iComName" ng-model="code.commonName" required/>
-<!-- 								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
- -->							</div>
- 							<div class="form-group" style="padding-left:30px">
-								<label>Component</label>
-								<input type="text" class="form-control" name="iComponent" ng-model="code.component" required/>
+							<div class="form-group" style="padding-left: 30px">
+								<label>Common Name</label> <input type="text"
+									class="form-control" name="iComName" ng-model="code.commonName"
+									required />
+								<!-- 								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
+ -->
 							</div>
-							<div class="form-group" style="padding-left:30px">
-								<label>Property</label>
-								<input type="text" class="form-control" name="iProperty" ng-model="code.property" required/>
+							<div class="form-group" style="padding-left: 30px">
+								<label>Component</label> <input type="text" class="form-control"
+									name="iComponent" ng-model="code.component" required />
 							</div>
-							<div class="form-group" style="padding-left:30px">								
-								<div style="padding-left:170px">
-									<button class="btn btn-primary" name="submit" id="submitLOINC" ng-click="addCode()">{{ editMode ? "Edit Code" : "Add Code" }}</button> 
+							<div class="form-group" style="padding-left: 30px">
+								<label>Property</label> <input type="text" class="form-control"
+									name="iProperty" ng-model="code.property" required />
+							</div>
+							<div class="form-group" style="padding-left: 30px">
+								<div style="padding-left: 170px">
+									<button class="btn btn-primary" name="submit" id="submitLOINC"
+										ng-click="addCode()">{{ editMode ? "Edit Code" : "Add
+										Code" }}</button>
 								</div>
 							</div>
 						</form>
 						<div>
-							<p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
-							<p style="color:green" ng-model="success" id="succP">{{success}}</p>
-						</div>	
+							<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+							<p style="color: green" ng-model="success" id="succP">{{success}}</p>
+						</div>
 						<div>
 							<!-- Formate guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
 							<h4>LOINC Code Format:</h4>
 							<ul>
 								<li>(Up to 5 digits) - 1 digit</li>
-								<li> Numeric values only </li>
+								<li>Numeric values only</li>
 							</ul>
 						</div>
 					</td>
 				</tr>
 			</table>
 		</div>
-		</div>
-	</body>
+	</div>
+</body>
 </html>

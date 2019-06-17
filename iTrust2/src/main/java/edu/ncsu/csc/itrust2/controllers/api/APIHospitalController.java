@@ -66,8 +66,8 @@ public class APIHospitalController extends APIController {
      * @return response
      */
     @PostMapping ( BASE_PATH + "/hospitals" )
+    @PreAuthorize ( "hasRole('ROLE_ADMIN') ")
     public ResponseEntity createHospital ( @RequestBody final HospitalForm hospitalF ) {
-        System.err.println( "HOSPITALS" );
         final Hospital hospital = new Hospital( hospitalF );
         if ( null != Hospital.getByName( hospital.getName() ) ) {
             return new ResponseEntity(
@@ -97,6 +97,7 @@ public class APIHospitalController extends APIController {
      * @return response
      */
     @PutMapping ( BASE_PATH + "/hospitals/{id}" )
+    @PreAuthorize ( "hasRole('ROLE_ADMIN') ")
     public ResponseEntity updateHospital ( @PathVariable final String id, @RequestBody final HospitalForm hospitalF ) {
         final Hospital hospital = new Hospital( hospitalF );
         final Hospital dbHospital = Hospital.getByName( id );

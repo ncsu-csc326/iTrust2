@@ -91,7 +91,7 @@ public class APIPatientTest {
         patient.setAddress2( "Some Location" );
         patient.setBloodType( BloodType.APos.toString() );
         patient.setCity( "Viipuri" );
-        patient.setDateOfBirth( "6/15/1977" );
+        patient.setDateOfBirth( "1977-06-15" );
         patient.setEmail( "antti@itrust.fi" );
         patient.setEthnicity( Ethnicity.Caucasian.toString() );
         patient.setFirstName( "Antti" );
@@ -152,7 +152,7 @@ public class APIPatientTest {
         patient.setAddress2( "Some Location" );
         patient.setBloodType( BloodType.APos.toString() );
         patient.setCity( "Viipuri" );
-        patient.setDateOfBirth( "6/15/1977" );
+        patient.setDateOfBirth( "1977-06-15" );
         patient.setEmail( "bobbo@itrust.fi" );
         patient.setEthnicity( Ethnicity.Caucasian.toString() );
         patient.setFirstName( "Bobbo" );
@@ -174,7 +174,7 @@ public class APIPatientTest {
         rep.setAddress2( "Some Location" );
         rep.setBloodType( BloodType.APos.toString() );
         rep.setCity( "Viipuri" );
-        rep.setDateOfBirth( "6/15/1977" );
+        rep.setDateOfBirth( "1977-06-15" );
         rep.setEmail( "terry@itrust.fi" );
         rep.setEthnicity( Ethnicity.Caucasian.toString() );
         rep.setFirstName( "Terry" );
@@ -196,7 +196,7 @@ public class APIPatientTest {
         jer.setAddress2( "Some Location" );
         jer.setBloodType( BloodType.APos.toString() );
         jer.setCity( "Viipuri" );
-        jer.setDateOfBirth( "6/15/1977" );
+        jer.setDateOfBirth( "1977-06-15" );
         jer.setEmail( "terry@itrust.fi" );
         jer.setEthnicity( Ethnicity.Caucasian.toString() );
         jer.setFirstName( "Jerry" );
@@ -302,7 +302,7 @@ public class APIPatientTest {
         patient.setAddress2( "Some Location" );
         patient.setBloodType( BloodType.APos.toString() );
         patient.setCity( "Viipuri" );
-        patient.setDateOfBirth( "6/15/1977" );
+        patient.setDateOfBirth( "1977-06-15" );
         patient.setEmail( "bobbo@itrust.fi" );
         patient.setEthnicity( Ethnicity.Caucasian.toString() );
         patient.setFirstName( "Bobbo" );
@@ -324,7 +324,7 @@ public class APIPatientTest {
         rep.setAddress2( "Some Location" );
         rep.setBloodType( BloodType.APos.toString() );
         rep.setCity( "Viipuri" );
-        rep.setDateOfBirth( "6/15/1977" );
+        rep.setDateOfBirth( "1977-06-15" );
         rep.setEmail( "terry@itrust.fi" );
         rep.setEthnicity( Ethnicity.Caucasian.toString() );
         rep.setFirstName( "Terry" );
@@ -343,7 +343,7 @@ public class APIPatientTest {
         a.setAddress2( "Some Location" );
         a.setBloodType( BloodType.APos.toString() );
         a.setCity( "Viipuri" );
-        a.setDateOfBirth( "6/15/1977" );
+        a.setDateOfBirth( "1977-06-15" );
         a.setEmail( "antti@itrust.fi" );
         a.setEthnicity( Ethnicity.Caucasian.toString() );
         a.setFirstName( "Antti" );
@@ -389,7 +389,7 @@ public class APIPatientTest {
         patient.setAddress2( "Some Location" );
         patient.setBloodType( BloodType.APos.toString() );
         patient.setCity( "Viipuri" );
-        patient.setDateOfBirth( "6/15/1977" );
+        patient.setDateOfBirth( "1977-06-15" );
         patient.setEmail( "antti@itrust.fi" );
         patient.setEthnicity( Ethnicity.Caucasian.toString() );
         patient.setFirstName( "Antti" );
@@ -417,7 +417,7 @@ public class APIPatientTest {
         patient.setAddress2( "Some Location" );
         patient.setBloodType( BloodType.APos.toString() );
         patient.setCity( "Viipuri" );
-        patient.setDateOfBirth( "6/15/1977" );
+        patient.setDateOfBirth( "1977-06-15" );
         patient.setEmail( "antti@itrust.fi" );
         patient.setEthnicity( Ethnicity.Caucasian.toString() );
         patient.setFirstName( "Antti" );

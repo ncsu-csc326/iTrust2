@@ -132,9 +132,9 @@
 				<h2 id="header0">Edit My Demographics</h2>
 				<table>
 					<tr>
-						<td style="text-align: left; padding: 5px"><b>First
-								Name:</b></td>
-						<td><input type="text" name="firstName" id="firstName" value="{{personnelForm.firstName}}"
+						<td style="text-align: left; padding: 5px"><b>First Name:</b></td>
+						<td><input type="text" name="firstName" id="firstName"
+							value="{{personnelForm.firstName}}"
 							ng-model="personnelForm.firstName" /></td>
 						<td style="color: red;" ng-show="err[0]">{{err[0]}}</td>
 					</tr>
@@ -148,21 +148,22 @@
 						<td style="text-align: left; padding: 5px"><b>Email:</b></td>
 						<td><input type="text" name="email" id="email"
 							ng-model="personnelForm.email" /></td>
-						<td style="color: red;" ng-show="err[2]">{{err[2]}} </td>
+						<td style="color: red;" ng-show="err[2]">{{err[2]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Address
 								Line 1:</b></td>
-						<td><input type="text" name="address1" id="address1" value="{{personnelForm.address1}}"
+						<td><input type="text" name="address1" id="address1"
+							value="{{personnelForm.address1}}"
 							ng-model="personnelForm.address1" /></td>
-						<td style="color: red;" ng-show="err[3]">{{err[3]}} </td>
+						<td style="color: red;" ng-show="err[3]">{{err[3]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Address
 								Line 2:</b></td>
 						<td><input type="text" name="address2" id="address2"
 							ng-model="personnelForm.address2" /></td>
-						<td style="color: red;" ng-show="err[4]">{{err[4]}} </td>
+						<td style="color: red;" ng-show="err[4]">{{err[4]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>City:</b></td>
@@ -172,23 +173,27 @@
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>State:</b></td>
-						<td><select name="state" id="state" ng-model="personnelForm.state">
+						<td><select name="state" id="state"
+							ng-model="personnelForm.state">
 								<option ng-repeat="st in states">{{st.id}}</option>
 						</select></td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Zip:</b></td>
-						<td><input type="text" name="zip" id="zip" ng-model="personnelForm.zip" /></td>
+						<td><input type="text" name="zip" id="zip"
+							ng-model="personnelForm.zip" /></td>
 						<td style="color: red;" ng-show="err[6]">{{err[6]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Phone:</b></td>
-						<td><input type="text" name="phone" id="phone" value="personnelForm.phone" placeholder="xxx-xxx-xxxx"
+						<td><input type="text" name="phone" id="phone"
+							value="personnelForm.phone" placeholder="xxx-xxx-xxxx"
 							ng-model="personnelForm.phone" /></td>
 						<td style="color: red;" ng-show="err[7]">{{err[7]}}</td>
 					</tr>
 					<tr>
-						<td style="text-align: left; padding: 5px"><b>Specialty (Optional):</b></td>
+						<td style="text-align: left; padding: 5px"><b>Specialty
+								(Optional):</b></td>
 						<td><input type="text" name="specialty" id="specialty"
 							ng-model="personnelForm.speciality" /></td>
 						<td style="color: red;" ng-show="err[8]">{{err[8]}}</td>

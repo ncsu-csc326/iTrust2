@@ -48,14 +48,13 @@ public class ViewAccessLogDefs extends CucumberTest {
 
     @When ( "She selects the start date and end date" )
     public void correctTime () {
-
         waitForAngular();
 
         final String pattern = "MM/dd/yyyy";
         final DateTimeFormatter dtf = DateTimeFormatter.ofPattern( pattern );
         final String dateInString = today.format( dtf );
-        setTextField( By.name( "startDate" ), dateInString );
-        setTextField( By.name( "endDate" ), dateInString );
+        setTextField( By.name( "startDate" ), dateInString.replace( "/", "" ) );
+        setTextField( By.name( "endDate" ), dateInString.replace( "/", "" ) );
         driver.findElement( By.name( "submit" ) ).click();
 
         waitForAngular();
@@ -64,7 +63,6 @@ public class ViewAccessLogDefs extends CucumberTest {
 
     @Then ( "She sees the access log within this time frame." )
     public void checkLog () {
-
         waitForAngular();
 
         assertTrue( driver.findElement( By.name( "dateCell" ) ).getText().contains( "" + today.getDayOfMonth() ) );
@@ -78,9 +76,8 @@ public class ViewAccessLogDefs extends CucumberTest {
     @And ( "She enter the date in the wrong text box" )
     public void startDateLaterThanEndDate () {
         waitForAngular();
-        setTextField( By.name( "startDate" ), "02/21/2018" );
-        setTextField( By.name( "endDate" ), "02/10/2018" );
-
+        setTextField( By.name( "startDate" ), "02/21/2018".replace( "/", "" ) );
+        setTextField( By.name( "endDate" ), "02/10/2018".replace( "/", "" ) );
     }
 
     @Then ( "The Search By Date button is disabled" )
@@ -92,15 +89,13 @@ public class ViewAccessLogDefs extends CucumberTest {
     @And ( "She didn't enter the end date" )
     public void noEndDate () {
         waitForAngular();
-        setTextField( By.name( "startDate" ), "01/01/2018" );
-
+        setTextField( By.name( "startDate" ), "01/01/2018".replace( "/", "" ) );
     }
 
     @And ( "She didn't enter the start date" )
     public void noStartDate () {
         waitForAngular();
-        setTextField( By.name( "endDate" ), "12/31/2018" );
-
+        setTextField( By.name( "endDate" ), "12/31/2018".replace( "/", "" ) );
     }
 
     /**

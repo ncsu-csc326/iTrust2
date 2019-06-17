@@ -1,10 +1,11 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
-import java.util.Calendar;
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Vector;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,9 +13,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAdapter;
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAttributeConverter;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -47,7 +52,11 @@ public class LogEntry extends DomainObject<LogEntry> {
      * The timestamp of when the event occurred
      */
     @NotNull
-    private Calendar        time;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert( converter = ZonedDateTimeAttributeConverter.class )
+    @JsonAdapter( ZonedDateTimeAdapter.class )
+    private ZonedDateTime        time;
 
     /**
      * The secondary user for the event that has been logged (optional)
@@ -107,19 +116,14 @@ public class LogEntry extends DomainObject<LogEntry> {
      * @return LogEntries within date range
      */
 
-    public static List<LogEntry> getByDateRange ( final Date startDate, final Date endDate ) {
-        final Calendar start = Calendar.getInstance();
-        start.setTime( startDate );
-        final Calendar end = Calendar.getInstance();
-        end.setTime( endDate );
-        end.add( Calendar.DAY_OF_MONTH, 1 ); // to make inclusive
+    public static List<LogEntry> getByDateRange ( final ZonedDateTime startDate, final ZonedDateTime endDate ) {
+        endDate.plusDays( 1 ); // To make inclusive
 
         final String user = LoggerUtil.currentUser();
 
         final List<Criterion> search = new Vector<Criterion>();
-        search.add( bt( "time", start, end ) );
-        search.add(
-                Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) );
+        search.add( bt( "time", startDate, endDate ) );
+        search.add( Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) );
 
         return getWhere( search );
     }
@@ -167,7 +171,7 @@ public class LogEntry extends DomainObject<LogEntry> {
         this.setPrimaryUser( primaryUser );
         this.setSecondaryUser( secondaryUser );
         this.setMessage( message );
-        this.setTime( Calendar.getInstance() );
+        this.setTime( ZonedDateTime.now() );
     }
 
     /**
@@ -199,7 +203,7 @@ public class LogEntry extends DomainObject<LogEntry> {
      *
      * @return Time
      */
-    public Calendar getTime () {
+    public ZonedDateTime getTime () {
         return this.time;
     }
 
@@ -288,7 +292,7 @@ public class LogEntry extends DomainObject<LogEntry> {
      * @param time
      *            Timestamp when the event occurred.
      */
-    public void setTime ( final Calendar time ) {
+    public void setTime ( final ZonedDateTime time ) {
         this.time = time;
     }
 

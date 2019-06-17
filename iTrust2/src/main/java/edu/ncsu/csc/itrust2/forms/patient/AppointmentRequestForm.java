@@ -1,10 +1,6 @@
 package edu.ncsu.csc.itrust2.forms.patient;
 
-import java.text.SimpleDateFormat;
-import java.util.Locale;
-
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -19,27 +15,6 @@ import edu.ncsu.csc.itrust2.models.persistent.AppointmentRequest;
  */
 public class AppointmentRequestForm {
 
-    /**
-     * Populate the appt request form from the Appointment request object
-     *
-     * @param ar
-     *            the appointment request to populate the form from
-     */
-    public AppointmentRequestForm ( final AppointmentRequest ar ) {
-        setPatient( ar.getPatient().getUsername() );
-        setHcp( ar.getHcp().getUsername() );
-        final SimpleDateFormat dateTemp = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        setDate( dateTemp.format( ar.getDate().getTime() ) );
-        final SimpleDateFormat timeTemp = new SimpleDateFormat( "hh:mm aaa", Locale.ENGLISH );
-        setTime( timeTemp.format( ar.getDate().getTime() ) );
-        setType( ar.getType().toString() );
-        setComments( ar.getComments() );
-        if ( null != ar.getId() ) {
-            setId( ar.getId().toString() );
-        }
-        setStatus( ar.getStatus().toString() );
-    }
-
     /** The status of the appt request **/
     private String status;
 
@@ -52,16 +27,10 @@ public class AppointmentRequestForm {
 
     /** The date of the appt request */
     @NotEmpty ( message = "Date cannot be empty" )
-    @Pattern ( regexp = "(^$|^[0-9]{2}/[0-9]{2}/[0-9]{4}$)", message = "Invalid date or date format" )
     private String date;
 
     /** The id of the appt request */
     private String id;
-
-    /** The time of the appt request */
-    @NotEmpty ( message = "Time cannot be empty" )
-    @Pattern ( regexp = "(^$|^[0-1][0-9]:[0-5][0-9] (am|pm|AM|PM)$)", message = "Invalid time" )
-    private String time;
 
     /** The type of the appt request */
     private String type;
@@ -72,7 +41,26 @@ public class AppointmentRequestForm {
     /**
      * Don't use this one. For Hibernate/Thymeleaf
      */
-    public AppointmentRequestForm () {
+    public AppointmentRequestForm () { }
+
+    /**
+     * Populate the appt request form from the Appointment request object
+     *
+     * @param request
+     *            the appointment request to populate the form from
+     */
+    public AppointmentRequestForm ( final AppointmentRequest request ) {
+        setPatient( request.getPatient().getUsername() );
+        setHcp( request.getHcp().getUsername() );
+        setDate( request.getDate().toString() );
+        setType( request.getType().toString() );
+        setComments( request.getComments() );
+
+        if ( request.getId() != null ) {
+            setId( request.getId().toString() );
+        }
+        
+        setStatus( request.getStatus().toString() );
     }
 
     /**
@@ -114,7 +102,7 @@ public class AppointmentRequestForm {
     }
 
     /**
-     * Get the date of the appointment to request
+     * Get the date of the appointment to request as ISO string with timezone.
      *
      * @return the date of the appointment to request
      */
@@ -123,32 +111,13 @@ public class AppointmentRequestForm {
     }
 
     /**
-     * Set the date of the appointment to request
+     * Set the date of the appointment to request from ISO string with timezone.
      *
      * @param date
      *            the date of the appointment to request
      */
     public void setDate ( final String date ) {
         this.date = date;
-    }
-
-    /**
-     * Get the time of the appointment to request
-     *
-     * @return the time of the appointment to request
-     */
-    public String getTime () {
-        return time;
-    }
-
-    /**
-     * Set the time of the appointment to request
-     *
-     * @param time
-     *            the time of the appointment to request
-     */
-    public void setTime ( final String time ) {
-        this.time = time;
     }
 
     /**

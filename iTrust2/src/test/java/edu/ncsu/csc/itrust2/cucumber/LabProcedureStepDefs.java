@@ -31,6 +31,41 @@ public class LabProcedureStepDefs extends CucumberTest {
     }
 
     /**
+     * Fills in the date and time fields with the specified date and time.
+     * @param date The date to enter.
+     * @param time The time to enter.
+     */
+    private void fillInDateTime(String dateField, String date, String timeField, String time) {
+        fillInDate(dateField, date);
+        fillInTime(timeField, time);
+    }
+
+    /**
+     * Fills in the date field with the specified date.
+     * @param date The date to enter.
+     */
+    private void fillInDate(String dateField, String date) {
+        driver.findElement( By.name( dateField ) ).clear();
+        final WebElement dateElement = driver.findElement( By.name( dateField ) );
+        dateElement.sendKeys( date.replace( "/", "" ) );
+    }
+
+    /**
+     * Fills in the time field with the specified time.
+     * @param time The time to enter.
+     */
+    private void fillInTime(String timeField, String time) {
+        // Zero-pad the time for entry
+        if ( time.length() == 7 ) {
+            time = "0" + time;
+        }
+
+        driver.findElement( By.name( timeField ) ).clear();
+        final WebElement timeElement = driver.findElement( By.name( timeField ) );
+        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
+    }
+
+    /**
      * Login as HCP Shelly Vang.
      */
     @Given ( "I log in to iTrust2 as an HCP" )
@@ -97,10 +132,10 @@ public class LabProcedureStepDefs extends CucumberTest {
         waitForAngular();
 
         driver.findElement( By.id( "patient" ) ).click();
-        driver.findElement( By.name( "type" ) ).click();
+        driver.findElement( By.name( "GENERAL_CHECKUP" ) ).click();
         driver.findElement( By.name( "hospital" ) ).click();
-        setTextField( By.name( "date" ), "10/17/2018" );
-        setTextField( By.name( "time" ), "9:30 AM" );
+        
+        fillInDateTime( "date", "10/17/2018", "time", "9:30 AM");
 
         waitForAngular();
         setTextField( By.name( "height" ), "62.3" );

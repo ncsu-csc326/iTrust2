@@ -2,15 +2,14 @@ package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.io.Serializable;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -25,9 +24,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters.LocalDateConverter;
 
+import edu.ncsu.csc.itrust2.adapters.LocalDateAdapter;
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
 import edu.ncsu.csc.itrust2.models.enums.BloodType;
 import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
@@ -165,31 +168,12 @@ public class Patient extends DomainObject<Patient> implements Serializable {
         setZip( form.getZip() );
         setPhone( form.getPhone() );
 
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        try {
-            final Date parsedDate = sdf.parse( form.getDateOfBirth() );
-            final Calendar c = Calendar.getInstance();
-            c.setTime( parsedDate );
-            setDateOfBirth( c );
-
-        }
-        catch ( final Exception e ) {
-            throw new IllegalArgumentException( "Date of birth must be of the form mm/dd/yyyy" );
-        }
-        if ( null != form
-                .getDateOfDeath() ) { /*
-                                       * Patient can't set their date of death
-                                       */
-            try {
-                final Date parsedDeathDate = sdf.parse( form.getDateOfDeath() );
-                final Calendar deathC = Calendar.getInstance();
-                deathC.setTime( parsedDeathDate );
-                setDateOfDeath( deathC );
-                setCauseOfDeath( form.getCauseOfDeath() );
-            }
-            catch ( final Exception e ) {
-                throw new IllegalArgumentException( "Date of death must be of the form mm/dd/yyyy" );
-            }
+        setDateOfBirth( LocalDate.parse( form.getDateOfBirth() ) );
+        
+        // Patient can't set their date of death
+        if ( form.getDateOfDeath() != null ) {
+            setDateOfDeath( LocalDate.parse( form.getDateOfDeath() ) );
+            setCauseOfDeath( form.getCauseOfDeath() );
         }
 
         setBloodType( BloodType.parse( form.getBloodType() ) );
@@ -317,12 +301,20 @@ public class Patient extends DomainObject<Patient> implements Serializable {
     /**
      * The birthday of this patient
      */
-    private Calendar     dateOfBirth;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert(converter = LocalDateConverter.class)
+    @JsonAdapter( LocalDateAdapter.class )
+    private LocalDate    dateOfBirth;
 
     /**
      * The date of death of this patient
      */
-    private Calendar     dateOfDeath;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert(converter = LocalDateConverter.class)
+    @JsonAdapter( LocalDateAdapter.class )
+    private LocalDate    dateOfDeath;
 
     /**
      * The cause of death of this patient
@@ -659,7 +651,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *
      * @return the date of birth of this patient
      */
-    public Calendar getDateOfBirth () {
+    public LocalDate getDateOfBirth () {
         return dateOfBirth;
     }
 
@@ -669,7 +661,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * @param dateOfBirth
      *            the date of birth to set this patient to
      */
-    public void setDateOfBirth ( final Calendar dateOfBirth ) {
+    public void setDateOfBirth ( final LocalDate dateOfBirth ) {
         this.dateOfBirth = dateOfBirth;
     }
 
@@ -678,7 +670,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *
      * @return the date of death of this patient
      */
-    public Calendar getDateOfDeath () {
+    public LocalDate getDateOfDeath () {
         return dateOfDeath;
     }
 
@@ -688,7 +680,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * @param dateOfDeath
      *            the date of death to set this patient to
      */
-    public void setDateOfDeath ( final Calendar dateOfDeath ) {
+    public void setDateOfDeath ( final LocalDate dateOfDeath ) {
         this.dateOfDeath = dateOfDeath;
     }
 

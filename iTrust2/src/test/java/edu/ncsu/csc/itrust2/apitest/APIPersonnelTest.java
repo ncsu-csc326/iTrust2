@@ -132,6 +132,8 @@ public class APIPersonnelTest {
         mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_LABTECH" ) ).andExpect( status().isOk() );
         mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_ER" ) ).andExpect( status().isOk() );
         mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_HCP" ) ).andExpect( status().isOk() );
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_OD" ) ).andExpect( status().isOk() );
+        mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_OPH" ) ).andExpect( status().isOk() );
 
         // Invalid get request
         mvc.perform( get( "/api/v1/personnel/getbyroles/ROLE_SCHMOO" ) ).andExpect( status().is4xxClientError() );

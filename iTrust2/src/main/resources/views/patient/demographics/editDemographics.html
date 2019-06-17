@@ -1,6 +1,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:include="layout :: head(title=~{::title},links=~{})">
-<title>Document Office Visit</title>
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title>Edit My Demographics</title>
+<script th:src="@{/resources/js/dateTimeService.js}"
+	src="../resources/js/dateTimeService.js"></script>
 </head>
 <body th:include="layout :: body" th:with="content=~{::content}">
 	<div th:fragment="content">
@@ -8,8 +10,8 @@
 		<script th:inline="javascript">
 	    /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
 	    /*<![CDATA[*/
-	    var app = angular.module("editPatientApp", []);
-	    app.controller("editPatientCtrl", function($scope, $http) {
+	    var app = angular.module("editPatientApp", ['dateTimeServices']);
+	    app.controller("editPatientCtrl", function($scope, $http, dateTimeService) {
 		
 		$scope.err = [];
 		for(var i = 0; i < 12; i++) {
@@ -28,8 +30,7 @@
 		    $scope.patientForm.state = $scope.patient.state;
 		    $scope.patientForm.zip = $scope.patient.zip;
 		    $scope.patientForm.phone = $scope.patient.phone;
-		    $scope.patientForm.dateOfBirth = formatDOB($scope.patient);
-		    console.log(getBT($scope.patient.bloodType));
+		    $scope.patientForm.dateOfBirth = new Date($scope.patient.dateOfBirth);
 		    $scope.patientForm.bloodType = getBT($scope.patient.bloodType);
 		    $scope.patientForm.ethnicity = $scope.patient.ethnicity;
 		    $scope.patientForm.gender = $scope.patient.gender;
@@ -136,9 +137,8 @@
 			    valid = false;
 		    } else {
 			    $scope.err[10] = "";
-		    }
-		    var date_regex = /^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19|20)\d{2}$/;
-		    if(!date_regex.test(form.dateOfBirth)) {
+			}
+		    if(!dateTimeService.isValidDate(form.dateOfBirth)) {
 			    $scope.err[11] = ("date of birth can't be empty and must be written as mm/dd/yyyy");
 			    valid = false;
 		    } else {
@@ -153,36 +153,30 @@
 				$scope.message = "";
 		    } else {
 				if ($scope.patient) {
-				    $scope.patientForm.self = $scope.patient.self.username;
-			    		$http.put("/iTrust2/api/v1/patients/"
-				    	+ $scope.patient.self.username, $scope.patientForm).then(
-				    		function(response) {
-				    		    $scope.message = "Your demographics were updated successfully."
-				    		}, function(rejection) {
-				    		    $scope.message = "Failed to update demographics."
-				    		});
+					$scope.patientForm.self = $scope.patient.self.username;
+
+					var form = angular.copy($scope.patientForm);
+					form.dateOfBirth = dateTimeService.toDateString(form.dateOfBirth);
+				    
+					$http.put("/iTrust2/api/v1/patients/" + $scope.patient.self.username, form).then(
+						function(response) {
+							$scope.message = "Your demographics were updated successfully."
+						}, function(rejection) {
+							$scope.message = "Failed to update demographics."
+				    });
 				} else {
-				    $http.post("/iTrust2/api/v1/patients/", $scope.patientForm).then(
-					    		function(response) {
-					    		    $scope.message = "Your demographics were updated successfully."
-					    		}, function(rejection) {
-					    		    $scope.message = "Failed to create demographics."
-					    		});			    
+					var form = angular.copy($scope.patientForm);
+					form.dateOfBirth = dateTimeService.toDateString(form.dateOfBirth);
+
+				    $http.post("/iTrust2/api/v1/patients/", form).then(
+						function(response) {
+							$scope.message = "Your demographics were updated successfully."
+						}, function(rejection) {
+							$scope.message = "Failed to create demographics."
+						});			    
 				}
 		    }
 		}
-		    
-		    function zeroPad(number, characters) {
-				var s = String(number);
-				while (s.length < characters) s = "0" + s;
-				return s;
-			}
-		
-			function formatDOB(patient) {
-				return zeroPad(patient.dateOfBirth.month+1, 2) + '/'
-					+ zeroPad(patient.dateOfBirth.dayOfMonth, 2) + '/'
-					+ zeroPad(patient.dateOfBirth.year, 4);
-			}
 			
 			function getBT(bloodtype) {
 			    var pos = bloodtype.replace("Pos", "+");
@@ -202,9 +196,9 @@
 				<h2 id="header0">Edit My Demographics</h2>
 				<table>
 					<tr>
-						<td style="text-align: left; padding: 5px"><b>First
-								Name:</b></td>
-						<td><input type="text" name="firstName" id="firstName" value="{{patientForm.firstName}}"
+						<td style="text-align: left; padding: 5px"><b>First Name:</b></td>
+						<td><input type="text" name="firstName" id="firstName"
+							value="{{patientForm.firstName}}"
 							ng-model="patientForm.firstName" /></td>
 						<td style="color: red;" ng-show="err[0]">{{err[0]}}</td>
 					</tr>
@@ -217,8 +211,8 @@
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Preferred
 								Name:</b></td>
-						<td><input type="text" name="preferredName" id="preferredName"
-							ng-model="patientForm.preferredName" /></td>
+						<td><input type="text" name="preferredName"
+							id="preferredName" ng-model="patientForm.preferredName" /></td>
 						<td style="color: red;" ng-show="err[2]">{{err[2]}}</td>
 					</tr>
 					<tr>
@@ -239,21 +233,21 @@
 						<td style="text-align: left; padding: 5px"><b>Email:</b></td>
 						<td><input type="text" name="email" id="email"
 							ng-model="patientForm.email" /></td>
-						<td style="color: red;" ng-show="err[5]">{{err[5]}} </td>
+						<td style="color: red;" ng-show="err[5]">{{err[5]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Address
 								Line 1:</b></td>
-						<td><input type="text" name="address1" id="address1" value="{{patientForm.address1}}"
-							ng-model="patientForm.address1" /></td>
-						<td style="color: red;" ng-show="err[6]">{{err[6]}} </td>
+						<td><input type="text" name="address1" id="address1"
+							value="{{patientForm.address1}}" ng-model="patientForm.address1" /></td>
+						<td style="color: red;" ng-show="err[6]">{{err[6]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Address
 								Line 2:</b></td>
 						<td><input type="text" name="address2" id="address2"
 							ng-model="patientForm.address2" /></td>
-						<td style="color: red;" ng-show="err[7]">{{err[7]}} </td>
+						<td style="color: red;" ng-show="err[7]">{{err[7]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>City:</b></td>
@@ -263,44 +257,48 @@
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>State:</b></td>
-						<td><select name="state" id="state" ng-model="patientForm.state">
+						<td><select name="state" id="state"
+							ng-model="patientForm.state">
 								<option ng-repeat="st in states">{{st.id}}</option>
 						</select></td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Zip:</b></td>
-						<td><input type="text" name="zip" id="zip" ng-model="patientForm.zip" /></td>
+						<td><input type="text" name="zip" id="zip"
+							ng-model="patientForm.zip" /></td>
 						<td style="color: red;" ng-show="err[9]">{{err[9]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Phone:</b></td>
-						<td><input type="text" name="phone" id="phone" placeholder="xxx-xxx-xxxx"
-							ng-model="patientForm.phone" /></td>
+						<td><input type="text" name="phone" id="phone"
+							placeholder="xxx-xxx-xxxx" ng-model="patientForm.phone" /></td>
 						<td style="color: red;" ng-show="err[10]">{{err[10]}}</td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Date of
 								Birth:</b></td>
-						<td><input type="text" name="dateOfBirth" id="dateOfBirth"
+						<td><input type="date" name="dateOfBirth" id="dateOfBirth"
 							ng-model="patientForm.dateOfBirth" /></td>
 						<td style="color: red;" ng-show="err[11]">{{err[11]}}</td>
 					</tr>
 					<tr>
-						<td style="text-align: left; padding: 5px"><b>Blood
-								Type:</b></td>
-						<td><select name="bloodType" id="bloodType" ng-model="patientForm.bloodType">
+						<td style="text-align: left; padding: 5px"><b>Blood Type:</b></td>
+						<td><select name="bloodType" id="bloodType"
+							ng-model="patientForm.bloodType">
 								<option ng-repeat="bt in bloodTypes">{{bt.name}}</option>
 						</select></td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Ethnicity:</b></td>
-						<td><select name="ethnicity" id="ethnicity" ng-model="patientForm.ethnicity">
+						<td><select name="ethnicity" id="ethnicity"
+							ng-model="patientForm.ethnicity">
 								<option ng-repeat="eth in ethnicities">{{eth.name}}</option>
 						</select></td>
 					</tr>
 					<tr>
 						<td style="text-align: left; padding: 5px"><b>Gender:</b></td>
-						<td><select name="gender" id="gender" ng-model="patientForm.gender">
+						<td><select name="gender" id="gender"
+							ng-model="patientForm.gender">
 								<option ng-repeat="gen in genders">{{gen.name}}</option>
 						</select></td>
 					</tr>

@@ -34,8 +34,11 @@ public abstract class CucumberTest {
 
         final ChromeOptions options = new ChromeOptions();
         options.addArguments( "headless" );
+        options.setExperimentalOption( "useAutomationExtension", false );
         options.addArguments( "window-size=1200x600" );
         options.addArguments( "blink-settings=imagesEnabled=false" );
+        options.addArguments( "--no-sandbox" );
+        options.addArguments( "--disable-dev-shm-usage" );
 
         if ( Linux() ) {
             options.setBinary( "/usr/bin/google-chrome" );

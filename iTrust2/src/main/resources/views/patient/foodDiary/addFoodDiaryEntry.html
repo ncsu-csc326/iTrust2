@@ -1,0 +1,221 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title>Add Food Diary Entry</title>
+<script th:src="@{/resources/js/dateTimeService.js}"
+	src="../resources/js/dateTimeService.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+			var app = angular.module("addFoodDiaryEntryApp", ['dateTimeServices']);
+			app.controller('addFoodDiaryEntryCtrl', function ($scope, $http, dateTimeService) {
+				const now = new Date();
+				$scope.inputDate = now;
+				$scope.entry = {
+					date: dateTimeService.toDateString(now),
+					mealType: '',
+					food: '',
+					servings: 1
+				};
+				$scope.mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+				
+				// Sets the messages when the system fails to 
+				// add the food diary entry to the database.
+				$scope.failAddEntry = function () {
+					$scope.errorMsg += "Could not add diary entry."
+					$scope.message = "";
+				}
+
+				$scope.submit = function () {
+					$scope.errorMsg = "";
+					
+					// Validate entry date
+					var date = new Date($scope.inputDate);
+					var now = new Date();
+					if (!dateTimeService.isValidDate(date) || now - date < 0) {
+						$scope.errorMsg += "Please input a valid date.\n";
+					} else {
+						$scope.entry.date = dateTimeService.toDateString(date);
+					}
+					
+					if (!$scope.entry.mealType) {
+						$scope.errorMsg += "A meal type must be selected\n";
+					}
+					
+					// Validate food name
+					if ( !$scope.entry.food || $scope.entry.food.length >=50 ) {
+						$scope.errorMsg += "Name of food cannot be empty and must be less than 50 characters.\n";
+					}
+					
+					// Validate servings
+					if (!$scope.entry.servings || $scope.entry.servings <= 0) {
+						$scope.errorMsg += "Servings cannot be empty or negative.\n";
+					}
+					
+					// Validate nutrition values - they are all validated the
+					// same way, so we use a for loop to check and propagate all
+					// errors.
+					var nutritionValues = {
+						"calories": $scope.entry.calories,
+						"fat": $scope.entry.fat,
+						"sodium": $scope.entry.sodium,
+						"carbs": $scope.entry.carbs,
+						"sugars": $scope.entry.sugars,
+						"fiber": $scope.entry.fiber,
+						"protein": $scope.entry.protein
+					};
+					
+					for ( type in nutritionValues ) {
+						if ( nutritionValues[type] == null || nutritionValues[type] < 0 ) {
+							$scope.errorMsg += `Field ${type} must be a positive whole number.\n`;
+						}
+					}
+					
+					// Check to ensure a patient is authenticated and the form is correct.
+					if ($scope.errorMsg.length >= 1 ) {
+						$scope.failAddEntry();
+						return;
+					}
+					
+					// Prepare entry for submission
+					var submitEntry = angular.copy($scope.entry);
+					submitEntry.date = dateTimeService.toDateString(date);
+
+					// POST the entry to the REST API endpoint, and handle
+					// success/error
+					$http.post("/iTrust2/api/v1/diary", $scope.entry).then(
+						function success(response) {
+							if (response.data.patient) {
+								$scope.message = "Your diary entry has been added successfully."
+								$scope.entry = {};
+								$scope.errorMsg = "";
+								document.location.href = '/iTrust2/patient/foodDiary/viewFoodDiaryEntries';
+							} else {
+								// Redirected to login page,
+								// not actually successful
+								$scope.failAddEntry();
+							}
+						}, function failure(rejection) {
+							$scope.failAddEntry();
+						}
+					);
+				}
+			});
+			/*]]>*/
+		</script>
+
+		<div class="container" ng-app="addFoodDiaryEntryApp"
+			ng-controller="addFoodDiaryEntryCtrl">
+			<div class="row">
+				<div class="col">
+					<h3>Add Food Diary Entry</h3>
+				</div>
+
+				<div class="col-md-5">
+					<div class="form-group">
+						<label for="date">Date</label> <input class="form-control"
+							id="date" type="date" ng-model="inputDate" name="date"
+							required="true" />
+					</div>
+
+					<div class="form-group">
+						<label for="mealType">Type of Meal</label> <select
+							class="form-control" ng-model="entry.mealType" id="mealType"
+							name="mealType">
+							<option ng-repeat="mealType in mealTypes">{{mealType}}</option>
+						</select>
+					</div>
+
+					<div class="form-group">
+						<label for="food">Name of Food</label> <input class="form-control"
+							id="food" type="text" ng-model="entry.food" name="food" />
+					</div>
+
+					<div class="form-group">
+						<label for="servings">Number of Servings</label> <input
+							class="form-control" id="servings" type="number"
+							ng-model="entry.servings" name="servings" />
+					</div>
+
+					<div class="form-group">
+						<label for="calories">Calories per Serving</label> <input
+							class="form-control" id="calories" type="number"
+							ng-model="entry.calories" name="calories" />
+					</div>
+
+					<div class="form-group">
+						<label for="fat">Fat per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="fat" type="number"
+								ng-model="entry.fat" name="fat" />
+							<div class="input-group-addon">g</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="sodium">Sodium per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="sodium" type="number"
+								ng-model="entry.sodium" name="sodium" />
+							<div class="input-group-addon">mg</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="carbs">Carbs per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="carbs" type="number"
+								ng-model="entry.carbs" name="carbs" />
+							<div class="input-group-addon">g</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="sugars">Sugars per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="sugars" type="number"
+								ng-model="entry.sugars" name="sugars" />
+							<div class="input-group-addon">g</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="fiber">Fiber per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="fiber" type="number"
+								ng-model="entry.fiber" name="fiber" />
+							<div class="input-group-addon">g</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="protein">Protein per Serving</label>
+						<div class="input-group">
+							<input class="form-control" id="protein" type="number"
+								ng-model="entry.protein" name="protein" />
+							<div class="input-group-addon">g</div>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<button type="submit" class="btn btn-primary" ng-click=submit()
+							name="submit" id="submit">Add Entry</button>
+					</div>
+
+					<div class="form-group">
+						<div name="success" class="text-success" style="white-space: pre;">{{message}}</div>
+						<div name="errorMsg" class="text-danger" style="white-space: pre;">{{errorMsg}}</div>
+					</div>
+
+				</div>
+			</div>
+
+		</div>
+</body>
+
+</html>

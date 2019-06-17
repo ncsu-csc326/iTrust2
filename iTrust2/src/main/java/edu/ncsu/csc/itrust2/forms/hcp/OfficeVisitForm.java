@@ -1,179 +1,116 @@
 package edu.ncsu.csc.itrust2.forms.hcp;
 
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
-import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
-import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
-import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 
-/**
- * Office Visit form used to document an Office Visit by the HCP. This will be
- * validated and converted to a OfficeVisit to be stored in the database.
- *
- * @author Kai Presler-Marshall
- * @author Elizabeth Gilbert
- *
- */
-public class OfficeVisitForm implements Serializable {
-    /**
-     * Serial Version of the Form. For the Serializable
-     */
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * Empty constructor so that we can create an Office Visit form for the user
-     * to fill out
-     */
-    public OfficeVisitForm () {
-    }
+public class OfficeVisitForm {
 
     /**
      * Name of the Patient involved in the OfficeVisit
      */
     @NotEmpty
     private String                 patient;
-
     /**
      * Name of the HCP involved in the OfficeVisit
      */
     @NotEmpty
     private String                 hcp;
-
     /**
      * Date at which the OfficeVisit occurred
      */
     @NotEmpty
     private String                 date;
-
     /**
      * ID of the OfficeVisit
      */
     private String                 id;
-
-    /**
-     * Time at which the OfficeVisit occurred
-     */
-    @NotEmpty
-    private String                 time;
-
     /**
      * Type of the OfficeVisit.
      */
     @NotEmpty
     private String                 type;
-
     /**
      * Hospital where the OfficeVisit occurred
      */
     @NotEmpty
     private String                 hospital;
-
     /**
      * Doctor's Notes on the OfficeVisit
      */
     @Length ( max = 255 )
     private String                 notes;
-
     /**
      * Whether the OfficeVisit was prescheduled or not
      */
     public String                  preScheduled;
-
     /**
      * Height or length of the person. Up to a 3-digit number and potentially
      * one digit of decimal precision. > 0
      */
     private Float                  height;
-
     /**
      * Weight of the person. Up to a 3-digit number and potentially one digit of
      * decimal precision. > 0
      */
     private Float                  weight;
-
     /**
      * Head circumference of the person. Up to a 3-digit number and potentially
      * one digit of decimal precision. > 0
      */
     private Float                  headCircumference;
-
     /**
      * Systolic blood pressure. 3-digit positive number.
      */
     private Integer                systolic;
-
     /**
      * Diastolic blood pressure. 3-digit positive number.
      */
     private Integer                diastolic;
-
     /**
      * HDL cholesterol. Between 0 and 90 inclusive.
      */
     private Integer                hdl;
-
     /**
      * LDL cholesterol. Between 0 and 600 inclusive.
      */
     private Integer                ldl;
-
     /**
      * Triglycerides cholesterol. Between 100 and 600 inclusive.
      */
     private Integer                tri;
-
     /**
      * Smoking status of the patient's household.
      */
     private HouseholdSmokingStatus houseSmokingStatus;
-
     /**
      * Smoking status of the patient.
      */
     private PatientSmokingStatus   patientSmokingStatus;
 
     /**
-     * Diagnoses associated with this visit
+     * Constructs a new OfficeVisitForm for Hibernate.
      */
-    private List<Diagnosis>        diagnoses;
-    /**
-     * Lab Procedures associated with this visit
-     */
-    private List<LabProcedure>     labProcedures;
-
-    private List<PrescriptionForm> prescriptions;
+    public OfficeVisitForm () {
+    }
 
     /**
-     * Creates an OfficeVisitForm from the OfficeVisit provided
-     *
-     * @param ov
-     *            OfficeVisit to turn into an OfficeVisitForm
+     * Constructs a new OfficeVisitForm with 
+     * the specified OfficeVisit for Hibernate.
+     * @param ov OfficeVisit instance.
      */
     public OfficeVisitForm ( final OfficeVisit ov ) {
+        super();
         setPatient( ov.getPatient().getUsername() );
         setHcp( ov.getHcp().getUsername() );
         setHospital( ov.getHospital().getName() );
-        final SimpleDateFormat tempDate = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        setDate( tempDate.format( ov.getDate().getTime() ) );
-        final SimpleDateFormat tempTime = new SimpleDateFormat( "hh:mm aaa", Locale.ENGLISH );
-        setTime( tempTime.format( ov.getDate().getTime() ) );
+        setDate( ov.getDate().toString() );
         setNotes( ov.getNotes() );
         setId( ov.getId().toString() );
         setPreScheduled( ( (Boolean) ( ov.getAppointment() != null ) ).toString() );
-        setDiagnoses( ov.getDiagnoses() );
-        setLabProcedures( ov.getLabProcedures() );
-        setPrescriptions( ov.getPrescriptions().stream().map( ( final Prescription p ) -> new PrescriptionForm( p ) )
-                .collect( Collectors.toList() ) );
         setDiastolic( ov.getBasicHealthMetrics().getDiastolic() );
         setHdl( ov.getBasicHealthMetrics().getHdl() );
         setLdl( ov.getBasicHealthMetrics().getLdl() );
@@ -260,25 +197,6 @@ public class OfficeVisitForm implements Serializable {
      */
     public void setId ( final String id ) {
         this.id = id;
-    }
-
-    /**
-     * Gets the Time of the OfficeVisit
-     *
-     * @return Time of the Visit
-     */
-    public String getTime () {
-        return this.time;
-    }
-
-    /**
-     * Sets the time of the OfficeVisit
-     *
-     * @param time
-     *            New time to set
-     */
-    public void setTime ( final String time ) {
-        this.time = time;
     }
 
     /**
@@ -547,60 +465,4 @@ public class OfficeVisitForm implements Serializable {
         this.patientSmokingStatus = patientSmokingStatus;
     }
 
-    /**
-     * Sets the Diagnosis list for this visit.
-     *
-     * @param list
-     *            The list of Diagnoses.
-     */
-    public void setDiagnoses ( final List<Diagnosis> list ) {
-        diagnoses = list;
-    }
-
-    /**
-     * Returns the list of diagnoses associated with this office visit.
-     *
-     * @return The list of Diagnoses
-     */
-    public List<Diagnosis> getDiagnoses () {
-        return diagnoses;
-    }
-
-    /**
-     * Sets the Lab Procedure list for this visit.
-     *
-     * @param list
-     *            The list of Lab Procedures.
-     */
-    public void setLabProcedures ( final List<LabProcedure> list ) {
-        labProcedures = list;
-    }
-
-    /**
-     * Returns the list of lab procedures associated with this office visit.
-     *
-     * @return The list of Lab Procedures
-     */
-    public List<LabProcedure> getLabProcedures () {
-        return labProcedures;
-    }
-
-    /**
-     * Sets the list of prescriptions for this visit.
-     *
-     * @param prescriptions
-     *            the list of prescriptions
-     */
-    public void setPrescriptions ( final List<PrescriptionForm> prescriptions ) {
-        this.prescriptions = prescriptions;
-    }
-
-    /**
-     * Returns the list of prescriptions associated with this office visit.
-     *
-     * @return prescriptions the list prescriptions
-     */
-    public List<PrescriptionForm> getPrescriptions () {
-        return prescriptions;
-    }
 }

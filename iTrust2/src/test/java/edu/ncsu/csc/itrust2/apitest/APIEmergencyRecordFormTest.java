@@ -106,10 +106,9 @@ public class APIEmergencyRecordFormTest {
     /**
      * Tests the functionality of the EmergencyRecordForm object.
      *
-     * @throws Exception
      */
     @Test
-    public void testEmergencyRecordForm () throws Exception {
+    public void testEmergencyRecordForm () {
         // The EmergencyRecordForm
         final EmergencyRecordForm form = new EmergencyRecordForm( "onionman" );
 

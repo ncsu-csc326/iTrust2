@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
-import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -53,11 +53,11 @@ public class APIDiagnosisController extends APIController {
     @GetMapping ( BASE_PATH + "/diagnosesforvisit/{id}" )
     public List<Diagnosis> getDiagnosesForVisit ( @PathVariable ( "id" ) final Long id ) {
         // Check if office visit exists
-        if ( OfficeVisit.getById( id ) == null ) {
+        if ( GeneralCheckup.getById( id ) == null ) {
             return null;
         }
         LoggerUtil.log( TransactionType.DIAGNOSIS_VIEW_BY_OFFICE_VISIT, LoggerUtil.currentUser(),
-                OfficeVisit.getById( id ).getPatient().getUsername(),
+                GeneralCheckup.getById( id ).getPatient().getUsername(),
                 "Retrieved diagnoses for office visit with id " + id );
         return Diagnosis.getByVisit( id );
     }
