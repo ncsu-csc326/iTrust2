@@ -5,8 +5,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ncsu.csc.itrust2.forms.hcp.PrescriptionForm;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
+import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
@@ -25,6 +24,7 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  * to add, edit, fetch, and delete prescriptions.
  *
  * @author Connor
+ * @author Kai Presler-Marshall
  */
 @RestController
 @SuppressWarnings ( { "rawtypes", "unchecked" } )
@@ -37,7 +37,7 @@ public class APIPrescriptionController extends APIController {
      *            details of the new prescription
      * @return the created prescription
      */
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     @PostMapping ( BASE_PATH + "/prescriptions" )
     public ResponseEntity addPrescription ( @RequestBody final PrescriptionForm form ) {
         try {
@@ -63,7 +63,7 @@ public class APIPrescriptionController extends APIController {
      *            the form containing the details of the new prescription
      * @return the edited prescription
      */
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     @PutMapping ( BASE_PATH + "/prescriptions" )
     public ResponseEntity editPrescription ( @RequestBody final PrescriptionForm form ) {
         try {
@@ -95,7 +95,7 @@ public class APIPrescriptionController extends APIController {
      *            the id
      * @return the id of the deleted prescription
      */
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     @DeleteMapping ( BASE_PATH + "/prescriptions/{id}" )
     public ResponseEntity deletePrescription ( @PathVariable final Long id ) {
         final Prescription p = Prescription.getById( id );
@@ -121,12 +121,11 @@ public class APIPrescriptionController extends APIController {
      *
      * @return all saved prescriptions
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     @GetMapping ( BASE_PATH + "/prescriptions" )
     public List<Prescription> getPrescriptions () {
-        final boolean isHCP = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-                .contains( new SimpleGrantedAuthority( "ROLE_HCP" ) );
-        if ( isHCP ) {
+        final User self = User.getByName( LoggerUtil.currentUser() );
+        if ( self.isDoctor() ) {
             // Return all prescriptions in system
             LoggerUtil.log( TransactionType.PRESCRIPTION_VIEW, LoggerUtil.currentUser(),
                     "HCP viewed a list of all prescriptions" );
@@ -148,7 +147,7 @@ public class APIPrescriptionController extends APIController {
      *            the id of the desired prescription
      * @return the requested prescription
      */
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     @GetMapping ( BASE_PATH + "/prescriptions/{id}" )
     public ResponseEntity getPrescription ( @PathVariable final Long id ) {
         final Prescription p = Prescription.getById( id );

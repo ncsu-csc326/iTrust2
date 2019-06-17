@@ -11,6 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,10 +27,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.forms.admin.DrugForm;
@@ -91,16 +91,16 @@ public class APIPrescriptionTest {
         form1.setDosage( 100 );
         form1.setRenewals( 12 );
         form1.setPatient( "api_test_patient" );
-        form1.setStartDate( "10/10/2009" );
-        form1.setEndDate( "10/10/2010" );
+        form1.setStartDate( "2009-10-10" ); // 10/10/2009
+        form1.setEndDate( "2010-10-10" ); // 10/10/2010
 
         final PrescriptionForm form2 = new PrescriptionForm();
         form2.setDrug( drugForm.getCode() );
         form2.setDosage( 200 );
         form2.setRenewals( 3 );
         form2.setPatient( "api_test_patient" );
-        form2.setStartDate( "10/10/2020" );
-        form2.setEndDate( "11/10/2020" );
+        form2.setStartDate( "2020-10-10" ); // 10/10/2020
+        form2.setEndDate( "2020-11-10" ); // 11/10/2020
 
         // Add first prescription to system
         final String content1 = mvc

@@ -1,11 +1,12 @@
 package edu.ncsu.csc.itrust2.controllers.api;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -48,20 +49,28 @@ public class APILogEntryController extends APIController {
         // If no dates are specified, get all entries, otherwise use the date
         // range
         List<LogEntry> entries = null;
-        final DateFormat df = new SimpleDateFormat( "MM/dd/yyyy" );
-        df.setLenient( false );
         try {
             if ( body.getStartDate().equals( "" ) || body.getEndDate().equals( "" ) ) {
                 throw new ParseException( "Date", 1 );
             }
 
-            Date start = null;
-            Date end = null;
+            // Parse in start/end dates as ZonedDateTimes 
+            // from ISO date/time or ISO date strings
+            ZonedDateTime start;
+            try {
+                start = ZonedDateTime.parse( body.getStartDate() );
+            } catch ( DateTimeParseException ex ) {
+                start = LocalDate.parse( body.getStartDate() ).atStartOfDay( ZoneId.systemDefault() );
+            }
 
-            start = df.parse( body.getStartDate() );
-            end = df.parse( body.getEndDate() );
+            ZonedDateTime end;
+            try {
+                end = ZonedDateTime.parse( body.getEndDate() ).plusDays( 1 );
+            } catch ( DateTimeParseException ex ) {
+                end = LocalDate.parse( body.getEndDate() ).atStartOfDay( ZoneId.systemDefault() ).plusDays( 1 );
+            }
 
-            if ( start.after( end ) ) {
+            if ( start.isAfter( end ) ) {
                 return new ResponseEntity( errorResponse( "Start Date is after End Date" ), HttpStatus.NOT_ACCEPTABLE );
             }
             entries = LogEntry.getByDateRange( start, end );
@@ -116,7 +125,10 @@ public class APILogEntryController extends APIController {
 
             row.setPrimary( le.getPrimaryUser() );
             row.setSecondary( le.getSecondaryUser() );
-            row.setDateTime( le.getTime().getTime().toString() );
+
+            // Convert to OffsetDateTime String so that
+            // text-based timezone is not included
+            row.setDateTime( le.getTime().toOffsetDateTime().toString() );
             row.setTransactionType( le.getLogCode().getDescription() );
             row.setNumPages( numPages );
 

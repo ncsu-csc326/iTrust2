@@ -11,12 +11,14 @@ Scenario Outline: Valid Logins
     When I log into iTrust2 as a: <user>
     Then I should be able to view my homepage
 	Examples:
-	| user    |
-	| admin   |
-	| hcp     |
-	| patient |
-	| er      |
-	| lt      |
+	| user      |
+	| admin     |
+	| hcp       |
+	| patient   |
+	| er        |
+	| lt        |
+	| bobbyOD   |
+	| robortOPH |
 	
 	
 Scenario Outline: Invalid Logins

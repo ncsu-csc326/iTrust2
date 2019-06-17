@@ -5,7 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import org.junit.Test;
 
@@ -40,13 +42,13 @@ public class LockoutTest {
         assertFalse( LoginBan.isUserBanned( user ) );
 
         LoginAttempt attempt = new LoginAttempt();
-        attempt.setTime( Calendar.getInstance() );
+        attempt.setTime( ZonedDateTime.now() );
         attempt.setUser( user );
         attempt.save();
         assertEquals( 1, LoginAttempt.getUserFailures( user ) );
         assertFalse( LoginLockout.isUserLocked( user ) );
         attempt = new LoginAttempt();
-        attempt.setTime( Calendar.getInstance() );
+        attempt.setTime( ZonedDateTime.now() );
         attempt.setUser( user );
         attempt.save();
         assertEquals( 2, LoginAttempt.getUserFailures( user ) );
@@ -56,14 +58,13 @@ public class LockoutTest {
 
         LoginLockout lockout = new LoginLockout();
         lockout.setUser( user );
-        Calendar d = Calendar.getInstance();
+
         // Test expiration
-        d.setTimeInMillis( d.getTimeInMillis() - ( 1000 * 60 * 61 ) );
-        lockout.setTime( d );
+        lockout.setTime( ZonedDateTime.now().minusMinutes( 61 ) );
         lockout.save();
         assertEquals( 0, LoginAttempt.getUserFailures( user ) );
         lockout = new LoginLockout();
-        lockout.setTime( Calendar.getInstance() );
+        lockout.setTime( ZonedDateTime.now() );
         lockout.setUser( user );
         lockout.save();
         LoginLockout.clearUser( user );
@@ -73,9 +74,8 @@ public class LockoutTest {
 
         final LoginBan ban = new LoginBan();
         ban.setUser( user );
-        d = Calendar.getInstance();
-        d.setTimeInMillis( 0 ); // Even really old still in effect
-        ban.setTime( d );
+        // Even really old still in effect
+        ban.setTime( ZonedDateTime.ofInstant( Instant.ofEpochMilli( 0 ), ZoneOffset.UTC ) );
         ban.save();
         assertTrue( LoginBan.isUserBanned( user ) );
         LoginBan.clearUser( User.getByName( userName ) );
@@ -99,13 +99,13 @@ public class LockoutTest {
         assertFalse( LoginBan.isIPBanned( ip ) );
 
         LoginAttempt attempt = new LoginAttempt();
-        attempt.setTime( Calendar.getInstance() );
+        attempt.setTime( ZonedDateTime.now() );
         attempt.setIp( ip );
         attempt.save();
         assertEquals( 1, LoginAttempt.getIPFailures( ip ) );
         assertFalse( LoginLockout.isIPLocked( ip ) );
         attempt = new LoginAttempt();
-        attempt.setTime( Calendar.getInstance() );
+        attempt.setTime( ZonedDateTime.now() );
         attempt.setIp( ip );
         attempt.save();
         assertEquals( 2, LoginAttempt.getIPFailures( ip ) );
@@ -115,14 +115,13 @@ public class LockoutTest {
 
         LoginLockout lockout = new LoginLockout();
         lockout.setIp( ip );
-        Calendar d = Calendar.getInstance();
+        
         // Test expiration
-        d.setTimeInMillis( d.getTimeInMillis() - ( 1000 * 60 * 61 ) );
-        lockout.setTime( d );
+        lockout.setTime( ZonedDateTime.now().minusMinutes( 61 ) );
         lockout.save();
         assertEquals( 0, LoginAttempt.getIPFailures( ip ) );
         lockout = new LoginLockout();
-        lockout.setTime( Calendar.getInstance() );
+        lockout.setTime( ZonedDateTime.now() );
         lockout.setIp( ip );
         lockout.save();
         LoginLockout.clearIP( ip );
@@ -132,9 +131,8 @@ public class LockoutTest {
 
         final LoginBan ban = new LoginBan();
         ban.setIp( ip );
-        d = Calendar.getInstance();
-        d.setTimeInMillis( 0 ); // Even really old still in effect
-        ban.setTime( d );
+        // Even really old still in effect
+        ban.setTime( ZonedDateTime.ofInstant( Instant.ofEpochMilli( 0 ), ZoneOffset.UTC ) );
         ban.save();
         assertTrue( LoginBan.isIPBanned( ip ) );
         LoginBan.clearIP( ip );

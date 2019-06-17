@@ -1,0 +1,562 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Patient Office Visits</title>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<div class="container">
+
+			<script th:inline="javascript">
+        /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+        /*<![CDATA[*/
+
+        var app = angular.module('myApp', []);
+
+        /**
+          * A filter to humanize the text to be more user friendly.
+          */
+        app.filter('humanize', function () {
+          return function (input) {
+            return !input ? input : input.toLowerCase().split('_')
+              .map((word) => word.charAt(0).toUpperCase() + word.substring(1))
+              .join(' ');
+          }
+        });
+
+        app.controller(
+          'viewOfficeVisitCtrl',
+          function ($scope, $http) {
+            $http.get("/iTrust2/api/v1/officevisits").then(
+              function (response) {
+                $scope.visits = response.data;
+                
+                //The problem is that the visit does not contain an actual reference to the patient as a patient, only as a user
+                //to get around this, we will use the patients api which can get us this mapping, and we will have angular help
+                for (var i = 0; i < $scope.visits.length; i++) {
+                   
+                    //passing to inner loop taken from https://stackoverflow.com/questions/17244614/passing-variable-to-promise-in-a-loop
+                    (function (i) {
+                        $http.get("/iTrust2/api/v1/patients/" + $scope.visits[i].patient.username).then(
+                        function (response) {
+                            $scope.visits[i].actualPatient = response.data;
+                        });
+                    })(i);
+                }
+              });
+
+
+            $scope.selectedVisitID = null;
+            $scope.selectedVisit = {};
+            
+            /**
+             * Checks if any BHM are present.
+             */
+            function validateBasicHealthMetrics() {
+                const checkValues = [
+                    $scope.selectedVisit.height,
+                    $scope.selectedVisit.weight,
+                    $scope.selectedVisit.headCircumference,
+                    $scope.selectedVisit.systolic,
+                    $scope.selectedVisit.diastolic,
+                    $scope.selectedVisit.hdl,
+                    $scope.selectedVisit.ldl,
+                    $scope.selectedVisit.tri,
+                    $scope.selectedVisit.patientSmokingStatus,
+                    $scope.selectedVisit.houseSmokingStatus
+                ];
+
+                $scope.hasBHM = checkValues.some((value) => { return value; });
+            }
+            
+            $scope.populateVisit = function () {
+              $scope.prescriptions = [];
+              $scope.diagnoses = [];
+              $scope.procedures = [];
+              $scope.showBHM = true;
+
+              for (var i = 0; i < $scope.visits.length; i++) {
+                //gets general info and basic health metrics
+                if ($scope.visits[i].id == $scope.selectedVisitID) {
+                  $scope.selectedVisit.patient = $scope.visits[i].patient.username;
+                  $scope.selectedVisit.hcp = $scope.visits[i].hcp.username;
+                  $scope.selectedVisit.notes = $scope.visits[i].notes;
+                  $scope.selectedVisit.type = $scope.visits[i].type;
+                  $scope.selectedVisit.hospital = $scope.visits[i].hospital.name;
+                  $scope.selectedVisit.date = $scope.visits[i].date;
+                  $scope.selectedVisit.id = $scope.visits[i].id;
+                  $scope.selectedVisit.height = $scope.visits[i].basicHealthMetrics.height;
+                  $scope.selectedVisit.weight = $scope.visits[i].basicHealthMetrics.weight;
+                  $scope.selectedVisit.headCircumference = $scope.visits[i].basicHealthMetrics.headCircumference;
+                  $scope.selectedVisit.systolic = $scope.visits[i].basicHealthMetrics.systolic;
+                  $scope.selectedVisit.diastolic = $scope.visits[i].basicHealthMetrics.diastolic;
+                  $scope.selectedVisit.hdl = $scope.visits[i].basicHealthMetrics.hdl;
+                  $scope.selectedVisit.ldl = $scope.visits[i].basicHealthMetrics.ldl;
+                  $scope.selectedVisit.tri = $scope.visits[i].basicHealthMetrics.tri;
+                  $scope.selectedVisit.houseSmokingStatus = $scope.visits[i].basicHealthMetrics.houseSmokingStatus;
+                  $scope.selectedVisit.patientSmokingStatus = $scope.visits[i].basicHealthMetrics.patientSmokingStatus;
+                  
+                  validateBasicHealthMetrics();
+
+                  // Eye health metrics
+                  $scope.selectedVisit.visualAcuityOS = $scope.visits[i].visualAcuityOS;
+                  $scope.selectedVisit.visualAcuityOD = $scope.visits[i].visualAcuityOD;
+                  $scope.selectedVisit.sphereOS = $scope.visits[i].sphereOS;
+                  $scope.selectedVisit.sphereOD = $scope.visits[i].sphereOD;
+                  $scope.selectedVisit.cylinderOS = $scope.visits[i].cylinderOS;
+                  $scope.selectedVisit.cylinderOD = $scope.visits[i].cylinderOD;
+                  $scope.selectedVisit.axisOS = $scope.visits[i].axisOS;
+                  $scope.selectedVisit.axisOD = $scope.visits[i].axisOD;
+                  $scope.selectedVisit.eyeDiagnoses = undefined;
+                  if($scope.visits[i].diagnosis !== undefined && $scope.visits[i].diagnosis !== "")
+                  	$scope.selectedVisit.eyeDiagnoses = $scope.visits[i].diagnosis.split(",");
+                  $scope.selectedVisit.surgeryType = $scope.visits[i].surgeryType;
+
+                  // Diagnoses
+                  if ($scope.selectedVisit.type == 'GENERAL_CHECKUP') {
+                    $http.get("/iTrust2/api/v1/diagnosesforvisit/" + $scope.selectedVisitID).then(
+                      function (response) {
+                        $scope.diagnosesResponse = response.data;
+                        for (var i = 0; i < $scope.diagnosesResponse.length; i++) {
+                          $scope.diagnoses.push({
+                            note: $scope.diagnosesResponse[i].note,
+                            code: $scope.diagnosesResponse[i].code
+                          });
+                        }
+                      });
+
+                    // Prescriptions
+                    let prescriptions = $scope.visits[i].prescriptions;
+                    for (var j = 0; j < prescriptions.length; j++) {
+                      var prescription = prescriptions[j];
+                      
+                      $scope.prescriptions.push({
+                        drug: prescription.drug.code,
+                        dosage: prescription.dosage,
+                        startDate: prescription.startDate,
+                        endDate: prescription.endDate,
+                        renewals: prescription.renewals
+                      });
+                    }
+
+                    // Lab procedures
+                    $http.get("/iTrust2/api/v1//labprocedures/byVisit/" + $scope.selectedVisitID).then(
+                      function (response) {
+                        $scope.proceduresResponse = response.data;
+
+                        for (var i = 0; i < $scope.proceduresResponse.length; i++) {
+                          var procedure = $scope.proceduresResponse[i];
+                          $scope.procedures.push({
+                            code: procedure.loinc.code,
+                            commonName: procedure.loinc.commonName,
+                            priority: procedure.priority,
+                            comments: procedure.comments,
+                            status: procedure.status
+                          });
+                        }
+                      });
+                  }
+                }
+              }
+            }
+          });
+			/*]]>*/
+      </script>
+
+			<div ng-app="myApp" ng-controller="viewOfficeVisitCtrl">
+				<div class="container">
+					<div class="row" style="margin-top: 1em">
+
+						<div class="col-md-12">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h4>Select an Office Visit to View</h4>
+								</div>
+								<div class="panel-body">
+									<div class="row">
+										<div class="col-md-12">
+											<ul style="list-style: none;">
+												<li ng-repeat="visit in visits">
+													<h4>
+														<label> <input type="radio"
+															ng-model="$parent.selectedVisitID"
+															ng-click="populateVisit()" name="{{visit.id}}"
+															value="{{visit.id}}" required="true" />
+															{{visit.patient.username}}'s {{visit.type | humanize}} on
+															{{visit.date | date : 'MM/dd/yyyy'}} at {{visit.date |
+															date : 'shortTime'}}
+														</label>
+													</h4>
+												</li>
+											</ul>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-md-12" ng-show="selectedVisit.id">
+							<div class="row">
+								<div class="col-md-12">
+									<div class="panel panel-primary">
+										<div class="panel-heading">
+											<h3>{{selectedVisit.patient}}'s {{selectedVisit.type |
+												humanize}} on {{selectedVisit.date | date : 'MM/dd/yyyy'}}
+												at {{selectedVisit.date | date : 'shortTime'}}</h3>
+										</div>
+										<div class="panel-body">
+											<div class="row">
+												<div name='date' class="form-group col-md-2">
+													<label>Date:</label> {{selectedVisit.date | date :
+													'MM/dd/yyyy'}}
+												</div>
+												<div name='time' class="form-group col-md-2">
+													<label>Time:</label> {{selectedVisit.date | date :
+													'shortTime'}}
+												</div>
+												<div class="form-group col-md-2 text-right">
+													<div class="checkbox">
+														<label> <input type="checkbox" name="preScheduled"
+															class="checkbox" ng-model="selectedVisit.prescheduled">Prescheduled?
+														</label>
+													</div>
+												</div>
+											</div>
+											<div class="row">
+												<div class="form-group col-md-4">
+													<label>Patient:</label>
+
+													<div class="panel panel-default">
+														<div class="panel-body">
+															<div name='patientName' class="form-check">
+																{{selectedVisit.patient}}</div>
+														</div>
+													</div>
+
+												</div>
+												<div class="form-group col-md-4">
+													<label>Type of Visit:</label>
+
+													<div class="panel panel-default">
+														<div class="panel-body">
+															<div name='visitType' class="form-check">
+																{{selectedVisit.type | humanize}}</div>
+														</div>
+													</div>
+												</div>
+
+												<div class="form-group col-md-4">
+													<label>Hospital:</label>
+													<div class="panel panel-default">
+														<div class="panel-body">
+															<div name='hospitalName' class="form-check">
+																{{selectedVisit.hospital}}</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<div class="row">
+												<!-- Basic Health Metrics Panel -->
+												<div class="col-md-4" ng-show="hasBHM">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Basic Health Metrics</h4>
+														</div>
+														<div class="panel-body" ng-show="showBHM">
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Height/Length:</label>
+																</div>
+																<div name='height' class="col-xs-6">
+																	{{selectedVisit.height}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Weight:</label>
+																</div>
+																<div name='weight' class="col-xs-6">
+																	{{selectedVisit.weight}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Head Circumference:</label>
+																</div>
+																<div class="col-xs-6">
+																	{{selectedVisit.headCircumference}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Systolic:</label>
+																</div>
+																<div name='systolic' class="col-xs-6">
+																	{{selectedVisit.systolic}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Diastolic:</label>
+																</div>
+																<div name='diastolic' class="col-xs-6">
+																	{{selectedVisit.diastolic}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>HDL:</label>
+																</div>
+																<div name='hdl' class="col-xs-6">
+																	{{selectedVisit.hdl}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>LDL:</label>
+																</div>
+																<div name='ldl' class="col-xs-6">
+																	{{selectedVisit.ldl}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Triglycerides:</label>
+																</div>
+																<div name='tri' class="col-xs-6">
+																	{{selectedVisit.tri}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Household Smoking Status:</label>
+																</div>
+																<div class="col-xs-6 radio-box">
+																	<div name='houseSmokingStatus' class="form-check">
+																		{{selectedVisit.houseSmokingStatus}}</div>
+																</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Patient Smoking Status:</label>
+																</div>
+																<div class="col-xs-6 ">
+																	<div name='patientSmokingStatus' class="form-check">
+																		{{selectedVisit.patientSmokingStatus}}</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+
+												<!-- Eye Health Panel -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'GENERAL_OPHTHALMOLOGY' || selectedVisit.type === 'OPHTHALMOLOGY_SURGERY'">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Eye Health Metrics</h4>
+														</div>
+														<div class="panel-body">
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Visual Acuity Left (OS):</label>
+																</div>
+																<div name='acuityOS' class="col-xs-6">
+																	{{selectedVisit.visualAcuityOS}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Visual Acuity Right (OD):</label>
+																</div>
+																<div name='acuityOD' class="col-xs-6">
+																	{{selectedVisit.visualAcuityOD}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Sphere Left (OS):</label>
+																</div>
+																<div name='sphereOS' class="col-xs-6">
+																	{{selectedVisit.sphereOS}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Sphere Right (OD):</label>
+																</div>
+																<div name='sphereOD' class="col-xs-6">
+																	{{selectedVisit.sphereOD}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Cylinder Left (OS):</label>
+																</div>
+																<div name='cylinderOS' class="col-xs-6">
+																	{{selectedVisit.cylinderOS}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Cylinder Right (OD):</label>
+																</div>
+																<div name='cylinderOD' class="col-xs-6">
+																	{{selectedVisit.cylinderOD}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Axis Left (OS):</label>
+																</div>
+																<div name='axisOS' class="col-xs-6">
+																	{{selectedVisit.axisOS}}</div>
+															</div>
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Axis Right (OD):</label>
+																</div>
+																<div name='axisOD' class="col-xs-6">
+																	{{selectedVisit.axisOD}}</div>
+															</div>
+														</div>
+													</div>
+												</div>
+
+												<!-- Diagnosis Panel  -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'GENERAL_CHECKUP' && diagnoses.length">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Diagnoses</h4>
+														</div>
+														<div class="panel-body" ng-show="diagnoses.length">
+															<div class="row">
+																<div class="col-md-6">
+																	<b>Description</b>
+																</div>
+																<div class="col-md-6">
+																	<b>Note</b>
+																</div>
+															</div>
+															<div name='diagnose' class="row"
+																ng-repeat="d in diagnoses">
+																<div name='diagnoseDesc' class="col-md-6">
+																	{{d.code.description}}</div>
+																<div name='diagnoseNote' class="col-md-6">
+																	{{d.note}}</div>
+															</div>
+														</div>
+													</div>
+												</div>
+
+												<!-- Eye Diagnosis Panel  -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'GENERAL_OPHTHALMOLOGY' && selectedVisit.eyeDiagnoses != undefined">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Diagnoses</h4>
+														</div>
+														<div class="panel-body"
+															ng-show="selectedVisit.eyeDiagnoses.length">
+															<ul ng-repeat="d in selectedVisit.eyeDiagnoses">
+																<li>{{d}}</li>
+															</ul>
+														</div>
+													</div>
+												</div>
+
+												<!-- Ophthalmology Surgery Panel  -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'OPHTHALMOLOGY_SURGERY'">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Surgery Type</h4>
+														</div>
+														<div class="panel-body">
+															<div class="form-group row">
+																<div class="col-xs-6">
+																	<label>Surgery Type:</label>
+																</div>
+																<div name='surgeryType' class="col-xs-6">
+																	{{selectedVisit.surgeryType}}</div>
+															</div>
+														</div>
+													</div>
+												</div>
+
+												<!-- Prescription Panel -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'GENERAL_CHECKUP' && prescriptions.length">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Prescriptions</h4>
+														</div>
+														<div class="panel-body" ng-show="prescriptions.length">
+															<div class="row" ng-repeat="p in prescriptions">
+																<div class="col-md-6">
+																	<b>Drug:</b> {{p.drug}}
+																</div>
+															</div>
+															<div class="row" ng-repeat="p in prescriptions">
+																<div class="col-md-2">
+																	<!-- "tabs" over the columns -->
+																</div>
+																<div class="col-md-8">
+																	<b>Dosage:</b> {{p.dosage}}mg <br> <b>Start
+																		Date:</b> {{p.startDate | date : 'MM/dd/yyyy'}} <br>
+																	<b>End Date:</b> {{p.endDate | date : 'MM/dd/yyyy'}} <br>
+																	<b>Renewals:</b> {{p.renewals}}
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+
+												<!-- Lab Procedures Panel  -->
+												<div class="col-md-4"
+													ng-show="selectedVisit.type === 'GENERAL_CHECKUP' && procedures.length">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Lab Procedures</h4>
+														</div>
+														<div class="panel-body" ng-show="procedures.length">
+															<div class="row" ng-repeat="p in procedures">
+																<div class="col-md-6">
+																	<b>Code:</b> {{p.code}}
+																</div>
+															</div>
+															<div class="row" ng-repeat="p in procedures">
+																<div class="col-md-2">
+																	<!-- "tabs" over the columns -->
+																</div>
+																<div class="col-md-8">
+																	<b>Common Name:</b> {{p.commonName}} <br> <b>Priority:</b>
+																	{{p.priority}} <br> <b>Status:</b> {{p.status |
+																	humanize}} <br> <b>Comments:</b> {{p.comments}}
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<div class="row">
+												<!-- Notes Panel  -->
+												<div class="col-md-12">
+													<div class="panel panel-info">
+														<div class="panel-heading">
+															<h4>Notes</h4>
+														</div>
+														<div class="panel-body">
+															<div class="col-xs-2">
+																<label>Notes:</label>
+															</div>
+															<div name='notes' class="col-xs-6">
+																{{selectedVisit.notes}}</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+</body>
+
+</html>

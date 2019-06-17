@@ -8,7 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -35,11 +36,11 @@ import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
 import edu.ncsu.csc.itrust2.models.persistent.Drug;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.ICDCode;
 import edu.ncsu.csc.itrust2.models.persistent.LOINC;
 import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
-import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
@@ -125,7 +126,7 @@ public class APILabProcedureTest {
         l.save();
         form.setLoincId( l.getId() );
         assertEquals( form.getLoincId(), l.getId() );
-        final OfficeVisit of = makeOfficeVisit();
+        final GeneralCheckup of = makeGeneralCheckup();
         form.setVisitId( of.getId() );
         assertEquals( of.getId(), form.getVisitId() );
 
@@ -136,15 +137,15 @@ public class APILabProcedureTest {
     }
 
     /**
-     * Makes an OfficeVisit for testing
+     * Makes an GeneralCheckup for testing
      *
-     * @return The newly created OfficeVisit
+     * @return The newly created GeneralCheckup
      */
-    private OfficeVisit makeOfficeVisit () {
+    private GeneralCheckup makeGeneralCheckup () {
         final Hospital hosp = new Hospital( "Dr. Jenkins' Insane Asylum", "123 Main St", "12345", "NC" );
         hosp.save();
 
-        final OfficeVisit visit = new OfficeVisit();
+        final GeneralCheckup visit = new GeneralCheckup();
 
         final BasicHealthMetrics bhm = new BasicHealthMetrics();
 
@@ -163,7 +164,7 @@ public class APILabProcedureTest {
         visit.setHospital( hosp );
         visit.setPatient( User.getByName( "AliceThirteen" ) );
         visit.setHcp( User.getByName( "AliceThirteen" ) );
-        visit.setDate( Calendar.getInstance() );
+        visit.setDate( ZonedDateTime.now() );
 
         final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
 
@@ -194,11 +195,9 @@ public class APILabProcedureTest {
         pres.setDosage( 3 );
         pres.setDrug( drug );
 
-        final Calendar end = Calendar.getInstance();
-        end.add( Calendar.DAY_OF_WEEK, 10 );
-        pres.setEndDate( end );
+        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
         pres.setPatient( User.getByName( "AliceThirteen" ) );
-        pres.setStartDate( Calendar.getInstance() );
+        pres.setStartDate( LocalDate.now() );
         pres.setRenewals( 5 );
 
         pres.save();
@@ -215,7 +214,7 @@ public class APILabProcedureTest {
      * @throws Exception
      */
     @Test
-    @WithMockUser ( username = "hcp", roles = { "USER", "HCP" } )
+    @WithMockUser ( username = "hcp", roles = { "USER", "HCP", "ADMIN" } )
     public void testLabProcedureHCPAPI () throws Exception {
 
         mvc.perform( delete( "/api/v1/labprocedures" ) );
@@ -249,7 +248,7 @@ public class APILabProcedureTest {
         l.setProperty( "JUMP" );
         l.save();
 
-        final OfficeVisit visit = new OfficeVisit();
+        final GeneralCheckup visit = new GeneralCheckup();
 
         final BasicHealthMetrics bhm = new BasicHealthMetrics();
 
@@ -268,7 +267,7 @@ public class APILabProcedureTest {
         visit.setHospital( hospital );
         visit.setPatient( User.getByName( "patient" ) );
         visit.setHcp( User.getByName( "patient" ) );
-        visit.setDate( Calendar.getInstance() );
+        visit.setDate( ZonedDateTime.now() );
 
         final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
 
@@ -299,11 +298,9 @@ public class APILabProcedureTest {
         pres.setDosage( 3 );
         pres.setDrug( drug );
 
-        final Calendar end = Calendar.getInstance();
-        end.add( Calendar.DAY_OF_WEEK, 10 );
-        pres.setEndDate( end );
+        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
         pres.setPatient( User.getByName( "patient" ) );
-        pres.setStartDate( Calendar.getInstance() );
+        pres.setStartDate( LocalDate.now() );
         pres.setRenewals( 5 );
 
         pres.save();
@@ -354,11 +351,11 @@ public class APILabProcedureTest {
         /* Test BAD getProceduresForTech */
         mvc.perform( get( "/api/v1/labprocedures/byUser/-1" ) ).andExpect( status().isNotFound() );
 
-        /* Test getProceduresForOfficeVisit */
+        /* Test getProceduresForGeneralCheckup */
         mvc.perform( get( "/api/v1/labprocedures/byVisit/" + form.getVisitId() ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
-        /* Test BAD getProceduresForOfficeVisit */
+        /* Test BAD getProceduresForGeneralCheckup */
         mvc.perform( get( "/api/v1/labprocedures/byVisit/-1" ) ).andExpect( status().isNotFound() );
 
         /* Test getProcedureById */
@@ -422,7 +419,7 @@ public class APILabProcedureTest {
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
         /* Assert the LabProcedure was updated */
-        final OfficeVisit visit = lp.getVisit();
+        final GeneralCheckup visit = lp.getVisit();
         final LOINC l = lp.getLoinc();
         lp = LabProcedure.getByVisit( visit.getId() ).get( 0 );
         assertEquals( "patient", lp.getPatient().getUsername() );

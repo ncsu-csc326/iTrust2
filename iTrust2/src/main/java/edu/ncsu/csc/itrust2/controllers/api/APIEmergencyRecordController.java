@@ -22,9 +22,11 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  * username.
  *
  * @author Alexander Phelps
+ * @author Kai Presler-Marshall
  *
  */
 @RestController
+@SuppressWarnings ( { "unchecked", "rawtypes" } )
 public class APIEmergencyRecordController extends APIController {
     /**
      * Returns the EmergencyRecordForm for a patient.
@@ -34,16 +36,15 @@ public class APIEmergencyRecordController extends APIController {
      *            be generated for.
      * @return emergRec The EmergencyRecordForm for the patient requested.
      */
-    @SuppressWarnings ( { "unchecked", "rawtypes" } )
-    @PreAuthorize ( "hasRole('ROLE_ER') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_ER')" )
     @GetMapping ( BASE_PATH + "/emergencyrecord/{patientName}" )
     public ResponseEntity getEmergencyRecord ( @PathVariable ( "patientName" ) final String username ) {
         final User expectedPatient = User.getByName( username );
         final boolean isHCP = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
                 .contains( new SimpleGrantedAuthority( "ROLE_HCP" ) );
-        
-        TransactionType logCode = isHCP ? TransactionType.HCP_VIEW_ER : TransactionType.ER_VIEW_ER;
-        
+
+        final TransactionType logCode = isHCP ? TransactionType.HCP_VIEW_ER : TransactionType.ER_VIEW_ER;
+
         if ( expectedPatient != null && expectedPatient.getRole().equals( Role.ROLE_PATIENT ) ) {
             final EmergencyRecordForm emergRec = new EmergencyRecordForm( expectedPatient.getUsername() );
             LoggerUtil.log( logCode, LoggerUtil.currentUser(), expectedPatient.getUsername(),
@@ -64,12 +65,11 @@ public class APIEmergencyRecordController extends APIController {
      *            be generated for.
      * @return emergRec The EmergencyRecordForm for the patient requested.
      */
-    @SuppressWarnings ( { "unchecked", "rawtypes" } )
     @GetMapping ( BASE_PATH + "/emergencyrecord/hcp/{patientName}" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public ResponseEntity getEmergencyRecordHCP ( @PathVariable ( "patientName" ) final String username ) {
         final User expectedPatient = User.getByName( username );
-        
+
         if ( expectedPatient != null && expectedPatient.getRole().equals( Role.ROLE_PATIENT ) ) {
             final EmergencyRecordForm emergRec = new EmergencyRecordForm( expectedPatient.getUsername() );
             LoggerUtil.log( TransactionType.HCP_VIEW_ER, LoggerUtil.currentUser(), expectedPatient.getUsername(),

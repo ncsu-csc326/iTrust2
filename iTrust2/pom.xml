@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>edu.ncsu.csc</groupId>
 	<artifactId>iTrust2</artifactId>
-	<version>3.0.0</version>
+	<version>4.0.0</version>
 	<packaging>war</packaging>
 	<name>iTrust2</name>
 	<organization>
@@ -24,11 +24,12 @@
 		<java.version>1.8</java.version>
 		<checkstyle.config.location>src/test/resources/reporting/csc_checkstyle.xml</checkstyle.config.location>
 		<cucumber.options>--plugin json:target/cucumber.json</cucumber.options>
-		<jacoco.version>0.8.1</jacoco.version>
+		<jacoco.version>0.8.2</jacoco.version>
 		<surefire.version>2.22.0</surefire.version>
 		<failsafe.version>2.22.0</failsafe.version>
 		<maven.compiler.version>3.7.0</maven.compiler.version>
 		<jetty.version>9.2.2.v20140723</jetty.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<dependencyManagement>
@@ -44,7 +45,7 @@
 	</dependencyManagement>
 	<dependencies>
 
-        <!-- Java EE stuff for Java 9+ -->
+		<!-- Java EE stuff for Java 9+ -->
 		<dependency>
 			<groupId>javax.xml.bind</groupId>
 			<artifactId>jaxb-api</artifactId>
@@ -65,7 +66,7 @@
 			<artifactId>activation</artifactId>
 			<version>1.1.1</version>
 		</dependency>
-        <!-- End Java EE -->
+		<!-- End Java EE -->
 
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
@@ -142,7 +143,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
-			<version>4.2.2.RELEASE</version>
+			<version>[4.2.12,)</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -227,7 +228,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
-			<version>4.2.2.RELEASE</version>
+			<version>4.2.4.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -247,7 +248,7 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-jpa</artifactId>
-			<version>1.10.2.RELEASE</version>
+			<version>[1.11.22,)</version>
 		</dependency>
 
 		<!-- Thymeleaf -->
@@ -507,6 +508,7 @@
 				<configuration>
 					<argLine>${surefireArgLine}</argLine>
 					<skip>${skipSurefireTests}</skip>
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -518,6 +520,7 @@
 						<server.port>8080</server.port>
 						<cucumber.options>${cucumber.options}</cucumber.options>
 					</systemPropertyVariables>
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 				<executions>
 					<execution>

@@ -33,18 +33,6 @@
 									return false;
 								}
 								
-								function zeroPad(number, characters) {
-									var s = String(number);
-									while (s.length < characters) s = "0" + s;
-									return s;
-								}
-								
-								function formatDOB(patient) {
-									return zeroPad(patient.dateOfBirth.month+1, 2) + '/'
-											+ zeroPad(patient.dateOfBirth.dayOfMonth, 2) + '/'
-											+ zeroPad(patient.dateOfBirth.year, 4);
-								}
-								
 								$scope.originalForm = {};
 								$scope.patientForm = {};
 								$scope.selectPatient = function(patient, override) {
@@ -56,12 +44,9 @@
 									console.log(patient);
 									$http.get("/iTrust2/api/v1/emergencyrecord/" + patient.self.username).then(
 											function(response) {
-												console.log("received response");
-												console.log(response);
 												// SelectedPatient maps to the radio button, currentPatient is used for ER data
 												$scope.selectedPatient = patient.self.username;
 												$scope.currentPatient = response.data;
-												console.log(response.data);
 											});
 									
 									
@@ -77,52 +62,71 @@
 		</script>
 
 		<div ng-app="myApp" ng-controller="documentOfficeVisitCtrl">
-			<div style="float:left;width:30%;height:75%;overflow-y:auto">
-			<h2>Patients:</h2>
-			<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
+			<div style="float: left; width: 30%; height: 75%; overflow-y: auto">
+				<h2>Patients:</h2>
+				<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
 				and https://docs.angularjs.org/api/ng/filter/filter -->
-			<h4>Search: <input type="text" name="search" ng-model="searchFilter"/></h4>
-			<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
-			<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
-			<ul style="overflow:auto;height=90%;" id="patientList">
-			<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
-							<li ng-repeat="patient in patients | filter:filterPatients"><h4><label>
-									<input type="radio" ng-model="$parent.selectedPatient"
-									name="patient" value="{{patient.self.username}}"
-									ng-click='$parent.selectPatient(patient)' />&nbsp;{{$parent.displayName(patient)}}</label>
-							</h4></li>
-						</ul>
+				<h4>
+					Search: <input type="text" name="search" ng-model="searchFilter" />
+				</h4>
+				<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+				<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+				<ul style="overflow: auto;height=90%;" id="patientList">
+					<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+					<li ng-repeat="patient in patients | filter:filterPatients"><h4>
+							<label> <input type="radio"
+								ng-model="$parent.selectedPatient" name="patient"
+								value="{{patient.self.username}}"
+								ng-click='$parent.selectPatient(patient)' />&nbsp;{{$parent.displayName(patient)}}
+							</label>
+						</h4></li>
+				</ul>
 			</div>
 			<!-- information on vertical rule found here: https://stackoverflow.com/questions/571900/is-there-a-vr-vertical-rule-in-html  -->
-		<div style="float:left;width:70%;border-left:1px solid #bbb;padding-left: 3%;height:75%;overflow-y:auto">
-			<h2 id="header0">View Patient Information</h2>
-			<div ng-show="currentPatient">
-				<h3>Username: {{currentPatient.patient.self.username}}</h3>
-				<table>
-					<tr><td id="Name">Name: {{currentPatient.firstName}} {{currentPatient.lastName}}</td></tr>
-					<tr><td id="Gender">Gender: {{currentPatient.gender}}</td></tr>
-					<tr><td id="Blood">Blood Type: {{currentPatient.bloodType}}</td></tr>
-					<tr><td id="DOB">Date of Birth: {{currentPatient.dateOfBirth}}</td></tr>
-					<tr><td id="age">Age: {{currentPatient.age}}</td></tr>
-					
-				</table>
-				
-				<h4>Diagnoses</h4>
-				
-				<ul>
-					<li ng-repeat="diagnosis in currentPatient.diagnoses">{{diagnosis.code.code}}: {{diagnosis.code.description}}</li>
-				</ul>
-				
-				<h4>Prescriptions</h4>
-				
-				<ul>
-					<li ng-repeat="prescription in currentPatient.prescriptions">{{prescription.drug.code}}: {{prescription.drug.name}}</li>
-				</ul>
-				
-				<br />
-				
-				<div name="success">{{message}}</div>
-			</div>
+			<div
+				style="float: left; width: 70%; border-left: 1px solid #bbb; padding-left: 3%; height: 75%; overflow-y: auto">
+				<h2 id="header0">View Patient Information</h2>
+				<div ng-show="currentPatient">
+					<h3>Username: {{currentPatient.patient.self.username}}</h3>
+					<table>
+						<tr>
+							<td id="Name">Name: {{currentPatient.firstName}}
+								{{currentPatient.lastName}}</td>
+						</tr>
+						<tr>
+							<td id="Gender">Gender: {{currentPatient.gender}}</td>
+						</tr>
+						<tr>
+							<td id="Blood">Blood Type: {{currentPatient.bloodType}}</td>
+						</tr>
+						<tr>
+							<td id="DOB">Date of Birth: {{currentPatient.dateOfBirth |
+								date : 'MM/dd/yyyy'}}</td>
+						</tr>
+						<tr>
+							<td id="age">Age: {{currentPatient.age}}</td>
+						</tr>
+
+					</table>
+
+					<h4>Diagnoses</h4>
+
+					<ul>
+						<li ng-repeat="diagnosis in currentPatient.diagnoses">{{diagnosis.code.code}}:
+							{{diagnosis.code.description}}</li>
+					</ul>
+
+					<h4>Prescriptions</h4>
+
+					<ul>
+						<li ng-repeat="prescription in currentPatient.prescriptions">{{prescription.drug.code}}:
+							{{prescription.drug.name}}</li>
+					</ul>
+
+					<br />
+
+					<div name="success">{{message}}</div>
+				</div>
 			</div>
 		</div>
 	</div>

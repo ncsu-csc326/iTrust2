@@ -11,6 +11,7 @@ import javax.persistence.Enumerated;
  *
  * @author Alex Phelps
  * @author Natalie Landsberg
+ * @author Kai Presler-Marshall
  */
 public enum LabStatus {
 

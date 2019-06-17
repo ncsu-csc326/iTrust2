@@ -40,7 +40,7 @@ public class APILabProcedureController extends APIController {
      *
      * @return list of lab procedures
      */
-    @PreAuthorize ( "hasRole('ROLE_HCP') or hasRole('ROLE_LABTECH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH')" )
     @GetMapping ( BASE_PATH + "/labprocedures" )
     public ResponseEntity getLabProcedures () {
         final List<LabProcedure> procs;
@@ -70,7 +70,7 @@ public class APILabProcedureController extends APIController {
      * @return Specified LabTechs LabProcedures
      */
     @GetMapping ( BASE_PATH + "/labprocedures/byUser/{techId}" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public ResponseEntity getProceduresForTech ( @PathVariable ( "techId" ) final String techId ) {
         final User tech = User.getByName( techId );
         final TransactionType logCode;
@@ -95,14 +95,18 @@ public class APILabProcedureController extends APIController {
      * @return LabProcedures associated with the specified OfficeVisit
      */
     @GetMapping ( BASE_PATH + "/labprocedures/byVisit/{id}" )
-    @PreAuthorize ( "hasRole('ROLE_HCP') or hasRole('ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
     public ResponseEntity getProceduresForOfficeVisit ( @PathVariable ( "id" ) final Long id ) {
         final OfficeVisit ov = OfficeVisit.getById( id );
         final TransactionType logCode;
         final List<LabProcedure> procs;
         final boolean isHCP = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
                 .contains( new SimpleGrantedAuthority( "ROLE_HCP" ) );
-        if ( isHCP ) {
+        final boolean isOD = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .contains( new SimpleGrantedAuthority( "ROLE_OD" ) );
+        final boolean isOPH = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .contains( new SimpleGrantedAuthority( "ROLE_OPH" ) );
+        if ( isHCP || isOD || isOPH ) {
             if ( ov != null ) {
                 logCode = TransactionType.HCP_VIEW_PROCS;
                 procs = LabProcedure.getForVisit( id );
@@ -142,7 +146,7 @@ public class APILabProcedureController extends APIController {
      * @return LabProcedure with the specified id.
      */
     @GetMapping ( BASE_PATH + "/labprocedures/{id}" )
-    @PreAuthorize ( "hasRole('ROLE_LABTECH') or hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH')" )
     public ResponseEntity getProcedureById ( @PathVariable ( "id" ) final Long id ) {
         final boolean isHCP = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
                 .contains( new SimpleGrantedAuthority( "ROLE_HCP" ) );
@@ -171,8 +175,8 @@ public class APILabProcedureController extends APIController {
      * exercise caution before calling it
      */
     @DeleteMapping ( BASE_PATH + "/labprocedures" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
-    public void deleteLaProcedures () {
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    public void deleteLabProcedures () {
         LoggerUtil.log( TransactionType.HCP_DELETE_PROC, LoggerUtil.currentUser() );
         LabProcedure.deleteAll();
     }
@@ -185,7 +189,7 @@ public class APILabProcedureController extends APIController {
      * @return response
      */
     @PostMapping ( BASE_PATH + "/labprocedures" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public ResponseEntity createLabProcedure ( @RequestBody final LabProcedureForm procF ) {
         try {
             final LabProcedure proc = new LabProcedure( procF );
@@ -216,7 +220,7 @@ public class APILabProcedureController extends APIController {
      * @return response
      */
     @DeleteMapping ( BASE_PATH + "/labprocedures/{id}" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public ResponseEntity deleteLabProcedure ( @PathVariable final Long id ) {
         final LabProcedure proc = LabProcedure.getById( id );
         if ( proc == null ) {

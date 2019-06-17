@@ -1,7 +1,7 @@
 package edu.ncsu.csc.itrust2.config;
 
 import java.io.IOException;
-import java.util.Calendar;
+import java.time.ZonedDateTime;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
@@ -52,7 +52,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     // BAN
                     final LoginBan ban = new LoginBan();
                     ban.setIp( addr );
-                    ban.setTime( Calendar.getInstance() );
+                    ban.setTime( ZonedDateTime.now() );
                     ban.save();
                     LoginLockout.clearIP( addr );
                     LoggerUtil.log( TransactionType.IP_BANNED, addr, null, addr + " has been banned." );
@@ -62,7 +62,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     // lockout IP.
                     final LoginLockout lockout = new LoginLockout();
                     lockout.setIp( addr );
-                    lockout.setTime( Calendar.getInstance() );
+                    lockout.setTime( ZonedDateTime.now() );
                     lockout.save();
                     LoggerUtil.log( TransactionType.IP_LOCKOUT, addr, null, addr + " has been locked out for 1 hour." );
                     this.getRedirectStrategy().sendRedirect( request, response, "/login?iplocked" );
@@ -88,7 +88,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
             else {
                 // fail for IP
                 final LoginAttempt attempt = new LoginAttempt();
-                attempt.setTime( Calendar.getInstance() );
+                attempt.setTime( ZonedDateTime.now() );
                 attempt.setIp( addr );
                 attempt.save();
             }
@@ -106,7 +106,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     if ( LoginLockout.getRecentUserLockouts( user ) >= 2 ) {
                         LoginLockout.clearUser( user );
                         final LoginBan ban = new LoginBan();
-                        ban.setTime( Calendar.getInstance() );
+                        ban.setTime( ZonedDateTime.now() );
                         ban.setUser( user );
                         ban.save();
                         LoggerUtil.log( TransactionType.USER_BANNED, username, null, username + " has been banned." );
@@ -131,7 +131,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     else {
                         // lockout user
                         final LoginLockout lock = new LoginLockout();
-                        lock.setTime( Calendar.getInstance() );
+                        lock.setTime( ZonedDateTime.now() );
                         lock.setUser( user );
                         lock.save();
                         LoggerUtil.log( TransactionType.USER_LOCKOUT, username, null,
@@ -159,7 +159,7 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                 else {
                     // fail for username
                     final LoginAttempt attempt = new LoginAttempt();
-                    attempt.setTime( Calendar.getInstance() );
+                    attempt.setTime( ZonedDateTime.now() );
                     attempt.setUser( user );
                     attempt.save();
                 }

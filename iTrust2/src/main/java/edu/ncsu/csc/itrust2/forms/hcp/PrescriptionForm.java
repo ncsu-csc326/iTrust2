@@ -1,8 +1,6 @@
 package edu.ncsu.csc.itrust2.forms.hcp;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 
@@ -40,9 +38,8 @@ public class PrescriptionForm implements Serializable {
         setId( prescription.getId() );
         setDrug( prescription.getDrug().getCode() );
         setDosage( prescription.getDosage() );
-        final SimpleDateFormat tempDate = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        setStartDate( tempDate.format( prescription.getStartDate().getTime() ) );
-        setEndDate( tempDate.format( prescription.getEndDate().getTime() ) );
+        setStartDate( prescription.getStartDate().toString() );
+        setEndDate( prescription.getEndDate().toString() );
         setRenewals( prescription.getRenewals() );
         setPatient( prescription.getPatient().getUsername() );
     }

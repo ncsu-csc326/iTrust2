@@ -39,6 +39,14 @@ public class LoginStepDefs extends CucumberTest {
         final User lt  = new User( "lt", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.", Role.ROLE_LABTECH,
                 1 );
         lt.save();
+        
+        final User oph = new User( "robortOPH", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.", Role.ROLE_OPH,
+                1 );
+        oph.save();
+        
+        final User od = new User( "bobbyOD", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.", Role.ROLE_OD,
+                1 );
+        od.save();
 
 
 	}

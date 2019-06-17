@@ -3,15 +3,16 @@ package edu.ncsu.csc.itrust2.unit;
 import static org.junit.Assert.assertEquals;
 
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
 import org.junit.Test;
 
-import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
+import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.LabStatus;
@@ -21,25 +22,25 @@ import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
 import edu.ncsu.csc.itrust2.models.persistent.Drug;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.ICDCode;
 import edu.ncsu.csc.itrust2.models.persistent.LOINC;
 import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
-import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 
-public class OfficeVisitTest {
+public class GeneralCheckupTest {
 
     @Test
-    public void testOfficeVisit () throws NumberFormatException, ParseException {
+    public void testGeneralCheckups () throws NumberFormatException, ParseException {
 
-        OfficeVisit.deleteAll();
+        GeneralCheckup.deleteAll();
 
         final Hospital hosp = new Hospital( "Dr. Jenkins' Insane Asylum", "123 Main St", "12345", "NC" );
         hosp.save();
 
-        final OfficeVisit visit = new OfficeVisit();
+        final GeneralCheckup visit = new GeneralCheckup();
 
         final BasicHealthMetrics bhm = new BasicHealthMetrics();
 
@@ -62,7 +63,7 @@ public class OfficeVisitTest {
         visit.setHospital( hosp );
         visit.setPatient( User.getByName( "AliceThirteen" ) );
         visit.setHcp( User.getByName( "hcp" ) );
-        visit.setDate( Calendar.getInstance() );
+        visit.setDate( ZonedDateTime.now() );
         visit.save();
 
         final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
@@ -122,11 +123,9 @@ public class OfficeVisitTest {
         pres.setDosage( 3 );
         pres.setDrug( drug );
 
-        final Calendar end = Calendar.getInstance();
-        end.add( Calendar.DAY_OF_WEEK, 10 );
-        pres.setEndDate( end );
+        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
         pres.setPatient( User.getByName( "AliceThirteen" ) );
-        pres.setStartDate( Calendar.getInstance() );
+        pres.setStartDate( LocalDate.now() );
         pres.setRenewals( 5 );
 
         pres.save();
@@ -136,7 +135,7 @@ public class OfficeVisitTest {
         visit.save();
 
         // Test the visit's persistence
-        final OfficeVisit copy = OfficeVisit.getById( visit.getId() );
+        final GeneralCheckup copy = GeneralCheckup.getById( visit.getId() );
         assertEquals( visit.getId(), copy.getId() );
         assertEquals( visit.getAppointment(), copy.getAppointment() );
         assertEquals( visit.getBasicHealthMetrics(), copy.getBasicHealthMetrics() );
@@ -145,7 +144,7 @@ public class OfficeVisitTest {
         assertEquals( visit.getPatient(), copy.getPatient() );
 
         // Test the form object
-        final OfficeVisitForm form = new OfficeVisitForm( visit );
+        final GeneralCheckupForm form = new GeneralCheckupForm( visit );
         form.setPreScheduled( null );
         assertEquals( visit.getId().toString(), form.getId() );
         assertEquals( visit.getHcp().getUsername(), form.getHcp() );
@@ -154,7 +153,7 @@ public class OfficeVisitTest {
         assertEquals( visit.getDiagnoses(), form.getDiagnoses() );
         assertEquals( visit.getLabProcedures(), form.getLabProcedures() );
 
-        final OfficeVisit clone = new OfficeVisit( form );
+        final GeneralCheckup clone = new GeneralCheckup( form );
         assertEquals( visit.getId(), clone.getId() );
         assertEquals( visit.getAppointment(), clone.getAppointment() );
         assertEquals( visit.getBasicHealthMetrics().getDiastolic(), clone.getBasicHealthMetrics().getDiastolic() );
@@ -165,22 +164,29 @@ public class OfficeVisitTest {
         visit.setPrescriptions( Collections.emptyList() );
 
         visit.save();
-
+        
         visit.delete();
-
     }
 
     @Test
-    public void testOfficeVisitForm () throws NumberFormatException, ParseException {
-        final OfficeVisitForm visit = new OfficeVisitForm();
+    public void testGeneralCheckupForm () throws NumberFormatException, ParseException {
+        final GeneralCheckupForm visit = new GeneralCheckupForm();
         visit.setPreScheduled( null );
-        visit.setDate( "4/16/2048" );
-        visit.setTime( "9:50 AM" );
+        visit.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
         visit.setHcp( "hcp" );
         visit.setPatient( "patient" );
         visit.setNotes( "Test office visit" );
         visit.setType( AppointmentType.GENERAL_CHECKUP.toString() );
         visit.setHospital( "iTrust Test Hospital 2" );
+        visit.setDiastolic( 150 );
+        visit.setHdl( 75 );
+        visit.setLdl( 75 );
+        visit.setHeight( 75f );
+        visit.setWeight( 130f );
+        visit.setTri( 300 );
+        visit.setSystolic( 150 );
+        visit.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+        visit.setPatientSmokingStatus( PatientSmokingStatus.NEVER );
         final LabProcedure proc = new LabProcedure();
         proc.setAssignedTech( User.getByRole( Role.ROLE_LABTECH ).get( 0 ) );
         proc.setComments( "Commment" );
@@ -192,7 +198,7 @@ public class OfficeVisitTest {
         procs.add( proc );
         visit.setLabProcedures( procs );
 
-        final OfficeVisit ov = new OfficeVisit( visit );
+        final GeneralCheckup ov = new GeneralCheckup( visit );
 
         assertEquals( visit.getHcp(), ov.getHcp().getUsername() );
         assertEquals( visit.getPatient(), ov.getPatient().getUsername() );

@@ -5,10 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import java.time.LocalDate;
 import java.util.function.Consumer;
 
 import org.junit.Test;
@@ -58,8 +55,8 @@ public class PatientTest {
         form.setState( State.AL.getName() );
         form.setZip( "27606" );
         form.setPhone( "111-111-1111" );
-        form.setDateOfBirth( "01/01/1901" );
-        form.setDateOfDeath( "01/01/2001" );
+        form.setDateOfBirth( "1901-01-01" ); // YYYY-MM-dd
+        form.setDateOfDeath( "2001-01-01" ); // YYYY-MM-dd
         form.setCauseOfDeath( "Hit by a truck" );
         form.setBloodType( BloodType.ABPos.getName() );
         form.setEthnicity( Ethnicity.Asian.getName() );
@@ -84,19 +81,11 @@ public class PatientTest {
         assertEquals( "27606", testPatient.getZip() );
         assertEquals( "111-111-1111", testPatient.getPhone() );
 
-        final SimpleDateFormat sdfBirth = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        final Date parsedBirthDate = sdfBirth.parse( form.getDateOfBirth() );
-        final Calendar birth = Calendar.getInstance();
-        birth.setTime( parsedBirthDate );
+        LocalDate birth = LocalDate.parse( form.getDateOfBirth() );
+        assertEquals( birth, testPatient.getDateOfBirth() );
 
-        assertEquals( birth.getTime(), testPatient.getDateOfBirth().getTime() );
-
-        final SimpleDateFormat sdfDeath = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        final Date parsedDeathDate = sdfDeath.parse( form.getDateOfDeath() );
-        final Calendar death = Calendar.getInstance();
-        death.setTime( parsedDeathDate );
-
-        assertEquals( death.getTime(), testPatient.getDateOfDeath().getTime() );
+        LocalDate death = LocalDate.parse( form.getDateOfDeath() );
+        assertEquals( death, testPatient.getDateOfDeath() );
         assertEquals( "Hit by a truck", testPatient.getCauseOfDeath() );
         assertEquals( BloodType.ABPos, testPatient.getBloodType() );
         assertEquals( Ethnicity.Asian, testPatient.getEthnicity() );
@@ -118,7 +107,7 @@ public class PatientTest {
         assertEquals( testPatient.getState().getAbbrev(), pf2.getState() );
         assertEquals( testPatient.getZip(), pf2.getZip() );
         assertEquals( testPatient.getPhone(), pf2.getPhone() );
-        assertEquals( sdfBirth.format( testPatient.getDateOfBirth().getTime() ), pf2.getDateOfBirth() );
+        assertEquals( testPatient.getDateOfBirth().toString(), pf2.getDateOfBirth() );
         assertEquals( testPatient.getCauseOfDeath(), pf2.getCauseOfDeath() );
         assertEquals( testPatient.getBloodType().getName(), pf2.getBloodType() );
         assertEquals( testPatient.getEthnicity().getName(), pf2.getEthnicity() );
@@ -204,7 +193,7 @@ public class PatientTest {
         form.setState( State.AL.getName() );
         form.setZip( "27606" );
         form.setPhone( "111-111-1111" );
-        form.setDateOfBirth( "01/01/1901" );
+        form.setDateOfBirth( "1901-01-01" );
         form.setSelf( patient.getUsername() );
         final Patient testPatient = new Patient( form );
         testPatient.save();
@@ -220,7 +209,7 @@ public class PatientTest {
         form.setState( State.AL.getName() );
         form.setZip( "27606" );
         form.setPhone( "111-222-1111" );
-        form.setDateOfBirth( "01/01/1901" );
+        form.setDateOfBirth( "1901-01-01" );
         form.setSelf( rep.getUsername() );
         final Patient testRep = new Patient( form );
         testRep.save();

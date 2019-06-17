@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -64,6 +65,7 @@ public class APIHospitalTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "admin", roles = { "ADMIN" } )
     public void testHospitalAPI () throws Exception {
         mvc.perform( delete( "/api/v1/hospitals" ) );
         final Hospital hospital = new Hospital( "iTrust Test Hospital 2", "1 iTrust Test Street", "27607", "NC" );

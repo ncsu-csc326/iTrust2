@@ -1,16 +1,18 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head th:include="layout :: head(title=~{::title},links=~{})">
-  <title>Admin Drugs</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<title>Admin Drugs</title>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
 </head>
 
 <body th:include="layout :: body" th:with="content=~{::content}">
-  <div th:fragment="content">
+	<div th:fragment="content">
 
 
-    <script th:inline="javascript">
+		<script th:inline="javascript">
       /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
       /*<![CDATA[*/
       var app = angular.module("drugsApp", []);
@@ -109,32 +111,34 @@
 
 
 
-    <div ng-app="drugsApp" ng-controller="drugsCtrl">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="panel panel-primary">
-              <div class="panel-heading">
-                <h3>Admin Manage Drugs</h3>
-              </div>
-              <div class="panel-body">
-                <table class="table table-bordered">
-                  <caption>Existing Medications:</caption>
-                  <thead>
-                    <tr>
-                      <th>Drug</th>
-                      <th>NDC</th>
-                      <th>Description</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr name="drugTableRow" ng-repeat="d in drugs | orderBy: 'name'" ng-include="getTemplate(d)" drugId={{d.id}}>
-                    </tr>
-                  </tbody>
-                </table>
-                <!-- table in view mode -->
-                <script type="text/ng-template" id="view">
+		<div ng-app="drugsApp" ng-controller="drugsCtrl">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3>Admin Manage Drugs</h3>
+							</div>
+							<div class="panel-body">
+								<table class="table table-bordered">
+									<caption>Existing Medications:</caption>
+									<thead>
+										<tr>
+											<th>Drug</th>
+											<th>NDC</th>
+											<th>Description</th>
+											<th>Action</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr name="drugTableRow"
+											ng-repeat="d in drugs | orderBy: 'name'"
+											ng-include="getTemplate(d)" drugId={{d.id}}>
+										</tr>
+									</tbody>
+								</table>
+								<!-- table in view mode -->
+								<script type="text/ng-template" id="view">
                   <td name="nameCell">{{d.name}}</td>
                   <td name="codeCell">{{d.code}}</td>
                   <td name="descriptionCell">{{d.description}}</td>
@@ -150,8 +154,8 @@
                   </td>
                 </script>
 
-                <!-- table in edit mode -->
-                <script type="text/ng-template" id="edit">
+								<!-- table in edit mode -->
+								<script type="text/ng-template" id="edit">
                   <td name="editNameCell">
                     <input type="text" class="form-control" ng-model="selectedDrug.name" />
                   </td>
@@ -173,44 +177,50 @@
                   </td>
                 </script>
 
-                <br>
-                <div class="row">
-                  <div class="col-md-12">
-                    <div class="panel panel-default">
-                      <div class="panel-heading ">Add a Drug</div>
-                      <div class="panel-body">
-                        <form class="form-horizontal" role="form" name="addDrugForm" ng-submit="addDrug(addDrugForm.$valid)">
-                          <div class="row">
-                            <div class="col-md-4">
-                              <label>Name</label>
-                              <input type="text" class="form-control" name="drug" ng-model="drug.name" required/>
-                            </div>
-                            <div class="col-md-4">
-                              <label>Code</label>
-                              <input type="text" class="form-control" placeholder="xxxx-xxxx-xx" name="code" ng-model="drug.code" required />
-                            </div>
-                            <div class="col-md-4">
-                              <label>Description</label>
-                              <textarea class="form-control" rows="5" name="description" ng-model="drug.description" required ng-minlength="1"></textarea>
-                            </div>
-                          </div>
-                          <div class="row">
-                            <div class="col-md-12 text-right">
-                              <button type="submit" class="btn btn-success" name="submit">Submit</button>
-                            </div>
-                          </div>
-                        </form>
-                        <div>
-                          <p style="color:red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+								<br>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="panel panel-default">
+											<div class="panel-heading ">Add a Drug</div>
+											<div class="panel-body">
+												<form class="form-horizontal" role="form" name="addDrugForm"
+													ng-submit="addDrug(addDrugForm.$valid)">
+													<div class="row">
+														<div class="col-md-4">
+															<label>Name</label> <input type="text"
+																class="form-control" name="drug" ng-model="drug.name"
+																required />
+														</div>
+														<div class="col-md-4">
+															<label>Code</label> <input type="text"
+																class="form-control" placeholder="xxxx-xxxx-xx"
+																name="code" ng-model="drug.code" required />
+														</div>
+														<div class="col-md-4">
+															<label>Description</label>
+															<textarea class="form-control" rows="5"
+																name="description" ng-model="drug.description" required
+																ng-minlength="1"></textarea>
+														</div>
+													</div>
+													<div class="row">
+														<div class="col-md-12 text-right">
+															<button type="submit" class="btn btn-success"
+																name="submit">Submit</button>
+														</div>
+													</div>
+												</form>
+												<div>
+													<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 </body>
 
 </html>

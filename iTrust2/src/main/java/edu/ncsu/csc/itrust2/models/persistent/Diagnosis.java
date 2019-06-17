@@ -28,7 +28,7 @@ public class Diagnosis extends DomainObject<Diagnosis> {
     @NotNull
     @ManyToOne
     @JoinColumn ( name = "visit_id", nullable = false )
-    private OfficeVisit visit;
+    private GeneralCheckup visit;
 
     private String      note;
 
@@ -62,7 +62,7 @@ public class Diagnosis extends DomainObject<Diagnosis> {
      * @param visit
      *            The Visit to associate with
      */
-    public void setVisit ( final OfficeVisit visit ) {
+    public void setVisit ( final GeneralCheckup visit ) {
         this.visit = visit;
     }
 
@@ -71,7 +71,7 @@ public class Diagnosis extends DomainObject<Diagnosis> {
      *
      * @return The Offive Visit
      */
-    public OfficeVisit getVisit () {
+    public GeneralCheckup getVisit () {
         return visit;
     }
 

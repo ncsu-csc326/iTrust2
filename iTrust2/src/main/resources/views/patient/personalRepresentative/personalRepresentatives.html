@@ -1,12 +1,14 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:include="layout :: head(title=~{::title},links=~{})">
-	<title>Personal Representatives</title>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<title>Personal Representatives</title>
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
 </head>
 <body th:include="layout :: body" th:with="content=~{::content}">
-	<div th:fragment="content" style="text-align:center;">
-		
+	<div th:fragment="content" style="text-align: center;">
+
 		<script th::inline="javascript">
 		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
 		/*<![CDATA[*/
@@ -205,142 +207,187 @@
 				
 				}); //put everything above this!!! 
 		</script>
-		
-	<h1 align="center">Personal Representatives</h1>
-	<div ng-app="personalRepsApp" ng-controller="personalRepsCtrl">
-	
-	<!-- Various alerts for whether declaring or undeclaring was successful -->
-	    	<div class="alert alert-success" ng-show="succDeclare" ng-hide="!succDeclare || failUndeclare || failDeclare || succUndeclare">
-   				<button type="button" class="close" data-ng-click="switchBool('succDeclare');" id="closeAlert" >x</button>
-			    Successfully declared a representative
-		 </div>
-	 	 <div class="alert alert-danger" ng-show="failDeclare" ng-hide="!failDeclare || failUndeclare || succUndeclare || succDeclare">
-   				<button type="button" class="close" data-ng-click="switchBool('failDeclare')" id="closeAlert" >x</button>
-			    Error while adding representative
-		 </div>
-		 <div class="alert alert-success" ng-show="succUndeclare" ng-hide="!succUndeclare || failDeclare || failUndeclare || succDeclare">
-   				<button type="button" class="close" data-ng-click="switchBool('succUndeclare')" id="closeAlert" >x</button>
-			    Successfully undeclared representative
-		 </div>
-		 <div class="alert alert-danger" ng-show="failUndeclare" ng-hide="!failUndeclare || succDeclare || succUndeclare || failDeclare">
-   				<button type="button" class="close" data-ng-click="switchBool('failUndeclare')" id="closeAlert" >x</button>
-			    Error while removing representative
-		 </div>
-		 
-		 
-	    	<div class="container"> 
-	      <!-- Who represent the logged in patient -->
-	 	  	<div class="row" style="display:inline-block;  position:relative; left:-50px; vertical-align:top">
-	          	<div class="col-md-5" style="width:550px;">
-	            		<div class="panel panel-primary">
-	              		<div class="panel-heading">
-	                			<h3>Your Representatives</h3>
-	              		</div>
-	              	<div class="panel-body" style="overflow-y: scroll;">
-	                		<table class="table table-bordered" style="width:500px;table-layout:fixed">
-	                		<thead>
-		                    <tr>
-		                      <th style="width:50px; text-align:center; vertical-align:middle" ng-show="undeclare" ng-hide="!undeclare"> </th>
-		                      <th>Name</th>
-		                      <th>MID</th>
-		                    </tr>
-	                    </thead>
-	                    <tbody>
-		                    <tr name="myRepsTableRow" ng-repeat="myR in representatives">
-		                      <td name="checks" style="width:50px; text-align:center; vertical-align:middle" 
-		                      	  ng-show="undeclare" ng-hide="!undeclare"><input type="radio" id="{{r.self.username}}-representatives"
-		                      	  ng-model="$parent.checked1" value="{{myR.self.username}}"/> </td>
-		                      <td name="myRepName" id="{{myR.self.username}}-representativeName">{{myR.firstName}} {{myR.lastName}}</td>
-		                      <td name="myRepMID" id="{{myR.self.username}}-representativeName">{{myR.self.username}}</td>
-		                    </tr>
-	                    </tbody>
-		                </table>
-		              </div>
-		            </div>
-		          </div>
-		       </div>
-	
-			<!-- Buttons -->
-	 		<div class="row" style="display:inline-block; ">
-		      	<div class="col-md-12" style="width:150px;text-align: center;">
-		      		<button class="btn btn-success" style="width:130px" id="declareButton"
-		      			ng-click="declareFn()" ng-hide="undeclare || declare" ng-show="!undeclare || !declare"> Declare a <br>Representative
-		      		</button>
-		      		<br>
-		      		<button class="btn btn-success" style="width:130px; position:relative; top:100px"  id="undeclareButton"
-		      			ng-click="undeclareFn()" ng-hide="declare || undeclare" ng-show="!declare || !undeclare"> Undeclare <br>Representatives 
-		      		</button>
-		      		<br>
-		    		</div>
-		      		
-		      		
-	      		<div class="row">
-  			     	<div class="col-md-12" style="text-align:center; margin: 0 auto;"> 
-	  			     	<button class="btn btn-success" style="width:150px" id="confirmDeclareButton"
-					    		ng-click="addRep()" ng-hide="undeclare || !declare" ng-show="declare"> Confirm Declaration 
-					    </button> 		
-					    <button class="btn btn-success" style="width:150px; position:relative;" id="confirmUndeclareButton" 
-					    		ng-click="removeRep()" ng-hide="declare || !undeclare" ng-show="undeclare"> Confirm Undeclare 
-					    	</button>
-			      		<button class="btn btn-success" style="width:130px; position:relative;" 
-			      			ng-click="back()" ng-show="undeclare || declare"> Back 
-			      		</button>
-		      		</div>
-	      		</div>
-		     </div>
-		     
-	
-	
-	 		<!-- Who they represent -->
-	        <div class="row" style="display:inline-block; position:relative; right:-50px; vertical-align:top">
-	          <div class="col-md-5" style="width:550px" >
-	            <div class="panel panel-primary">
-	              <div class="panel-heading">
-	                <h3>Who You Represent</h3>
-	              </div>
-	              <div class="panel-body" style="overflow-y: scroll;">
-	                <table class="table table-bordered" style="width:500px;table-layout:fixed;">
-	                  <thead>
-	                    <tr>
-	                      <th style="width:50px; text-align:center; vertical-align:middle" ng-show="undeclare" ng-hide="!undeclare"> </th>
-	                      <th>Name</th>
-	                      <th>MID</th>
-	                    </tr>
-	                  </thead>
-	                  <tbody>
-	                    <tr name="repTableRow" ng-repeat="r in representing">
-	                      <td name="checks2" style="width:50px; text-align:center; vertical-align:middle" 
-	                      	 ng-show="undeclare" ng-hide="!undeclare"><input type="radio" id="{{r.self.username}}-representing"
-	                      	 ng-model="$parent.checked2" value="{{r.self.username}}"/> </td>
-	                      <td name="repName" id="{{r.self.username}}-representingName">{{r.firstName}} {{r.lastName}}</td>
-	                      <td name="repMID" id="{{r.self.username}}-representingUsername">{{r.self.username}}</td>
-	                    </tr>
-	                  </tbody>
-	                </table>
-              	 </div>
-               </div>
-            </div>
-		 </div>
-		 
-		<div style="margin: 0 auto;overflow-y:auto;vertical-align:top;" ng-show="declare" ng-hide="!declare">
-			<h2>Patients:</h2>
-			<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
+
+		<h1 align="center">Personal Representatives</h1>
+		<div ng-app="personalRepsApp" ng-controller="personalRepsCtrl">
+
+			<!-- Various alerts for whether declaring or undeclaring was successful -->
+			<div class="alert alert-success" ng-show="succDeclare"
+				ng-hide="!succDeclare || failUndeclare || failDeclare || succUndeclare">
+				<button type="button" class="close"
+					data-ng-click="switchBool('succDeclare');" id="closeAlert">x</button>
+				Successfully declared a representative
+			</div>
+			<div class="alert alert-danger" ng-show="failDeclare"
+				ng-hide="!failDeclare || failUndeclare || succUndeclare || succDeclare">
+				<button type="button" class="close"
+					data-ng-click="switchBool('failDeclare')" id="closeAlert">x</button>
+				Error while adding representative
+			</div>
+			<div class="alert alert-success" ng-show="succUndeclare"
+				ng-hide="!succUndeclare || failDeclare || failUndeclare || succDeclare">
+				<button type="button" class="close"
+					data-ng-click="switchBool('succUndeclare')" id="closeAlert">x</button>
+				Successfully undeclared representative
+			</div>
+			<div class="alert alert-danger" ng-show="failUndeclare"
+				ng-hide="!failUndeclare || succDeclare || succUndeclare || failDeclare">
+				<button type="button" class="close"
+					data-ng-click="switchBool('failUndeclare')" id="closeAlert">x</button>
+				Error while removing representative
+			</div>
+
+
+			<div class="container">
+				<!-- Who represent the logged in patient -->
+				<div class="row"
+					style="display: inline-block; position: relative; left: -50px; vertical-align: top">
+					<div class="col-md-5" style="width: 550px;">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3>Your Representatives</h3>
+							</div>
+							<div class="panel-body" style="overflow-y: scroll;">
+								<table class="table table-bordered"
+									style="width: 500px; table-layout: fixed">
+									<thead>
+										<tr>
+											<th
+												style="width: 50px; text-align: center; vertical-align: middle"
+												ng-show="undeclare" ng-hide="!undeclare"></th>
+											<th>Name</th>
+											<th>MID</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr name="myRepsTableRow" ng-repeat="myR in representatives">
+											<td name="checks"
+												style="width: 50px; text-align: center; vertical-align: middle"
+												ng-show="undeclare" ng-hide="!undeclare"><input
+												type="radio" id="{{r.self.username}}-representatives"
+												ng-model="$parent.checked1" value="{{myR.self.username}}" />
+											</td>
+											<td name="myRepName"
+												id="{{myR.self.username}}-representativeName">{{myR.firstName}}
+												{{myR.lastName}}</td>
+											<td name="myRepMID"
+												id="{{myR.self.username}}-representativeName">{{myR.self.username}}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Buttons -->
+				<div class="row" style="display: inline-block;">
+					<div class="col-md-12" style="width: 150px; text-align: center;">
+						<button class="btn btn-success" style="width: 130px"
+							id="declareButton" ng-click="declareFn()"
+							ng-hide="undeclare || declare" ng-show="!undeclare || !declare">
+							Declare a <br>Representative
+						</button>
+						<br>
+						<button class="btn btn-success"
+							style="width: 130px; position: relative; top: 100px"
+							id="undeclareButton" ng-click="undeclareFn()"
+							ng-hide="declare || undeclare" ng-show="!declare || !undeclare">
+							Undeclare <br>Representatives
+						</button>
+						<br>
+					</div>
+
+
+					<div class="row">
+						<div class="col-md-12" style="text-align: center; margin: 0 auto;">
+							<button class="btn btn-success" style="width: 150px"
+								id="confirmDeclareButton" ng-click="addRep()"
+								ng-hide="undeclare || !declare" ng-show="declare">
+								Confirm Declaration</button>
+							<button class="btn btn-success"
+								style="width: 150px; position: relative;"
+								id="confirmUndeclareButton" ng-click="removeRep()"
+								ng-hide="declare || !undeclare" ng-show="undeclare">
+								Confirm Undeclare</button>
+							<button class="btn btn-success"
+								style="width: 130px; position: relative;" ng-click="back()"
+								ng-show="undeclare || declare">Back</button>
+						</div>
+					</div>
+				</div>
+
+
+
+				<!-- Who they represent -->
+				<div class="row"
+					style="display: inline-block; position: relative; right: -50px; vertical-align: top">
+					<div class="col-md-5" style="width: 550px">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3>Who You Represent</h3>
+							</div>
+							<div class="panel-body" style="overflow-y: scroll;">
+								<table class="table table-bordered"
+									style="width: 500px; table-layout: fixed;">
+									<thead>
+										<tr>
+											<th
+												style="width: 50px; text-align: center; vertical-align: middle"
+												ng-show="undeclare" ng-hide="!undeclare"></th>
+											<th>Name</th>
+											<th>MID</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr name="repTableRow" ng-repeat="r in representing">
+											<td name="checks2"
+												style="width: 50px; text-align: center; vertical-align: middle"
+												ng-show="undeclare" ng-hide="!undeclare"><input
+												type="radio" id="{{r.self.username}}-representing"
+												ng-model="$parent.checked2" value="{{r.self.username}}" /></td>
+											<td name="repName" id="{{r.self.username}}-representingName">{{r.firstName}}
+												{{r.lastName}}</td>
+											<td name="repMID"
+												id="{{r.self.username}}-representingUsername">{{r.self.username}}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div style="margin: 0 auto; overflow-y: auto; vertical-align: top;"
+					ng-show="declare" ng-hide="!declare">
+					<h2>Patients:</h2>
+					<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
 				and https://docs.angularjs.org/api/ng/filter/filter -->
-			<h4>Search: <input type="text" name="search" ng-model="searchFilter" id="patientSearch" /></h4>
-			<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
-			<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
-			<ul style="overflow:auto" class="list-unstyled">
-			<!-- Information on how labels work from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
-				<li ng-repeat="patient in patients | filter:filterPatients" ng-show="searchFilter.length > 0"><h4><label>
-						<input type="radio" ng-model="$parent.selectedPatient"
-						name="patient" value="{{patient.self.username}}" id="{{patient.self.username}}-declare"
-						ng-click='$parent.selectPatient(patient)' />&nbsp;{{$parent.displayName(patient)}}</label>
-				</h4></li>
-			</ul>
+					<h4>
+						Search: <input type="text" name="search" ng-model="searchFilter"
+							id="patientSearch" />
+					</h4>
+					<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+					<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+					<ul style="overflow: auto" class="list-unstyled">
+						<!-- Information on how labels work from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+						<li ng-repeat="patient in patients | filter:filterPatients"
+							ng-show="searchFilter.length > 0"><h4>
+								<label> <input type="radio"
+									ng-model="$parent.selectedPatient" name="patient"
+									value="{{patient.self.username}}"
+									id="{{patient.self.username}}-declare"
+									ng-click='$parent.selectPatient(patient)' />&nbsp;{{$parent.displayName(patient)}}
+								</label>
+							</h4></li>
+					</ul>
+				</div>
+
+			</div>
+			<!-- container div -->
 		</div>
-         
-       	</div><!-- container div -->
-     </div> <!-- controller div -->
-	</div><!-- thymeleaf div -->
+		<!-- controller div -->
+	</div>
+	<!-- thymeleaf div -->
 </body>
 </html>

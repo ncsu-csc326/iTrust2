@@ -1,8 +1,10 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
-import java.util.Calendar;
+import java.time.ZonedDateTime;
 import java.util.List;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -11,7 +13,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.criterion.Criterion;
+
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAdapter;
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAttributeConverter;
 
 /**
  * Class to hold failed login attempts. An entry is either for an IP address or
@@ -41,7 +48,11 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
     @JoinColumn ( name = "user_id", columnDefinition = "varchar(100)" )
     private User     user;
 
-    private Calendar time;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert( converter = ZonedDateTimeAttributeConverter.class )
+    @JsonAdapter( ZonedDateTimeAdapter.class )
+    private ZonedDateTime time;
 
     /**
      * Returns the ID of the Attempt for Hibernate
@@ -107,7 +118,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      *
      * @return the time
      */
-    public Calendar getTime () {
+    public ZonedDateTime getTime () {
         return time;
     }
 
@@ -117,7 +128,7 @@ public class LoginAttempt extends DomainObject<LoginAttempt> {
      * @param time
      *            the time to set
      */
-    public void setTime ( final Calendar time ) {
+    public void setTime ( final ZonedDateTime time ) {
         this.time = time;
     }
 

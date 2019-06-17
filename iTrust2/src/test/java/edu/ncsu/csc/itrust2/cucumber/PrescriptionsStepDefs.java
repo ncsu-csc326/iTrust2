@@ -37,6 +37,41 @@ public class PrescriptionsStepDefs extends CucumberTest {
         field.sendKeys( String.valueOf( value ) );
     }
 
+    /**
+     * Fills in the date and time fields with the specified date and time.
+     * @param date The date to enter.
+     * @param time The time to enter.
+     */
+    private void fillInDateTime(String dateField, String date, String timeField, String time) {
+        fillInDate(dateField, date);
+        fillInTime(timeField, time);
+    }
+
+    /**
+     * Fills in the date field with the specified date.
+     * @param date The date to enter.
+     */
+    private void fillInDate(String dateField, String date) {
+        driver.findElement( By.name( dateField ) ).clear();
+        final WebElement dateElement = driver.findElement( By.name( dateField ) );
+        dateElement.sendKeys( date.replace( "/", "" ) );
+    }
+
+    /**
+     * Fills in the time field with the specified time.
+     * @param time The time to enter.
+     */
+    private void fillInTime(String timeField, String time) {
+        // Zero-pad the time for entry
+        if ( time.length() == 7 ) {
+            time = "0" + time;
+        }
+
+        driver.findElement( By.name( timeField ) ).clear();
+        final WebElement timeElement = driver.findElement( By.name( timeField ) );
+        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
+    }
+
     private void selectItem ( final String name, final String value ) {
         final By selector = By.cssSelector( "input[name='" + name + "'][value='" + value + "']" );
         waitForAngular();
@@ -96,10 +131,11 @@ public class PrescriptionsStepDefs extends CucumberTest {
 
         waitForAngular();
 
-        enterValue( "date", date );
-        enterValue( "time", "10:10 AM" );
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementsByName('hospital')[0].click();" );
+        fillInDateTime("date", date, "time", "10:10 AM");
 
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementsByName('hospital')[0].click();" );
+        waitForAngular();
+        driver.findElement( By.name( "GENERAL_CHECKUP" ) ).click();
         waitForAngular();
         enterValue( "notes", notes );
         enterValue( "weight", weight );
@@ -117,9 +153,10 @@ public class PrescriptionsStepDefs extends CucumberTest {
     public void addPrescription ( final String drug, final String dosage, final String startDate, final String endDate,
             final String renewals ) {
         waitForAngular();
+
         enterValue( "dosageEntry", dosage );
-        enterValue( "startEntry", startDate );
-        enterValue( "endEntry", endDate );
+        fillInDate( "startEntry", startDate );
+        fillInDate( "endEntry", endDate );
         enterValue( "renewalEntry", renewals );
         selectName( drug );
         driver.findElement( By.name( "fillPrescription" ) ).click();

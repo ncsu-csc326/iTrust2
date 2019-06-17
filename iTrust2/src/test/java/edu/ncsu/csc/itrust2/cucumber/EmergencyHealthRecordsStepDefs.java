@@ -3,8 +3,8 @@ package edu.ncsu.csc.itrust2.cucumber;
 import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -195,11 +195,10 @@ public class EmergencyHealthRecordsStepDefs extends CucumberTest {
         assertTrue( driver.findElement( By.id( "Gender" ) ).getText().contains( "Gender: Male" ) );
 
         String dateOfBirth;
-        final SimpleDateFormat dob = new SimpleDateFormat( "EEE MMM dd yyyy", Locale.ENGLISH );
         try {
-            dateOfBirth = dob.format( Patient.getByName( "kingone" ).getDateOfBirth().getTime() );
-        }
-        catch ( final NullPointerException e ) {
+            LocalDate date = Patient.getByName( "kingone" ).getDateOfBirth();
+            dateOfBirth = date.format(DateTimeFormatter.ofPattern("MM/dd/yyyy"));
+        } catch ( final NullPointerException e ) {
             dateOfBirth = "NA";
         }
 

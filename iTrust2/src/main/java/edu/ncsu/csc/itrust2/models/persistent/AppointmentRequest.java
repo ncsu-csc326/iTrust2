@@ -1,13 +1,12 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Vector;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -19,8 +18,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.criterion.Criterion;
 
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAdapter;
+import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAttributeConverter;
 import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.Role;
@@ -106,7 +109,7 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * @return All AppointmentRequests involving this HCP
      */
     public static List<AppointmentRequest> getAppointmentRequestsForHCP ( final String hcpName ) {
-        return getWhere( eqList( "hcp", User.getByNameAndRole( hcpName, Role.ROLE_HCP ) ) );
+        return getWhere( eqList( "hcp", User.getByName( hcpName ) ) );
     }
 
     /**
@@ -141,17 +144,14 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      */
     public AppointmentRequest ( final AppointmentRequestForm raf ) throws ParseException {
         setPatient( User.getByNameAndRole( raf.getPatient(), Role.ROLE_PATIENT ) );
-        setHcp( User.getByNameAndRole( raf.getHcp(), Role.ROLE_HCP ) );
+        setHcp( User.getByName( raf.getHcp() ) );
         setComments( raf.getComments() );
 
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy hh:mm aaa", Locale.ENGLISH );
-        final Date parsedDate = sdf.parse( raf.getDate() + " " + raf.getTime() );
-        final Calendar c = Calendar.getInstance();
-        c.setTime( parsedDate );
-        if ( c.before( Calendar.getInstance() ) ) {
+        final ZonedDateTime requestDate = ZonedDateTime.parse( raf.getDate() );
+        if ( requestDate.isBefore( ZonedDateTime.now() ) ) {
             throw new IllegalArgumentException( "Cannot request an appointment before the current time" );
         }
-        setDate( c );
+        setDate( requestDate );
 
         Status s = null;
         try {
@@ -225,7 +225,11 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * When this AppointmentRequest has been scheduled to take place
      */
     @NotNull
-    private Calendar        date;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert( converter = ZonedDateTimeAttributeConverter.class )
+    @JsonAdapter( ZonedDateTimeAdapter.class )
+    private ZonedDateTime        date;
 
     /**
      * Store the Enum in the DB as a string as it then makes the DB info more
@@ -307,9 +311,9 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
     /**
      * Retrieves the date & time of the AppointmentRequest
      *
-     * @return Calendar for when the Request takes place
+     * @return ZonedDateTime for when the Request takes place
      */
-    public Calendar getDate () {
+    public ZonedDateTime getDate () {
         return date;
     }
 
@@ -317,9 +321,9 @@ public class AppointmentRequest extends DomainObject<AppointmentRequest> {
      * Sets the date & time of the AppointmentRequest
      *
      * @param date
-     *            Calendar object for the Date & Time of the request
+     *            ZonedDateTime object for the Date & Time of the request
      */
-    public void setDate ( final Calendar date ) {
+    public void setDate ( final ZonedDateTime date ) {
         this.date = date;
     }
 

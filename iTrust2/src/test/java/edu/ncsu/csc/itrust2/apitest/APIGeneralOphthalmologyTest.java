@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
@@ -28,7 +29,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
-import edu.ncsu.csc.itrust2.forms.hcp.OfficeVisitForm;
+import edu.ncsu.csc.itrust2.forms.hcp.GeneralOphthalmologyForm;
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
 import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
@@ -42,6 +43,7 @@ import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.enums.Status;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
+import edu.ncsu.csc.itrust2.models.persistent.GeneralOphthalmology;
 import edu.ncsu.csc.itrust2.models.persistent.Hospital;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
@@ -51,13 +53,14 @@ import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
 /**
  * Test for the API functionality for interacting with office visits
  *
+ * @author Jack MacDonald
  * @author Kai Presler-Marshall
  *
  */
 @RunWith ( SpringJUnit4ClassRunner.class )
 @ContextConfiguration ( classes = { RootConfiguration.class, WebMvcConfiguration.class } )
 @WebAppConfiguration
-public class APIOfficeVisitTest {
+public class APIGeneralOphthalmologyTest {
 
     private MockMvc               mvc;
 
@@ -85,8 +88,9 @@ public class APIOfficeVisitTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "robortOPH", roles = { "OPH" } )
     public void testGetNonExistentOfficeVisit () throws Exception {
-        mvc.perform( get( "/api/v1/officevisits/-1" ) ).andExpect( status().isNotFound() );
+        mvc.perform( get( "/api/v1/generalophthalmologies/-1" ) ).andExpect( status().isNotFound() );
     }
 
     /**
@@ -96,8 +100,9 @@ public class APIOfficeVisitTest {
      * @throws Exception
      */
     @Test
+    @WithMockUser ( username = "robortOPH", roles = { "OPH" } )
     public void testDeleteNonExistentOfficeVisit () throws Exception {
-        mvc.perform( delete( "/api/v1/officevisits/-1" ) ).andExpect( status().isNotFound() );
+        mvc.perform( delete( "/api/v1/generalophthalmologies/-1" ) ).andExpect( status().isNotFound() );
     }
 
     /**
@@ -107,7 +112,8 @@ public class APIOfficeVisitTest {
      * @throws Exception
      */
     @Test
-    public void testPreScheduledOfficeVisit () throws Exception {
+    @WithMockUser ( username = "bobbyOD", roles = { "OD", "PATIENT" } )
+    public void testPreScheduledGeneralOphthalmology () throws Exception {
         final UserForm hcp = new UserForm( "hcp", "123456", Role.ROLE_HCP, 1 );
         mvc.perform( post( "/api/v1/users" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( hcp ) ) );
@@ -119,9 +125,10 @@ public class APIOfficeVisitTest {
         mvc.perform( delete( "/api/v1/appointmentrequests" ) );
 
         final AppointmentRequestForm appointmentForm = new AppointmentRequestForm();
-        appointmentForm.setDate( "11/19/2030" );
-        appointmentForm.setTime( "4:50 AM" );
-        appointmentForm.setType( AppointmentType.GENERAL_CHECKUP.toString() );
+        appointmentForm.setDate( "2030-11-19T04:50:00.000-05:00" ); // 2030-11-19
+                                                                    // 4:50 AM
+                                                                    // EST
+        appointmentForm.setType( AppointmentType.GENERAL_OPHTHALMOLOGY.toString() );
         appointmentForm.setStatus( Status.APPROVED.toString() );
         appointmentForm.setHcp( "hcp" );
         appointmentForm.setPatient( "patient" );
@@ -130,20 +137,19 @@ public class APIOfficeVisitTest {
                 .content( TestUtils.asJsonString( appointmentForm ) ) ).andExpect( status().isOk() );
 
         mvc.perform( delete( "/api/v1/officevisits" ) );
-        final OfficeVisitForm visit = new OfficeVisitForm();
+        final GeneralOphthalmologyForm visit = new GeneralOphthalmologyForm();
         visit.setPreScheduled( "yes" );
-        visit.setDate( "11/19/2030" );
-        visit.setTime( "4:50 AM" );
+        visit.setDate( "2030-11-19T04:50:00.000-05:00" ); // 11/19/2030 4:50 AM
         visit.setHcp( "hcp" );
         visit.setPatient( "patient" );
         visit.setNotes( "Test office visit" );
-        visit.setType( AppointmentType.GENERAL_CHECKUP.toString() );
+        visit.setType( AppointmentType.GENERAL_OPHTHALMOLOGY.toString() );
         visit.setHospital( "iTrust Test Hospital 2" );
 
-        visit.setDate( "12/20/2031" );
+        visit.setDate( "2031-12-20T04:50:00.000-05:00" ); // 12/20/2031 4:50 AM
         // setting a pre-scheduled appointment that doesn't match should not
         // work.
-        mvc.perform( post( "/api/v1/officevisits" ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( post( "/api/v1/generalophthalmologies" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isBadRequest() );
 
     }
@@ -154,8 +160,8 @@ public class APIOfficeVisitTest {
      * @throws Exception
      */
     @Test
-    @WithMockUser ( username = "patient", roles = { "PATIENT" } )
-    public void testOfficeVisitAPI () throws Exception {
+    @WithMockUser ( username = "patient", roles = { "PATIENT", "OD", "ADMIN" } )
+    public void testGeneralOphthalmologyAPI () throws Exception {
 
         /*
          * Create a HCP and a Patient to use. If they already exist, this will
@@ -175,24 +181,27 @@ public class APIOfficeVisitTest {
                 .content( TestUtils.asJsonString( hospital ) ) );
 
         mvc.perform( delete( "/api/v1/officevisits" ) );
-        final OfficeVisitForm visit = new OfficeVisitForm();
-        visit.setDate( "4/16/2048" );
-        visit.setTime( "9:50 AM" );
+        final GeneralOphthalmologyForm visit = new GeneralOphthalmologyForm();
+        visit.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
         visit.setHcp( "hcp" );
         visit.setPatient( "patient" );
         visit.setNotes( "Test office visit" );
-        visit.setType( AppointmentType.GENERAL_CHECKUP.toString() );
+        visit.setType( AppointmentType.GENERAL_OPHTHALMOLOGY.toString() );
         visit.setHospital( "iTrust Test Hospital 2" );
+        final List<String> diagnosis = new ArrayList<String>();
+        diagnosis.add( "Glaucoma" );
+        diagnosis.add( "Cataracts" );
+        visit.setDiagnosis( diagnosis );
 
         /* Create the Office Visit */
-        mvc.perform( post( "/api/v1/officevisits" ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( post( "/api/v1/generalophthalmologies" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isOk() );
 
         mvc.perform( get( "/api/v1/officevisits" ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
         /* Test getForHCP and getForHCPAndPatient */
-        OfficeVisit v = new OfficeVisit( visit );
+        OfficeVisit v = new GeneralOphthalmology( visit );
         List<OfficeVisit> vList = OfficeVisit.getForHCP( v.getHcp().getUsername() );
         assertEquals( vList.get( 0 ).getHcp(), v.getHcp() );
         vList = OfficeVisit.getForHCPAndPatient( v.getHcp().getUsername(), v.getPatient().getUsername() );
@@ -251,7 +260,7 @@ public class APIOfficeVisitTest {
         visit.setSystolic( 102 );
         visit.setTri( 150 );
         visit.setWeight( 175.2f );
-        v = new OfficeVisit( visit );
+        v = new GeneralOphthalmology( visit );
 
         /* Test that all fields have been filled successfully */
         assertNotNull( v );
@@ -387,7 +396,7 @@ public class APIOfficeVisitTest {
         mvc.perform( post( "/api/v1/patients" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( patient2 ) ) );
         visit.setPatient( patient2.getSelf() );
-        v = new OfficeVisit( visit );
+        v = new GeneralOphthalmology( visit );
         assertNotNull( v );
 
         /* Create appointment with patient younger than 3 years old */
@@ -397,7 +406,7 @@ public class APIOfficeVisitTest {
                 .content( TestUtils.asJsonString( patient3 ) ) );
         visit.setHeadCircumference( 20.0f );
         visit.setPatient( patient3.getSelf() );
-        v = new OfficeVisit( visit );
+        v = new GeneralOphthalmology( visit );
         assertNotNull( v );
 
         /*
@@ -409,32 +418,32 @@ public class APIOfficeVisitTest {
         visit.setId( id.toString() );
 
         // Second post should fail with a conflict since it already exists
-        mvc.perform( post( "/api/v1/officevisits" ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( post( "/api/v1/generalophthalmologies" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isConflict() );
 
-        mvc.perform( get( "/api/v1/officevisits/" + id ) ).andExpect( status().isOk() )
+        mvc.perform( get( "/api/v1/generalophthalmologies/" + id ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
-        visit.setTime( "9:45 AM" );
+        visit.setDate( "2048-04-16T09:45:00.000-04:00" ); // 4/16/2048 9:45 AM
 
-        mvc.perform( put( "/api/v1/officevisits/" + id ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( put( "/api/v1/generalophthalmologies/" + id ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
         // PUT with the non-matching IDs should fail
-        mvc.perform( put( "/api/v1/officevisits/" + 1 ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( put( "/api/v1/generalophthalmologies/" + 1 ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isConflict() );
 
         // PUT with ID not in database should fail
         final long tempId = 101;
         visit.setId( "101" );
-        mvc.perform( put( "/api/v1/officevisits/" + tempId ).contentType( MediaType.APPLICATION_JSON )
+        mvc.perform( put( "/api/v1/generalophthalmologies/" + tempId ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( visit ) ) ).andExpect( status().isNotFound() );
 
         // Reset ID to old id
         visit.setId( id.toString() );
 
-        mvc.perform( delete( "/api/v1/officevisits/" + id ) ).andExpect( status().isOk() );
+        mvc.perform( delete( "/api/v1/generalophthalmologies/" + id ) ).andExpect( status().isOk() );
 
         mvc.perform( delete( "/api/v1/officevisits" ) );
 

@@ -1,0 +1,198 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>View Patient Food Diary</title>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+                /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+                /*<![CDATA[*/
+                var app = angular.module('myApp', []);
+                app.controller('viewPatientFoodDiary', function ($scope, $http) {
+                    $scope.Object = Object; // Allows for use of Object.keys()
+                    $scope.diaryEntries = {};
+
+                    $scope.displayName = function (p) {
+                        return p.firstName + " " + p.lastName + " (" + p.self.username + ")";
+                    }
+
+                    // documentation on Angular filters: https://docs.angularjs.org/api/ng/filter/filter
+                    $scope.searchFilter = "";
+                    $scope.filterPatients = function (patient) {
+                        return ($scope.displayName(patient)).toLowerCase().match($scope.searchFilter.toLowerCase());
+                    }
+
+                    $http.get("/iTrust2/api/v1/patients").then(
+                        function (response) {
+                            $scope.patients = response.data;
+
+                            $scope.selectPatient = function (patient) {
+                                $scope.selectedDate = null; // Reset selected date
+
+                                $scope.loadEntries = function () {
+                                    // Get diary entries for selected patient
+                                    $http.get("/iTrust2/api/v1/diary/" + $scope.selectedPatient).then(
+                                        function (response) {
+                                            $scope.diaryEntries = response.data || {};
+                                            $scope.diaryEntries = $scope.groupDates($scope.diaryEntries, 'date');
+                                            $scope.message = "";
+                                        },
+                                        function (rejection) {
+                                            $scope.diaryEntries = [];
+                                            $scope.message = "Could not display diary entries.";
+                                        });
+                                };
+
+                                $scope.loadEntries();
+                            };
+                        },
+                        function (rejection) {
+                            $scope.patient = null;
+                        });
+
+                    // Split entries into groups by date
+                    $scope.groupDates = function (arr, key) {
+                        var groups = {};
+
+                        for (var i = 0; l = arr.length, i < l; i++) {
+                            groups[arr[i][key]] = groups[arr[i][key]] || [];
+                            groups[arr[i][key]].push(arr[i]);
+                        }
+
+                        // Sort the groups by date in reverse chronological order
+                        const orderedGroups = {};
+                        Object.keys(groups).sort( function( a, b ) { return b.localeCompare(a) } ).forEach(function(key) {
+                            orderedGroups[key] = groups[key];
+                        });
+
+                        return orderedGroups;
+                    };
+                });
+
+                app.filter('sumByColumn', function () {
+                    return function (collection, column, serving) {
+                        var total = 0;
+
+                        collection.forEach(function (item) {
+                            total += parseInt(item[serving]) * parseInt(item[column]);
+                        });
+
+                        return total;
+                    };
+                })
+                /*]]>*/
+            </script>
+
+		<div ng-app="myApp" ng-controller="viewPatientFoodDiary" class="row">
+			<div class="col-md-3">
+				<h2>Patients:</h2>
+				<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
+                    and https://docs.angularjs.org/api/ng/filter/filter -->
+				<h4>
+					Search: <input type="text" name="search" ng-model="searchFilter" />
+				</h4>
+				<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+				<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+				<div>
+					<div class="radio"
+						ng-repeat="patient in patients | filter:filterPatients">
+						<label> <input type="radio" id="{{patient.self.username}}"
+							ng-model="$parent.selectedPatient" name="patient"
+							value="{{patient.self.username}}"
+							ng-click='$parent.selectPatient(patient)' />
+							&nbsp;{{$parent.displayName(patient)}}
+						</label>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-9">
+				<div class="panel panel-primary">
+					<div class="panel-heading">
+						<h3>Food Diary{{ selectedPatient ? ' for ' + selectedPatient
+							: '' }}</h3>
+					</div>
+					<div class="panel-body">
+						<div style="margin-left: 10px;">
+							<div ng-if="Object.keys(diaryEntries).length > 0">Please
+								select a date:</div>
+
+							<div class="radio" ng-repeat="(date, entry) in diaryEntries">
+								<label> <input type="radio"
+									ng-model="$parent.selectedDate" name="date" value="{{date}}"
+									required="true" /> {{date | date : 'MM/dd/yyyy'}}
+								</label>
+							</div>
+
+							<div ng-if="!selectedPatient">Please select a patient for
+								which to view Food Diary entries.</div>
+							<div
+								ng-if="selectedPatient && (!diaryEntries || Object.keys(diaryEntries).length == 0)">
+								There are no Food Diary entries for this patient.</div>
+						</div>
+
+						<p
+							ng-show="selectedDate && diaryEntries && Object.keys(diaryEntries).length > 0">
+							<b>Food Diary Entries for: {{selectedDate | date :
+								'MM/dd/yyyy'}}</b>
+						</p>
+
+						<table class="table table-bordered" ng-show="selectedDate"
+							ng-repeat="(date, entries) in diaryEntries"
+							ng-if="date == selectedDate">
+							<thead>
+								<tr>
+									<th>Type of meal</th>
+									<th>Food</th>
+									<th>Servings</th>
+									<th>Calories</th>
+									<th>Fat (g)</th>
+									<th>Sodium (mg)</th>
+									<th>Carbs (g)</th>
+									<th>Sugars (g)</th>
+									<th>Fiber (g)</th>
+									<th>Protein (g)</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="d in entries track by $index">
+									<td id="mealType-{{$index}}">{{d.mealType}}</td>
+									<td id="name-{{$index}}">{{d.food}}</td>
+									<td id="servings-{{$index}}">{{d.servings}}</td>
+									<td id="calories-{{$index}}">{{d.calories}}</td>
+									<td id="fat-{{$index}}">{{d.fat}}</td>
+									<td id="sodium-{{$index}}">{{d.sodium}}</td>
+									<td id="carbs-{{$index}}">{{d.carbs}}</td>
+									<td id="sugars-{{$index}}">{{d.sugars}}</td>
+									<td id="fiber-{{$index}}">{{d.fiber}}</td>
+									<td id="protein-{{$index}}">{{d.protein}}</td>
+								</tr>
+								<tr>
+									<th colspan="3" style="text-align: right;">Totals:</th>
+									<th id="totalCalories">{{ entries | sumByColumn:
+										'calories' : 'servings' }}</th>
+									<th id="totalFat">{{ entries | sumByColumn: 'fat' :
+										'servings' }}</th>
+									<th id="totalSodium">{{ entries | sumByColumn: 'sodium' :
+										'servings' }}</th>
+									<th id="totalCarbs">{{ entries | sumByColumn: 'carbs' :
+										'servings' }}</th>
+									<th id="totalSugars">{{ entries | sumByColumn: 'sugars' :
+										'servings' }}</th>
+									<th id="totalFiber">{{ entries | sumByColumn: 'fiber' :
+										'servings' }}</th>
+									<th id="totalProtein">{{ entries | sumByColumn: 'protein'
+										: 'servings' }}</th>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+</body>
+
+</html>

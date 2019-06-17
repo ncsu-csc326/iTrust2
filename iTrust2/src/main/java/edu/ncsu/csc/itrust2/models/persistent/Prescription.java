@@ -1,13 +1,11 @@
 
 package edu.ncsu.csc.itrust2.models.persistent;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 
+import javax.persistence.Basic;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -18,9 +16,13 @@ import javax.persistence.Table;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.annotations.JsonAdapter;
+
 import org.hibernate.ObjectNotFoundException;
 import org.hibernate.criterion.Criterion;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters.LocalDateConverter;
 
+import edu.ncsu.csc.itrust2.adapters.LocalDateAdapter;
 import edu.ncsu.csc.itrust2.forms.hcp.PrescriptionForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 
@@ -30,6 +32,7 @@ import edu.ncsu.csc.itrust2.models.enums.Role;
  *
  * @author Connor
  * @author Kai Presler-Marshall
+ * @author Matt Dzwonczyk
  */
 @Entity
 @Table ( name = "Prescriptions" )
@@ -50,11 +53,19 @@ public class Prescription extends DomainObject<Prescription> {
 
     @NotNull
     @JoinColumn ( name = "start_id" )
-    private Calendar startDate;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert(converter = LocalDateConverter.class)
+    @JsonAdapter( LocalDateAdapter.class )
+    private LocalDate startDate;
 
     @NotNull
     @JoinColumn ( name = "end_id" )
-    private Calendar endDate;
+    @Basic
+    // Allows the field to show up nicely in the database
+    @Convert(converter = LocalDateConverter.class)
+    @JsonAdapter( LocalDateAdapter.class )
+    private LocalDate endDate;
 
     @Min ( 0 )
     @JoinColumn ( name = "renewal_id" )
@@ -87,27 +98,8 @@ public class Prescription extends DomainObject<Prescription> {
             setId( form.getId() );
         }
 
-        final SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy", Locale.ENGLISH );
-        Date parsedDate = null;
-        try {
-            parsedDate = sdf.parse( form.getStartDate() );
-        }
-        catch ( final ParseException e ) {
-            // Ignore, Hibernate will catch the null date
-        }
-        Calendar c = Calendar.getInstance();
-        c.setTime( parsedDate );
-        setStartDate( c );
-
-        try {
-            parsedDate = sdf.parse( form.getEndDate() );
-        }
-        catch ( final ParseException e ) {
-            // Ignore, Hibernate will catch the null date
-        }
-        c = Calendar.getInstance();
-        c.setTime( parsedDate );
-        setEndDate( c );
+        setStartDate( LocalDate.parse( form.getStartDate() ) );
+        setEndDate( LocalDate.parse( form.getEndDate() ) );
     }
 
     /**
@@ -173,7 +165,7 @@ public class Prescription extends DomainObject<Prescription> {
      *
      * @return the start date
      */
-    public Calendar getStartDate () {
+    public LocalDate getStartDate () {
         return startDate;
     }
 
@@ -183,7 +175,7 @@ public class Prescription extends DomainObject<Prescription> {
      * @param startDate
      *            the first valid day
      */
-    public void setStartDate ( final Calendar startDate ) {
+    public void setStartDate ( final LocalDate startDate ) {
         this.startDate = startDate;
     }
 
@@ -192,7 +184,7 @@ public class Prescription extends DomainObject<Prescription> {
      *
      * @return the prescription's end date
      */
-    public Calendar getEndDate () {
+    public LocalDate getEndDate () {
         return endDate;
     }
 
@@ -202,7 +194,7 @@ public class Prescription extends DomainObject<Prescription> {
      * @param endDate
      *            the end date
      */
-    public void setEndDate ( final Calendar endDate ) {
+    public void setEndDate ( final LocalDate endDate ) {
         this.endDate = endDate;
     }
 

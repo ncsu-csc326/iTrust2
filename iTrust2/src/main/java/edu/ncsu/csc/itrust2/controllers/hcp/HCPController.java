@@ -24,7 +24,7 @@ public class HCPController {
      * @return The page to display
      */
     @RequestMapping ( value = "hcp/index" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String index ( final Model model ) {
         return edu.ncsu.csc.itrust2.models.enums.Role.ROLE_HCP.getLanding();
     }
@@ -35,7 +35,7 @@ public class HCPController {
      * @return The page to display
      */
     @GetMapping ( "/hcp/editPatientDemographics" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String editPatientDemographics () {
         return "/hcp/editPatientDemographics";
     }
@@ -46,7 +46,7 @@ public class HCPController {
      * @return The page to display
      */
     @GetMapping ( "/hcp/editPrescriptions" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String editPrescriptions () {
         return "/hcp/editPrescriptions";
     }
@@ -57,24 +57,24 @@ public class HCPController {
      * @return The page to display
      */
     @GetMapping ( "/hcp/personalRepresentatives" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String personalReps () {
         return "/hcp/personalRepresentatives";
     }
-    
+
     /**
      * Returns the ER for the given model
-     * 
+     *
      * @param model
      *            model to check
      * @return role
      */
     @RequestMapping ( value = "hcp/records" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String emergencyRecords ( final Model model ) {
         return "personnel/records";
     }
-    
+
     /**
      * Method responsible for HCP's Accept/Reject requested appointment
      * functionality. This prepares the page.
@@ -84,9 +84,20 @@ public class HCPController {
      * @return The page to display to the user
      */
     @GetMapping ( "/hcp/appointmentRequests" )
-    @PreAuthorize ( "hasRole('ROLE_HCP')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
     public String requestAppointmentForm ( final Model model ) {
         return "hcp/appointmentRequests";
+    }
+
+    /**
+     * Returns the page allowing HCPs to view patient's food diary
+     *
+     * @return The page to display
+     */
+    @GetMapping ( "/hcp/viewPatientFoodDiary" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    public String foodDiary () {
+        return "/hcp/viewPatientFoodDiary";
     }
 
 }
