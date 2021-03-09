@@ -24,6 +24,7 @@ import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
 import edu.ncsu.csc.itrust2.forms.personnel.PersonnelForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
+import edu.ncsu.csc.itrust2.models.enums.Specialty;
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
 
@@ -102,7 +103,7 @@ public class APIPersonnelTest {
         mvc.perform( get( "/api/v1/personnel/hcp" ) ).andExpect( status().isOk() )
                 .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
 
-        personnel.setSpecialty( "Doctor Stuff" );
+        personnel.setSpecialty( Specialty.PSYCH );
 
         mvc.perform( put( "/api/v1/personnel/hcp" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( personnel ) ) ).andExpect( status().isOk() )

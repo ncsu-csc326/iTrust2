@@ -1,6 +1,7 @@
 package edu.ncsu.csc.itrust2.models.persistent;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +20,7 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
  * Model class for a general checkup.
- * 
+ *
  * @author Jack MacDonald
  */
 @Entity
@@ -40,7 +41,7 @@ public class GeneralCheckup extends OfficeVisit {
      * @param ovf
      *            The GeneralCheckupForm instance.
      */
-    public GeneralCheckup ( GeneralCheckupForm ovf ) throws NumberFormatException, ParseException {
+    public GeneralCheckup ( final GeneralCheckupForm ovf ) throws NumberFormatException, ParseException {
         super( ovf );
         // associate all diagnoses with this visit
         if ( ovf.getDiagnoses() != null ) {
@@ -183,6 +184,7 @@ public class GeneralCheckup extends OfficeVisit {
                 : oldVisit.getPrescriptions().stream().map( Prescription::getId ).collect( Collectors.toSet() );
 
         // Save each of the prescriptions
+        final List<Prescription> newPrescriptions = new ArrayList<>();
         this.getPrescriptions().forEach( p -> {
             final boolean isSaved = savedIds.contains( p.getId() );
             if ( isSaved ) {
@@ -193,8 +195,9 @@ public class GeneralCheckup extends OfficeVisit {
                 LoggerUtil.log( TransactionType.PRESCRIPTION_CREATE, LoggerUtil.currentUser(),
                         getPatient().getUsername(), "Creating prescription with id " + p.getId() );
             }
-            p.save();
+            newPrescriptions.add( p );
         } );
+        Prescription.saveAll( newPrescriptions );
 
         // Remove prescriptions no longer included
         if ( !savedIds.isEmpty() ) {

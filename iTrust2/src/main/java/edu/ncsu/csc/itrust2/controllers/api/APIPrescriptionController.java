@@ -37,7 +37,7 @@ public class APIPrescriptionController extends APIController {
      *            details of the new prescription
      * @return the created prescription
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @PostMapping ( BASE_PATH + "/prescriptions" )
     public ResponseEntity addPrescription ( @RequestBody final PrescriptionForm form ) {
         try {
@@ -63,7 +63,7 @@ public class APIPrescriptionController extends APIController {
      *            the form containing the details of the new prescription
      * @return the edited prescription
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @PutMapping ( BASE_PATH + "/prescriptions" )
     public ResponseEntity editPrescription ( @RequestBody final PrescriptionForm form ) {
         try {
@@ -95,7 +95,7 @@ public class APIPrescriptionController extends APIController {
      *            the id
      * @return the id of the deleted prescription
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @DeleteMapping ( BASE_PATH + "/prescriptions/{id}" )
     public ResponseEntity deletePrescription ( @PathVariable final Long id ) {
         final Prescription p = Prescription.getById( id );
@@ -121,7 +121,7 @@ public class APIPrescriptionController extends APIController {
      *
      * @return all saved prescriptions
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     @GetMapping ( BASE_PATH + "/prescriptions" )
     public List<Prescription> getPrescriptions () {
         final User self = User.getByName( LoggerUtil.currentUser() );
@@ -147,7 +147,7 @@ public class APIPrescriptionController extends APIController {
      *            the id of the desired prescription
      * @return the requested prescription
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @GetMapping ( BASE_PATH + "/prescriptions/{id}" )
     public ResponseEntity getPrescription ( @PathVariable final Long id ) {
         final Prescription p = Prescription.getById( id );

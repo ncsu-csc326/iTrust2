@@ -159,4 +159,16 @@ public class PatientController {
     public String viewBloodSugarJournal () {
         return "/patient/bloodSugar/viewJournal";
     }
+
+    /**
+     * Retrieves the page for patient to Find Experts.
+     *
+     * @return The page to display
+     *
+     */
+    @GetMapping ( "/findexperts/viewFindExpertFormPatient" )
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public String viewFindExpertForm () {
+        return "/findexperts/FindExpertForm";
+    }
 }

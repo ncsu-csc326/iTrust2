@@ -43,8 +43,8 @@ public class APILabProcedureController extends APIController {
      *
      * @return list of lab procedures
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH')" )
-    @GetMapping ( BASE_PATH + "/labprocedures" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH', 'ROLE_VIROLOGIST')" )
+    @GetMapping ( BASE_PATH + "labprocedures" )
     public ResponseEntity getLabProcedures () {
         final List<LabProcedure> procs;
         final TransactionType logCode;
@@ -72,8 +72,8 @@ public class APILabProcedureController extends APIController {
      *            The id of the
      * @return Specified LabTechs LabProcedures
      */
-    @GetMapping ( BASE_PATH + "/labprocedures/byUser/{techId}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @GetMapping ( BASE_PATH + "labprocedures/byUser/{techId}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity getProceduresForTech ( @PathVariable ( "techId" ) final String techId ) {
         final User tech = User.getByName( techId );
         final TransactionType logCode;
@@ -97,8 +97,8 @@ public class APILabProcedureController extends APIController {
      *
      * @return LabProcedures associated with the specified OfficeVisit
      */
-    @GetMapping ( BASE_PATH + "/labprocedures/byVisit/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @GetMapping ( BASE_PATH + "labprocedures/byVisit/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity getProceduresForOfficeVisit ( @PathVariable ( "id" ) final Long id ) {
         final OfficeVisit ov = OfficeVisit.getById( id );
         final TransactionType logCode;
@@ -148,8 +148,8 @@ public class APILabProcedureController extends APIController {
      *
      * @return LabProcedure with the specified id.
      */
-    @GetMapping ( BASE_PATH + "/labprocedures/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH')" )
+    @GetMapping ( BASE_PATH + "labprocedures/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_LABTECH')" )
     public ResponseEntity getProcedureById ( @PathVariable ( "id" ) final Long id ) {
         final boolean isHCP = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
                 .contains( new SimpleGrantedAuthority( "ROLE_HCP" ) );
@@ -177,8 +177,8 @@ public class APILabProcedureController extends APIController {
      * Deletes all LabProcedures in the system. This cannot be reversed;
      * exercise caution before calling it
      */
-    @DeleteMapping ( BASE_PATH + "/labprocedures" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @DeleteMapping ( BASE_PATH + "labprocedures" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public void deleteLabProcedures () {
         LoggerUtil.log( TransactionType.HCP_DELETE_PROC, LoggerUtil.currentUser() );
         LabProcedure.deleteAll();
@@ -191,8 +191,8 @@ public class APILabProcedureController extends APIController {
      *            The LabProcedure to be validated and saved
      * @return response
      */
-    @PostMapping ( BASE_PATH + "/labprocedures" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PostMapping ( BASE_PATH + "labprocedures" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity createLabProcedure ( @RequestBody final LabProcedureForm procF ) {
         try {
             final LabProcedure proc = new LabProcedure( procF );
@@ -222,8 +222,8 @@ public class APILabProcedureController extends APIController {
      *            The id of the LabProcedure to delete
      * @return response
      */
-    @DeleteMapping ( BASE_PATH + "/labprocedures/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @DeleteMapping ( BASE_PATH + "labprocedures/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity deleteLabProcedure ( @PathVariable final Long id ) {
         final LabProcedure proc = LabProcedure.getById( id );
         if ( proc == null ) {
@@ -260,7 +260,7 @@ public class APILabProcedureController extends APIController {
      *            The updated LabProcedure to save
      * @return response
      */
-    @PutMapping ( BASE_PATH + "/labprocedures/{id}" )
+    @PutMapping ( BASE_PATH + "labprocedures/{id}" )
     @PreAuthorize ( "hasRole('ROLE_LABTECH')" )
     public ResponseEntity updateLabProcedure ( @PathVariable final Long id, @RequestBody final LabProcedureForm form ) {
         try {

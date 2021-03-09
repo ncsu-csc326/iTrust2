@@ -1,6 +1,7 @@
 package edu.ncsu.csc.itrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -60,6 +61,21 @@ public class HCPViewPatientOfficeVisitsStepDefs extends CucumberTest {
     public void assertTextPresent ( final String text ) {
         try {
             assertTrue( driver.getPageSource().contains( text ) );
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
+    }
+
+    /**
+     * Asserts that the text is not on the page
+     *
+     * @param text
+     *            text to check
+     */
+    public void assertTextNotPresent ( final String text ) {
+        try {
+            assertFalse( driver.getPageSource().contains( text ) );
         }
         catch ( final Exception e ) {
             fail();
@@ -157,6 +173,44 @@ public class HCPViewPatientOfficeVisitsStepDefs extends CucumberTest {
     }
 
     /**
+     * The given type of HCP logs in and navigates to the view patient office
+     * visits page
+     *
+     * @param hcpType
+     *            type of the HCP
+     */
+    @Then ( "the (.+) HCP logs in and navigates to the patient drop down menu" )
+    public void hcpClickPatientDropDown ( final String hcpType ) {
+        attemptLogout();
+
+        driver.get( baseUrl );
+        final WebElement username = driver.findElement( By.name( "username" ) );
+        username.clear();
+
+        switch ( hcpType ) {
+            case OPH_HCP_TYPE:
+                username.sendKeys( ophHcpString );
+                break;
+            case OD_HCP_TYPE:
+                username.sendKeys( odHcpString );
+                break;
+            default:
+                username.sendKeys( hcpString );
+        }
+
+        final WebElement password = driver.findElement( By.name( "password" ) );
+        password.clear();
+        password.sendKeys( "123456" );
+        final WebElement submit = driver.findElement( By.className( "btn" ) );
+        submit.click();
+
+        assertEquals( "iTrust2: HCP Home", driver.getTitle() );
+        waitForAngular();
+        driver.findElement( By.id( "hcpPatientDropDown" ) ).click();
+        waitForAngular();
+    }
+
+    /**
      * Checks that of all the patient office visits shown, the HCP can see at
      * least of of each type
      */
@@ -166,6 +220,18 @@ public class HCPViewPatientOfficeVisitsStepDefs extends CucumberTest {
         assertTextPresent( "General Checkup" );
         assertTextPresent( "General Ophthalmology" );
         assertTextPresent( "Ophthalmology Surgery" );
+    }
+
+    /**
+     * #30 test fails due to this bug, going to fix
+     *
+     * Checks that of all the patient office visits shown, the HCP can see at
+     * least of of each type
+     */
+    @And ( "none of the options are unimplemented" )
+    public void allImplementedShown () {
+        waitForAngular();
+        assertTextNotPresent( "Not Implemented" );
     }
 
     /**

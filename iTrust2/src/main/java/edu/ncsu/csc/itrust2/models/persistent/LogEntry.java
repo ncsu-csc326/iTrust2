@@ -13,10 +13,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import com.google.gson.annotations.JsonAdapter;
-
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+
+import com.google.gson.annotations.JsonAdapter;
 
 import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAdapter;
 import edu.ncsu.csc.itrust2.adapters.ZonedDateTimeAttributeConverter;
@@ -54,9 +54,9 @@ public class LogEntry extends DomainObject<LogEntry> {
     @NotNull
     @Basic
     // Allows the field to show up nicely in the database
-    @Convert( converter = ZonedDateTimeAttributeConverter.class )
-    @JsonAdapter( ZonedDateTimeAdapter.class )
-    private ZonedDateTime        time;
+    @Convert ( converter = ZonedDateTimeAttributeConverter.class )
+    @JsonAdapter ( ZonedDateTimeAdapter.class )
+    private ZonedDateTime   time;
 
     /**
      * The secondary user for the event that has been logged (optional)
@@ -149,8 +149,8 @@ public class LogEntry extends DomainObject<LogEntry> {
      * @return All matching LogEntries
      */
     public static List<LogEntry> getAllForUser ( final String user ) {
-        return getWhere( createCriterionList(
-                Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) ) );
+        return getWhere(
+                createCriterionList( Restrictions.or( eq( "primaryUser", user ), eq( "secondaryUser", user ) ) ) );
     }
 
     /**

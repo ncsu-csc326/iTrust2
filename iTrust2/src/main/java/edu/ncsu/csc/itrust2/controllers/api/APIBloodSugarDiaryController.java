@@ -41,7 +41,7 @@ public class APIBloodSugarDiaryController extends APIController {
      * @return a response containing results of creating a new entry
      */
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
-    @PostMapping ( BASE_PATH + "/bloodSugarDiaries/patient" )
+    @PostMapping ( BASE_PATH + "bloodSugarDiaries/patient" )
     public ResponseEntity addEntry ( @RequestBody final BloodSugarDiaryForm entry ) {
         String date;
         if ( entry.getDate() != null ) {
@@ -91,7 +91,7 @@ public class APIBloodSugarDiaryController extends APIController {
      *         if the csv file has incorrect format.
      */
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
-    @PostMapping ( BASE_PATH + "/bloodSugarDiaries/patient/csv" )
+    @PostMapping ( BASE_PATH + "bloodSugarDiaries/patient/csv" )
     public ResponseEntity addEntries ( @RequestBody final String info ) {
         final String copy = info.replace( "\"", "" );
         final String lineSplit = "\n";
@@ -180,7 +180,7 @@ public class APIBloodSugarDiaryController extends APIController {
      *            The username of the patient for which to get entries
      * @return a list of patient's blood sugar diary entries
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @GetMapping ( BASE_PATH + "bloodSugarDiaries/hcp/{patient}" )
     public ResponseEntity getEntriesHCP ( @PathVariable ( "patient" ) final String patientName ) {
         final Patient patient = Patient.getByName( patientName );
@@ -259,7 +259,7 @@ public class APIBloodSugarDiaryController extends APIController {
      *            The username of the patient for which to get entries
      * @return patients blood sugar limits
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @GetMapping ( BASE_PATH + "bloodSugarDiaries/hcp/limits/{patient}" )
     public ResponseEntity getBloodSugarLimitsHCP ( @PathVariable final String patient ) {
         final Patient current = Patient.getByName( patient );
@@ -286,8 +286,8 @@ public class APIBloodSugarDiaryController extends APIController {
      *            the limits to be set
      * @return a response containing results of updating the limits
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
-    @PostMapping ( BASE_PATH + "/bloodSugarDiaries/hcp/limits/{patient}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
+    @PostMapping ( BASE_PATH + "bloodSugarDiaries/hcp/limits/{patient}" )
     public ResponseEntity addLimits ( @PathVariable final String patient, @RequestBody final List<Integer> limits ) {
         final Patient current = Patient.getByName( patient );
         BloodSugarLimit currentLimits = BloodSugarLimit.getByPatient( current );

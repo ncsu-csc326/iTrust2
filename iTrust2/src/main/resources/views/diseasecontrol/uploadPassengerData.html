@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+	<head th:include="layout :: head(title=~{::title},links=~{})">
+        <meta charset="UTF-8">
+        <title>
+            Upload Passenger Data
+        </title>
+        <link rel="icon" type="image/x-icon" href="/iTrust2/resources/img/favicon.ico" />
+    </head>
+    <style>
+    	/* This is from w3Schools at bit.ly/w3Loader */
+		.loader {
+		  border: 4px solid #f3f3f3;
+		  border-radius: 50%;
+		  border-top: 4px solid #3498db;
+		  width: 30px;
+		  height: 30px;
+		  -webkit-animation: spin 2s linear infinite; /* Safari */
+		  animation: spin 2s linear infinite;
+		}
+		
+		/* Safari */
+		@-webkit-keyframes spin {
+		  0% { -webkit-transform: rotate(0deg); }
+		  100% { -webkit-transform: rotate(360deg); }
+		}
+		
+		@keyframes spin {
+		  0% { transform: rotate(0deg); }
+		  100% { transform: rotate(360deg); }
+		}
+	</style>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+	
+		<!-- Script Starts Here -->
+		<script>
+			
+			var app = angular.module("passengerApp", []);
+			app.controller("passengerUploadCtrl", function($scope, $http){
+				// store csv contents in this string
+				 $scope.csvString = "";
+				// holds upload successes (index 0) and failures (index 1)
+				 $scope.uploads = [0, 0];
+				// set to true once there is upload data to display the message
+				 $scope.showUploads=false;
+				 $scope.showSkipped=false;
+				 $scope.showLoader=false;
+				 
+				 $scope.errorPresent="";
+				 
+				 /**
+				 * POST records of the data being entered to get back
+				 * information on skipped and successful additions to
+				 * the database.
+				 */
+				$scope.uploadCSV= function(){
+					
+					$http.post("/iTrust2/api/v1/diseasecontrol/passengers/csv", $scope.csvString).then(function(response){
+						$scope.uploads = response.data;
+						$scope.showLoader = false;
+						$scope.showUploads = true;
+						if ($scope.uploads[1] > 0) {
+							$scope.showSkipped=true;
+						}
+					},function(errorResponse){
+						$scope.uploads = errorResponse.data;
+						$scope.showLoader = false;
+						$scope.errorPresent = "Error: " + errorResponse.data.message;
+					});
+					
+					document.getElementById("uploadDataForm").reset();
+					
+				}
+				 
+				 
+				// Function adapted from bloodsugardiary.html
+				// Function used to read a .csv file submitted by the user
+                $scope.getFile = function() {
+                    var f = document.getElementById('dataUploadField').files[0],
+                    r = new FileReader();
+                    
+                    // Checks the file type to see if it is csv.
+                    // If it is not a CSV, aborts the upload.
+                    var fileName = f.name;
+                    // If the file name does not end in either .csv or .CSV
+                    // (the common capitalizations), make this stop with 
+                    // an error message.
+                    // Warning - Internet Explorer will fail with this.
+                    // Microsoft Edge, Google Chrome, Mozilla Firefox, or other
+                    // major browsers should work.
+                    if (!fileName.endsWith(".csv") && !fileName.endsWith(".CSV")) {
+                    	$scope.showUploads = false;
+                    	$scope.showSkipped = false;
+                    	$scope.errorPresent = "Error: " + "The file " + fileName + " has an incorrect file extension.";
+                    } else {
+                    	// In the else case, the file has the correct file extension.
+                    	// It is read to text, then sent to the correct function.
+                    	
+                    	// First, reset the error message and the show status.
+                    	$scope.errorPresent = "";
+                    	$scope.showUploads = false;
+                    	$scope.showSkipped = false;
+                    	$scope.showLoader = true;
+                    	// Then read the file as text.
+                    	r.readAsText(f);
+                    	
+                    	r.onload = function(e) {
+                    		$scope.csvString = r.result;
+                    	    $scope.uploadCSV();
+                    	};
+                    	
+                    }
+                }
+				 
+
+				// Confirms clearing the database
+				$scope.clearDatabaseConfirm = function() {
+					$scope.message = "";
+					if (confirm("This action will permanently delete all Passengers from the database.\nWARNING: This cannot be undone.\nPlease confirm by pressing OK or press Cancel to return to safety.")) {
+						// If the user presses yes
+						
+						// Actually clear the database.
+						$http.delete("/iTrust2/api/v1/diseasecontrol/passengers").then(function(response){
+							$scope.message = "Database cleared";
+						});
+						
+					} 
+					// If the user presses no
+					// Don't display anything.
+				}
+			
+			});
+			
+		</script>
+	
+		<!-- This div is the app -->
+		<div ng-app="passengerApp" ng-controller="passengerUploadCtrl">
+			<!-- This is the page container -->
+			<div class="container" id="uploaddatacontainer">
+				<div class="row">
+					<div class="col-md-12">
+						<!-- Everything is in this primary box. -->
+						<div class="panel panel-primary">
+							<!-- This is the panel heading area -->
+							<div class="panel-heading">
+								<h3 id="uploaddataheading">Upload Passenger Data</h3>
+							</div>
+							<!-- Next is the body of the panel. -->
+							<div class="panel-body">
+								<!-- This contains the instructions for the user. -->
+								<p>
+									<b>Please upload a CSV file with data in the following format:</b>
+									<br>
+									<i>Passenger ID, "Last Name, First Name", Severity, Date of Initial Symptoms Time of Initial Symptoms</i>
+								</p>
+								<br>
+								<b>Notes:</b>
+								<ul>
+									<li>Severity should be a one letter code (N - No Symptoms/Not Infected; M - Mild; S - Severe; C - Critical).</li>
+									<li>Date of Initial Symptoms should be formatted in terms of Year/Month/Day (YYYY/MM/DD).</li>
+									<li>Time should be formatted in Hours:Minutes:Seconds (HH:MM:SS).</li>
+								</ul>
+								<!-- The actual page functionality (file uploads) -->
+								<form ng-submit="getFile()" name="uploadDataForm" id="uploadDataForm">
+									<!-- This is how the file is uploaded. We do frontend file extension checks, and backend checks for contents. -->
+									<input type="file" id="dataUploadField" accept=".csv" required>
+									
+									<br>
+									<!-- The submit button stays enabled now. -->
+									<button ng-disabled="uploadDataForm.dataUploadField$untouched" type="submit" id="submitUploadedDataButton" class="btn btn-primary">Upload CSV</button>
+									<br>
+									<br>
+									
+									<!-- This is a loading message. -->
+									<div id="loadingDiv" ng-if="showLoader">
+									    <table id="loadingTable">
+									    	<tr></tr>
+									        <tr id="loadingRow">
+									            <td>Loading &ensp;</td>
+									            <td>
+									                <div class="loader" id="loaderSpinner"></div>
+									            </td>
+									        </tr>
+										</table>
+									</div>
+									
+									<!-- Messages with results - this is where the invalid file type or file error message appears -->
+									<div style="color:red" ng-bind="errorPresent" id="uploadErrorMessage"></div>
+									
+									<div ng-if="showUploads" id="numAddedMessage">
+										<p>
+											<b>{{uploads[0]}} Passengers were added to the database.</b>
+											<br>
+										</p>
+									</div>
+									
+									<div ng-if="showSkipped" id="numDupMessage">
+										<p>
+											<b>{{uploads[1]}} duplicate Passengers were not added.</b>
+											<br>
+										</p>
+									</div>
+									<hr>
+									
+									
+									<!-- Use a Javascript confirm (under Popup boxes on W3Schools) -->
+									<button type="button" ng-click="clearDatabaseConfirm()" id="clearDBButton" class="btn btn-danger">Reset Passenger Database</button>
+									<br>
+									<p id="clearMessage" ng-bind="message"></p>
+									
+								</form>
+							</div>		
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+	</div>
+</body>
+</html>

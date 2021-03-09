@@ -9,9 +9,6 @@
 	<module name="TreeWalker">
 		<module name="JavadocMethod">
 			<property name="scope" value="package" />
-			<property name="allowUndeclaredRTE" value="true" />
-			<property name="allowThrowsTagsForSubclasses" value="true" />
-			<property name="allowMissingThrowsTags" value="true" />
 		</module>
 		<module name="JavadocVariable">
 			<property name="scope" value="protected" />

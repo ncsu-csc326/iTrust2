@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>edu.ncsu.csc</groupId>
 	<artifactId>iTrust2</artifactId>
-	<version>4.0.0</version>
+	<version>7.0.0</version>
 	<packaging>war</packaging>
 	<name>iTrust2</name>
 	<organization>
@@ -29,7 +29,10 @@
 		<failsafe.version>2.22.0</failsafe.version>
 		<maven.compiler.version>3.7.0</maven.compiler.version>
 		<jetty.version>9.2.2.v20140723</jetty.version>
+		<launch.port>8080</launch.port>
+		<stop.port>8005</stop.port>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
 	</properties>
 
 	<dependencyManagement>
@@ -37,7 +40,7 @@
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-framework-bom</artifactId>
-				<version>4.3.5.RELEASE</version>
+				<version>5.2.8.RELEASE</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -107,7 +110,7 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-validator</artifactId>
-			<version>5.4.1.Final</version>
+			<version>5.4.2.Final</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -143,13 +146,13 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
-			<version>4.2.2.RELEASE</version>
+			<version>4.2.16.RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
-			<version>4.2.2.RELEASE</version>
+			<version>4.2.16.RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -239,7 +242,7 @@
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>8.0.11</version>
+			<version>8.0.16</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -248,7 +251,7 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-jpa</artifactId>
-			<version>1.10.2.RELEASE</version>
+			<version>1.11.22.RELEASE</version>
 		</dependency>
 
 		<!-- Thymeleaf -->
@@ -273,7 +276,7 @@
 			<artifactId>hibernate-entitymanager</artifactId>
 			<version>5.0.11.Final</version>
 		</dependency>
-		
+
 
 		<dependency>
 			<groupId>io.github.bonigarcia</groupId>
@@ -392,13 +395,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
-			<resource>
-				<directory>src/main/java</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>**/*.properties</include>
-                </includes>
-			</resource>
 		</resources>
 		<plugins>
 			<plugin>
@@ -423,9 +419,12 @@
 				<artifactId>jetty-maven-plugin</artifactId>
 				<version>${jetty.version}</version>
 				<configuration>
+					<httpConnector>
+						<port>${launch.port}</port>
+					</httpConnector>
 					<war>${project.basedir}/target/iTrust2.war</war>
 					<scanIntervalSeconds>10</scanIntervalSeconds>
-					<stopPort>8005</stopPort>
+					<stopPort>${stop.port}</stopPort>
 					<stopKey>STOP</stopKey>
 					<webApp>
 						<contextPath>/iTrust2</contextPath>
@@ -523,7 +522,7 @@
 				<version>${failsafe.version}</version>
 				<configuration>
 					<systemPropertyVariables>
-						<server.port>8080</server.port>
+						<server.port>${launch.port}</server.port>
 						<cucumber.options>${cucumber.options}</cucumber.options>
 					</systemPropertyVariables>
 					<useSystemClassLoader>false</useSystemClassLoader>

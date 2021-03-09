@@ -1,5 +1,7 @@
 package edu.ncsu.csc.itrust2.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,8 +31,9 @@ public class DBUtil {
         final Properties properties = new Properties();
 
         try {
-            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            input = classLoader.getResourceAsStream("db.properties");
+            final String filename = "src/main/java/db.properties";
+            final File initialFile = new File( filename );
+            input = new FileInputStream( initialFile );
             properties.load( input );
             url = properties.getProperty( "url" );
             username = properties.getProperty( "username" );
@@ -41,7 +44,7 @@ public class DBUtil {
             e.printStackTrace();
             // The file couldn't be loaded
             // Set some default values and maybe we'll get lucky
-            url = "jdbc:mysql://localhost:3306/iTrust2?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=EST";
+            url = "jdbc:mysql://localhost:3306/iTrust2_%s?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=EST";
             username = "root";
             password = "";
         }
@@ -55,6 +58,8 @@ public class DBUtil {
                 }
             }
         }
+        
+        url = String.format(url, null == System.getProperty( "dbVersion" ) ? "test" : System.getProperty("dbVersion"));
     }
 
     /**

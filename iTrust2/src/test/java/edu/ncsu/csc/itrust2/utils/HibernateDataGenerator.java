@@ -1,5 +1,6 @@
 package edu.ncsu.csc.itrust2.utils;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import edu.ncsu.csc.itrust2.forms.admin.ICDCodeForm;
 import edu.ncsu.csc.itrust2.forms.admin.LOINCForm;
 import edu.ncsu.csc.itrust2.forms.admin.LOINCForm.ResultEntry;
 import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
+import edu.ncsu.csc.itrust2.managers.ZipCodeManager;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.BloodType;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
@@ -21,6 +23,7 @@ import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
+import edu.ncsu.csc.itrust2.models.enums.Specialty;
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
 import edu.ncsu.csc.itrust2.models.persistent.Drug;
@@ -52,8 +55,9 @@ public class HibernateDataGenerator {
      *            command line arguments
      * @throws ParseException
      * @throws NumberFormatException
+     * @throws IOException
      */
-    public static void main ( final String args[] ) throws NumberFormatException, ParseException {
+    public static void main ( final String args[] ) throws NumberFormatException, ParseException, IOException {
         refreshDB();
 
         System.exit( 0 );
@@ -65,8 +69,9 @@ public class HibernateDataGenerator {
      *
      * @throws ParseException
      * @throws NumberFormatException
+     * @throws IOException
      */
-    public static void refreshDB () throws NumberFormatException, ParseException {
+    public static void refreshDB () throws NumberFormatException, ParseException, IOException {
         // using the config to drop/create taken from here:
         // https://stackoverflow.com/questions/20535423/how-to-manually-invoke-create-drop-from-jpa-on-hibernate
         // how to actually generate the schemaexport taken from here:
@@ -84,6 +89,10 @@ public class HibernateDataGenerator {
 
         generateUsers();
         generateTestFaculties();
+        generateFindExpertTest();
+
+        final ZipCodeManager manager = ZipCodeManager.getInstance();
+        manager.loadDatabase( "src/test/resources/edu/ncsu/csc/itrust/zipdata/sample.csv" );
     }
 
     /**
@@ -133,6 +142,10 @@ public class HibernateDataGenerator {
         final User svang = new User( "svang", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
                 Role.ROLE_HCP, 1 );
         svang.save();
+
+        final User virologist = new User( "virologist", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
+                Role.ROLE_VIROLOGIST, 1 );
+        virologist.save();
 
         // generate users for testing password change & reset
         for ( int i = 1; i <= 5; i++ ) {
@@ -543,4 +556,52 @@ public class HibernateDataGenerator {
         final GeneralCheckup siegOffVisit = new GeneralCheckup( form );
         siegOffVisit.save();
     }
+
+    /**
+     * Load more hospitals and personnel to test the Find Expert Form
+     */
+    public static void generateFindExpertTest () {
+        // Personnel.deleteAll( Personnel.class );
+        final Hospital rex = new Hospital( "Rex Hospital", "123 Lake Boone Trail", "27616-1234", "NC" );
+        rex.save();
+        final Hospital unc = new Hospital( "UNC Hospital", "123 UNC Trail", "27601", "NC" );
+        unc.save();
+        final Personnel ryan = new Personnel();
+        ryan.setFirstName( "Ryan" );
+        ryan.setHospitalId( "Rex Hospital" );
+        ryan.setSpecialty( Specialty.CARDIOLOGIST );
+        final User ryanUser = new User( "ryan", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
+                Role.ROLE_HCP, 1 );
+        ryanUser.save();
+        ryan.setEmail( "ryan_dr@gmail.com" );
+        ryan.setLastName( "Catalfu" );
+        ryan.setSelf( ryanUser );
+        ryan.save();
+
+        final Personnel neetya = new Personnel();
+        neetya.setFirstName( "Neetya" );
+        neetya.setLastName( "Shah" );
+        neetya.setHospitalId( "Rex Hospital" );
+        neetya.setSpecialty( Specialty.CARDIOLOGIST );
+        final User neetyaUser = new User( "neetya", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
+                Role.ROLE_HCP, 1 );
+        neetyaUser.save();
+        neetya.setSelf( neetyaUser );
+        neetya.setLastName( "Shah" );
+        neetya.setEmail( "neetya_dr@gmail.com" );
+        neetya.save();
+        final Personnel eddie = new Personnel();
+        eddie.setFirstName( "Eddie" );
+        eddie.setHospitalId( "UNC Hospital" );
+        eddie.setSpecialty( Specialty.CARDIOLOGIST );
+        final User eddieUser = new User( "eddie", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
+                Role.ROLE_HCP, 1 );
+        eddieUser.save();
+        eddie.setSelf( eddieUser );
+        eddie.setLastName( "Woodhouse" );
+        eddie.setEmail( "eddie_dr@gmail.com" );
+        eddie.save();
+
+    }
+
 }

@@ -16,6 +16,11 @@
 		<!-- JDBC connection pool (use the built-in) -->
 		<property name="hibernate.connection.pool_size">100</property>
 
+
+		<property name="connection.autoReconnect">true</property>
+		<property name="connection.autoReconnectForPools">true</property>
+		<property name="connection.is-connection-validation-required">false</property>
+
 		<!-- Echo all executed SQL to stdout -->
 		<property name="show_sql">false</property>
 
@@ -69,10 +74,14 @@
 			class="edu.ncsu.csc.itrust2.models.persistent.QualitativeLOINCResult" />
 		<mapping
 			class="edu.ncsu.csc.itrust2.models.persistent.QualitativeResultEntry" />
-    	<mapping
+		<mapping
 			class="edu.ncsu.csc.itrust2.models.persistent.BloodSugarDiaryEntry" />
 		<mapping
 			class="edu.ncsu.csc.itrust2.models.persistent.BloodSugarLimit" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.ZipCodeEntry" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.Passenger" />
 
 	</session-factory>
 </hibernate-configuration>

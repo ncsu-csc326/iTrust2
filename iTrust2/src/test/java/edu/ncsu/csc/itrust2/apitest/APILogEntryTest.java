@@ -5,8 +5,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-
-import com.google.gson.Gson;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,6 +20,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.google.gson.Gson;
 
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
 import edu.ncsu.csc.itrust2.controllers.api.comm.LogEntryRequestBody;
@@ -35,13 +37,13 @@ import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
  * @author Kai Presler-Marshall
  *
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = { RootConfiguration.class, WebMvcConfiguration.class })
+@RunWith ( SpringJUnit4ClassRunner.class )
+@ContextConfiguration ( classes = { RootConfiguration.class, WebMvcConfiguration.class } )
 @WebAppConfiguration
 public class APILogEntryTest {
 
-    private MockMvc mvc;
-    private final Gson gson = new Gson();
+    private MockMvc               mvc;
+    private final Gson            gson = new Gson();
     @Autowired
     private WebApplicationContext context;
 
@@ -77,14 +79,16 @@ public class APILogEntryTest {
                 Role.ROLE_PATIENT, 1 );
         user.save();
 
+        final List<LogEntry> newLogEntries = new ArrayList<>();
         for ( Integer i = 0; i < 500; ++i ) {
             final LogEntry le = new LogEntry();
             le.setLogCode( TransactionType.USER_BANNED );
             le.setPrimaryUser( "logapitest" );
             le.setTime( ZonedDateTime.now() );
 
-            le.save();
+            newLogEntries.add( le );
         }
+        LogEntry.saveAll( newLogEntries );
 
         final LocalDate start = LocalDate.now().minusMonths( 6 );
         final LocalDate end = LocalDate.now().plusMonths( 6 );

@@ -27,7 +27,7 @@ public class UserController {
      * @return response
      */
     @GetMapping ( value = "personnel/editDemographics" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_ADMIN', 'ROLE_ER', 'ROLE_LABTECH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_ADMIN', 'ROLE_ER', 'ROLE_LABTECH', 'ROLE_VIROLOGIST')" )
     public String viewDemographics ( final Model model ) {
         LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, LoggerUtil.currentUser() );
         return "/personnel/editDemographics";

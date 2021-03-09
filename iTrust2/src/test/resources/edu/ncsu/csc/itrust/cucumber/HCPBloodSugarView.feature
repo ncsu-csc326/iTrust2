@@ -44,7 +44,7 @@ Feature: HCP Blood Sugar View
       | 100     | 160       |
       | 130     | 180       |
 
-  Scenario Outline: HCP edits patient's limits successfully
+  Scenario Outline: HCP edits patient's limits unsuccessfully
     Given I am logged in as Saruman
 	And I navigate to the View Patient Blood Sugar Journal page
 	When I search the patients for BillyBob
@@ -55,11 +55,7 @@ Feature: HCP Blood Sugar View
     Examples: 
       | fasting | afterMeal |
       | 79      | 120       |
-      | 131     | 120       |
-      | -1      | 120       |
       | gh      | 120       |     
       | 80      | 119       |
-      | 80      | 181       |
       | 80      | rf        |
-      | 80      | -1        |          
        

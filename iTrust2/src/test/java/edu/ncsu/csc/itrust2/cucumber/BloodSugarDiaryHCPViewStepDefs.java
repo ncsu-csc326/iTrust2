@@ -122,6 +122,8 @@ public class BloodSugarDiaryHCPViewStepDefs extends CucumberTest {
     @Given ( "^Patient has the following entries$" )
     public void entriesExist ( final DataTable dt ) {
         final List<Map<String, String>> list = dt.asMaps( String.class, String.class );
+
+        final List<BloodSugarDiaryEntry> newDiaryEntries = new ArrayList<>();
         for ( int i = 0; i < list.size(); i++ ) {
             final BloodSugarDiaryEntry entry = new BloodSugarDiaryEntry();
 
@@ -139,9 +141,11 @@ public class BloodSugarDiaryHCPViewStepDefs extends CucumberTest {
             entry.setFirstLevel( first );
             entry.setSecondLevel( second );
             entry.setThirdLevel( third );
-            entry.save();
+
+            newDiaryEntries.add( entry );
             entries.add( entry );
         }
+        BloodSugarDiaryEntry.saveAll( newDiaryEntries );
     }
 
     /**

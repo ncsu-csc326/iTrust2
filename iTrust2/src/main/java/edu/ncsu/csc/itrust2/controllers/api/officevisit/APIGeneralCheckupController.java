@@ -38,7 +38,7 @@ public class APIGeneralCheckupController extends APIController {
      * @return response
      */
     @GetMapping ( BASE_PATH + "/generalcheckups/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT', 'ROLE_VIROLOGIST')" )
     public ResponseEntity getGeneralCheckup ( @PathVariable ( "id" ) final Long id ) {
         final GeneralCheckup visit = GeneralCheckup.getById( id );
         if ( null == visit ) {
@@ -66,7 +66,7 @@ public class APIGeneralCheckupController extends APIController {
      * @return response
      */
     @DeleteMapping ( BASE_PATH + "/generalcheckups/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity deleteGeneralCheckup ( @PathVariable final Long id ) {
         final GeneralCheckup visit = GeneralCheckup.getById( id );
         if ( null == visit ) {
@@ -93,7 +93,7 @@ public class APIGeneralCheckupController extends APIController {
      */
 
     @PostMapping ( BASE_PATH + "/generalcheckups" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity createGeneralCheckup ( @RequestBody final GeneralCheckupForm visitForm ) {
         try {
             final GeneralCheckup visit = new GeneralCheckup( visitForm );
@@ -129,7 +129,7 @@ public class APIGeneralCheckupController extends APIController {
      * @return response
      */
     @PutMapping ( BASE_PATH + "/generalcheckups/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT', 'ROLE_VIROLOGIST')" )
     public ResponseEntity updateGeneralCheckup ( @PathVariable final Long id,
             @RequestBody final GeneralCheckupForm form ) {
         try {
@@ -172,7 +172,7 @@ public class APIGeneralCheckupController extends APIController {
      * @return OK if the office visit is found, NOT_FOUND otherwise
      */
     @PostMapping ( BASE_PATH + "/generalcheckups/hcp/view/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity viewGeneralCheckup ( @PathVariable final Long id,
             @RequestBody final GeneralCheckupForm form ) {
         final GeneralCheckup dbVisit = GeneralCheckup.getById( id );

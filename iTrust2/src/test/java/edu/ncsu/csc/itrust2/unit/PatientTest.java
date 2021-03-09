@@ -1,6 +1,7 @@
 package edu.ncsu.csc.itrust2.unit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -23,6 +24,7 @@ import edu.ncsu.csc.itrust2.models.persistent.User;
  * Unit tests for the Patient class
  *
  * @author jshore
+ * @author Ryan Catalfu (rpcatalf)
  *
  */
 public class PatientTest {
@@ -81,10 +83,10 @@ public class PatientTest {
         assertEquals( "27606", testPatient.getZip() );
         assertEquals( "111-111-1111", testPatient.getPhone() );
 
-        LocalDate birth = LocalDate.parse( form.getDateOfBirth() );
+        final LocalDate birth = LocalDate.parse( form.getDateOfBirth() );
         assertEquals( birth, testPatient.getDateOfBirth() );
 
-        LocalDate death = LocalDate.parse( form.getDateOfDeath() );
+        final LocalDate death = LocalDate.parse( form.getDateOfDeath() );
         assertEquals( death, testPatient.getDateOfDeath() );
         assertEquals( "Hit by a truck", testPatient.getCauseOfDeath() );
         assertEquals( BloodType.ABPos, testPatient.getBloodType() );
@@ -134,7 +136,6 @@ public class PatientTest {
         expectFailure( p::setPhone, "phone" );
 
         // invalid sizes
-        expectFailure( p::setFirstName, "123456789012345678901" );
         expectFailure( p::setFirstName, "" );
         expectFailure( p::setLastName, "1234567890123456789012345678901" );
         expectFailure( p::setLastName, "" );
@@ -240,6 +241,56 @@ public class PatientTest {
             assertTrue( testPatient.getRepresentatives().isEmpty() );
         }
     }
+
+    /**
+     * Tests a patient with a multi-word city to unit test a fix which did not
+     * allow spaces in the city name (this was a requirements flaw, impacting
+     * well over 16 million Americans).
+     */
+    @Test
+    public void testPatientMultiWordCity () {
+        // Creates patient
+        final Patient p1 = new Patient();
+        assertNotNull( p1 );
+        // Sets city
+        try {
+            p1.setCity( "Los Angeles" );
+        }
+        catch ( final IllegalArgumentException e ) {
+            fail( "The space in the city name caused this test to fail." );
+        }
+        // This city should be valid
+        assertEquals( "Los Angeles", p1.getCity() );
+
+        // Try another patient.
+        // Creates patient
+        final Patient p2 = new Patient();
+        assertNotNull( p2 );
+        // Sets city
+        try {
+            p2.setCity( "Chapel Hill " );
+        }
+        catch ( final IllegalArgumentException e ) {
+            fail( "The space in the city name caused this test to fail." );
+        }
+        // This city should be valid
+        assertEquals( "Chapel Hill", p2.getCity() );
+
+        // Try another patient.
+        // Creates patient
+        final Patient p3 = new Patient();
+        assertNotNull( p3 );
+        // Sets city
+        try {
+            p3.setCity( null );
+            fail( "The city name cannot be null." );
+        }
+        catch ( final IllegalArgumentException e ) {
+            // Did not update, which is good.
+            assertEquals( "City must contain 1-15 alpha characters", e.getMessage() );
+        }
+    }
+
 
     private void expectFailure ( final Consumer<String> setter, final String value ) {
         try {

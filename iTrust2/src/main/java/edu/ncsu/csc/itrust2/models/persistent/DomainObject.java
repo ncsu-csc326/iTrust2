@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.Criteria;
+import org.hibernate.ObjectNotFoundException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -199,6 +200,26 @@ public abstract class DomainObject <D extends DomainObject<D>> {
     }
 
     /**
+     * Saves all DomainObjects in a list into the database. New object instances
+     * will be created in the database while existing object instances will be
+     * updated.
+     *
+     * @param objects
+     *            List of DomainObjects
+     */
+    public static void saveAll ( final List< ? extends DomainObject> objects ) {
+        final Session session = HibernateUtil.openSession();
+        session.beginTransaction();
+
+        for ( final DomainObject obj : objects ) {
+            session.saveOrUpdate( obj );
+        }
+
+        session.getTransaction().commit();
+        session.close();
+    }
+
+    /**
      * Deletes the selected DomainObject from the database. This is operation
      * cannot be reversed.
      */
@@ -229,10 +250,17 @@ public abstract class DomainObject <D extends DomainObject<D>> {
         catch ( final Exception e ) {
             return null;
         }
+
         final Session session = HibernateUtil.openSession();
         session.beginTransaction();
-        session.load( obj, (Serializable) id );
-        session.getTransaction().commit();
+        try {
+            session.load( obj, (Serializable) id );
+            session.getTransaction().commit();
+        }
+        catch ( final ObjectNotFoundException e ) {
+            session.close();
+            return null;
+        }
         session.close();
         return obj;
     }

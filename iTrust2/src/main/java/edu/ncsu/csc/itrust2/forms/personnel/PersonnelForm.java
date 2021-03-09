@@ -5,6 +5,7 @@ import javax.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
+import edu.ncsu.csc.itrust2.models.enums.Specialty;
 import edu.ncsu.csc.itrust2.models.persistent.Personnel;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 
@@ -33,85 +34,84 @@ public class PersonnelForm {
     /**
      * Username of the iTrust2 personnel to make a Personnel object for
      */
-    private String  self;
+    private String    self;
 
     /**
      * <<<<<<< HEAD Whether the Personnel is enabled or not
      */
-    private boolean enabled;
+    private boolean   enabled;
 
     /**
      * First name of the Personnel
      */
     @NotEmpty
     @Length ( max = 20 )
-    private String  firstName;
+    private String    firstName;
 
     /**
      * Last name of the Personnel
      */
     @NotEmpty
     @Length ( max = 30 )
-    private String  lastName;
+    private String    lastName;
 
     /**
      * Address1 of the Personnel
      */
     @NotEmpty
     @Length ( max = 50 )
-    private String  address1;
+    private String    address1;
 
     /**
      * Address2 of the Personnel
      */
     @Length ( max = 50 )
-    private String  address2;
+    private String    address2;
 
     /**
      * City of the Personnel
      */
     @NotEmpty
     @Length ( max = 15 )
-    private String  city;
+    private String    city;
 
     /**
      * State of the Personnel
      */
     @NotEmpty
     @Length ( min = 2, max = 2 )
-    private String  state;
+    private String    state;
 
     /**
      * Zip of the Personnel
      */
     @NotEmpty
     @Length ( min = 5, max = 10 )
-    private String  zip;
+    private String    zip;
 
     /**
      * Phone of the Personnel
      */
     @NotEmpty
     @Pattern ( regexp = "(^[0-9]{3}-[0-9]{3}-[0-9]{4}$)", message = "Phone number must be formatted as xxx-xxx-xxxx" )
-    private String  phone;
+    private String    phone;
 
     /**
      * Specialty of the Personnel
      */
-    @Length ( max = 30 )
-    private String  specialty;
+    private Specialty specialty;
 
     /**
      * Email of the Personnel
      */
     @NotEmpty
     @Length ( max = 30 )
-    private String  email;
+    private String    email;
 
     /**
      * ID of the Personnel
      */
-    private String  id;
+    private String    id;
 
     /**
      * Creates a PersonnelForm object. For initializing a blank form
@@ -346,7 +346,7 @@ public class PersonnelForm {
      *
      * @return Their specialty
      */
-    public String getSpecialty () {
+    public Specialty getSpecialty () {
         return specialty;
     }
 
@@ -356,7 +356,7 @@ public class PersonnelForm {
      * @param specialty
      *            Personnel's specialty
      */
-    public void setSpecialty ( final String specialty ) {
+    public void setSpecialty ( final Specialty specialty ) {
         this.specialty = specialty;
     }
 

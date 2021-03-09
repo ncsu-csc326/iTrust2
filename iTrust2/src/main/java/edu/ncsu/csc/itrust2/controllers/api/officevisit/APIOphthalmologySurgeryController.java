@@ -39,7 +39,7 @@ public class APIOphthalmologySurgeryController extends APIController {
      * @return response
      */
     @GetMapping ( BASE_PATH + "/ophthalmologysurgeries/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity getOphthalmologySurgery ( @PathVariable ( "id" ) final Long id ) {
         final OphthalmologySurgery visit = OphthalmologySurgery.getById( id );
         if ( null == visit ) {

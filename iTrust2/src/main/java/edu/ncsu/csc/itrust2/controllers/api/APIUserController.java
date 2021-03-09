@@ -34,25 +34,28 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 public class APIUserController extends APIController {
 
     /** constant for admin role */
-    private static final String ROLE_ADMIN   = "ROLE_ADMIN";
+    private static final String ROLE_ADMIN      = "ROLE_ADMIN";
 
     /** constant for patient role */
-    private static final String ROLE_PATIENT = "ROLE_PATIENT";
+    private static final String ROLE_PATIENT    = "ROLE_PATIENT";
 
     /** constant for hcp role */
-    private static final String ROLE_HCP     = "ROLE_HCP";
+    private static final String ROLE_HCP        = "ROLE_HCP";
 
     /** constant for ER role */
-    private static final String ROLE_ER      = "ROLE_ER";
+    private static final String ROLE_ER         = "ROLE_ER";
 
     /** constant for lab role */
-    private static final String ROLE_LABTECH = "ROLE_LABTECH";
+    private static final String ROLE_LABTECH    = "ROLE_LABTECH";
+
+    /** constant for virologist role */
+    private static final String ROLE_VIROLOGIST = "ROLE_VIROLOGIST";
 
     /** constant for lab role */
-    private static final String ROLE_OD = "ROLE_OD";
+    private static final String ROLE_OD         = "ROLE_OD";
 
     /** constant for lab role */
-    private static final String ROLE_OPH = "ROLE_OPH";
+    private static final String ROLE_OPH        = "ROLE_OPH";
 
     /**
      * Retrieves and returns a list of all Users in the system, regardless of
@@ -205,6 +208,9 @@ public class APIUserController extends APIController {
         }
         else if ( hasRole( ROLE_OPH ) ) {
             return new ResponseEntity( successResponse( ROLE_OPH ), HttpStatus.OK );
+        }
+        else if ( hasRole( ROLE_VIROLOGIST ) ) {
+            return new ResponseEntity( successResponse( ROLE_VIROLOGIST ), HttpStatus.OK );
         }
         else {
             return new ResponseEntity( errorResponse( "UNAUTHORIZED" ), HttpStatus.UNAUTHORIZED );

@@ -36,7 +36,7 @@ public class APIEmergencyRecordController extends APIController {
      *            be generated for.
      * @return emergRec The EmergencyRecordForm for the patient requested.
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_ER')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_ER', 'ROLE_VIROLOGIST')" )
     @GetMapping ( BASE_PATH + "/emergencyrecord/{patientName}" )
     public ResponseEntity getEmergencyRecord ( @PathVariable ( "patientName" ) final String username ) {
         final User expectedPatient = User.getByName( username );
@@ -66,7 +66,7 @@ public class APIEmergencyRecordController extends APIController {
      * @return emergRec The EmergencyRecordForm for the patient requested.
      */
     @GetMapping ( BASE_PATH + "/emergencyrecord/hcp/{patientName}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public ResponseEntity getEmergencyRecordHCP ( @PathVariable ( "patientName" ) final String username ) {
         final User expectedPatient = User.getByName( username );
 
