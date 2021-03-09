@@ -59,6 +59,20 @@
 			class="edu.ncsu.csc.itrust2.models.persistent.GeneralOphthalmology" />
 		<mapping
 			class="edu.ncsu.csc.itrust2.models.persistent.OphthalmologySurgery" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.LOINCResult" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.QuantitativeLOINCResult" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.QuantitativeResultRange" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.QualitativeLOINCResult" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.QualitativeResultEntry" />
+    	<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.BloodSugarDiaryEntry" />
+		<mapping
+			class="edu.ncsu.csc.itrust2.models.persistent.BloodSugarLimit" />
 
 	</session-factory>
 </hibernate-configuration>

@@ -4,20 +4,26 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import org.hibernate.criterion.Criterion;
 
 import edu.ncsu.csc.itrust2.forms.admin.LOINCForm;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 
 /**
  * Class for Lab Procedure codes. These codes themselves are stored as a String,
  * along with three descriptive strings and an ID.
  *
  * @author Thomas Dickerson
+ * @author Sam Fields
  *
  */
 @Entity
@@ -26,24 +32,35 @@ public class LOINC extends DomainObject<LOINC> {
 
     @Id
     @GeneratedValue ( strategy = GenerationType.AUTO )
-    private Long   id;
+    private Long           id;
 
     /**
      * The LOINC Code string. Formatted as [1 to 5 digits]-[1 digit]
      */
-    private String code;
+    private String         code;
     /**
      * The commonly-used name for the lab procedure
      */
-    private String commonName;
+    private String         commonName;
     /**
      * The substance or entity being measured or observed
      */
-    private String component;
+    private String         component;
     /**
      * The characteristic or attribute of the analyte
      */
-    private String property;
+    private String         property;
+    /**
+     * Scale used to measure the results
+     */
+    @NotNull
+    @Enumerated ( EnumType.STRING )
+    private LabResultScale scale;
+    /**
+     * Identifies the format of the results for the procedure
+     */
+    @OneToOne
+    private LOINCResult    result;
 
     @Override
     public Long getId () {
@@ -69,6 +86,8 @@ public class LOINC extends DomainObject<LOINC> {
         setCommonName( form.getCommonName() );
         setComponent( form.getComponent() );
         setProperty( form.getProperty() );
+        setScale( LabResultScale.parse( form.getScale() ) );
+        setResult( form.getResultEntries() );
     }
 
     /**
@@ -171,6 +190,86 @@ public class LOINC extends DomainObject<LOINC> {
         return property;
     }
 
+    /**
+     * Returns the scale of the code
+     *
+     * @return The scale
+     */
+    public LabResultScale getScale () {
+        return scale;
+    }
+
+    /**
+     * Sets the scale of this code
+     *
+     * @param scale
+     *            the scale to set
+     */
+    public void setScale ( LabResultScale scale ) {
+        this.scale = scale;
+    }
+
+    /**
+     * Gets the result format of the code
+     *
+     * @return the result format
+     */
+    public LOINCResult getResult () {
+        return result;
+    }
+
+    /**
+     * Sets the result format of the code
+     *
+     * @param result
+     *            the result format to set
+     */
+    public void setResult ( LOINCResult result ) {
+        this.result = result;
+    }
+
+    /**
+     * Creates a new LOINCResult from the provided form ResultEntries. The type
+     * of LOINCResult will be based on the scale of the code.
+     *
+     * @param entries
+     *            the form result entries
+     *
+     */
+    public void setResult ( List<LOINCForm.ResultEntry> entries ) {
+        switch ( getScale() ) {
+            case QUANTITATIVE:
+                final QuantitativeLOINCResult quantResult = new QuantitativeLOINCResult( entries );
+                quantResult.save();
+                setResult( quantResult );
+                break;
+            case QUALITATIVE:
+                final QualitativeLOINCResult qualResult = new QualitativeLOINCResult( entries );
+                qualResult.save();
+                setResult( qualResult );
+                break;
+            default:
+                this.result = null;
+                break;
+        }
+    }
+
+    @Override
+    public void save () {
+        final LOINC oldLOINC = LOINC.getById( getId() );
+        LOINCResult oldResult = null;
+
+        if ( oldLOINC != null ) {
+            oldResult = oldLOINC.getResult();
+        }
+
+        super.save();
+
+        if ( oldResult != null ) {
+            oldResult.delete();
+        }
+    }
+
     @Override
     public boolean equals ( final Object o ) {
         if ( o instanceof LOINC ) {
@@ -179,6 +278,23 @@ public class LOINC extends DomainObject<LOINC> {
                     && component.equals( c.getComponent() ) && property.equals( c.getProperty() );
         }
         return false;
+    }
+
+    @Override
+    public void delete () {
+        super.delete();
+        if ( result != null ) {
+            result.delete();
+        }
+    }
+
+    /**
+     * Deletes all LOINC codes from the database. Also cleans up and deletes any
+     * LOINC results in the databse.
+     */
+    public static void deleteAll () {
+        DomainObject.deleteAll( LOINC.class );
+        DomainObject.deleteAll( LOINCResult.class );
     }
 
     /**

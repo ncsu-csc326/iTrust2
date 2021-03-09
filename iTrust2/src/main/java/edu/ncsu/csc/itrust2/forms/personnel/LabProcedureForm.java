@@ -65,6 +65,8 @@ public class LabProcedureForm implements Serializable {
      */
     private Long   visit;
 
+    private String result;
+
     /**
      * Creates a LabProcedureForm from the LabProcedure provided
      *
@@ -80,6 +82,25 @@ public class LabProcedureForm implements Serializable {
         setId( lp.getId() );
         setAssignedTech( lp.getAssignedTech().getUsername() );
         setVisitId( lp.getVisit().getId() );
+    }
+
+    /**
+     * Gets the result
+     *
+     * @return the result
+     */
+    public String getResult () {
+        return result;
+    }
+
+    /**
+     * Sets the result
+     *
+     * @param result
+     *            the result to set
+     */
+    public void setResult ( String result ) {
+        this.result = result;
     }
 
     /**

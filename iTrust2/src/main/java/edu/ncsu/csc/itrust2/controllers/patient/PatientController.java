@@ -135,4 +135,28 @@ public class PatientController {
     public String viewFoodDiaryEntriesForm ( final Model model ) {
         return "/patient/foodDiary/viewFoodDiaryEntries";
     }
+
+    /**
+     * Retrieves the page for the Patient to enter blood sugar entries.
+     *
+     * @param model
+     *            Data for the front end
+     * @return The page the patient to enter entries.
+     */
+    @GetMapping ( "/patient/bloodSugar/bloodsugardiary" )
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public String addBloodSugarDiaryEntry ( final Model model ) {
+        return "/patient/bloodSugar/bloodsugardiary";
+    }
+
+    /**
+     * Retrieves the page for the Patient to view blood sugar entries.
+     *
+     * @return The page to display to the patient.
+     */
+    @GetMapping ( "/patient/bloodSugar/viewJournal" )
+    @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
+    public String viewBloodSugarJournal () {
+        return "/patient/bloodSugar/viewJournal";
+    }
 }

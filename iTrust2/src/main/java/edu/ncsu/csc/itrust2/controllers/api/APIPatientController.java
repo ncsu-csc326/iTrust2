@@ -19,6 +19,7 @@ import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
+import edu.ncsu.csc.itrust2.models.persistent.BloodSugarLimit;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -121,6 +122,11 @@ public class APIPatientController extends APIController {
             LoggerUtil.log( TransactionType.CREATE_DEMOGRAPHICS, LoggerUtil.currentUser() );
             patient.setRepresentatives( null );
             patient.setRepresented( null );
+
+            // Initialize the blood sugar limits for this patient
+            final BloodSugarLimit bloodSugarLimits = new BloodSugarLimit( patient );
+            bloodSugarLimits.save();
+
             return new ResponseEntity( patient, HttpStatus.OK );
         }
         catch ( final Exception e ) {

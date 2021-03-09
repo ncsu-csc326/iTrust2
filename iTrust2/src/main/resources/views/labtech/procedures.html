@@ -2,18 +2,20 @@
 <head th:include="layout :: head(title=~{::title},links=~{})">
 <title>Lab Procedures</title>
 </head>
-<body th:include="layout :: body" th:with="content=~{::content}">
+<body th:include="layout :: body" th:with="content=~{::content}" name="body">
 	<div th:fragment="content">
 
 		<script th:inline="javascript">
 		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
 		/*<![CDATA[*/
 			var app = angular.module("proceduresApp", []);
+			
 			app.controller('proceduresCtrl', function($scope, $http) {
 				$scope.procedures = [];				//array to hold all procedures of logged in labtech
 				$scope.viewStatus = false;			//boolean flag for whether user is viewing a status
 				$scope.viewReassign = false;			//boolean flag for whether user is reassigning procedure or not
 				$scope.newcomments = "";				//new comments
+				$scope.newresults="";				//new results
 				
 				$scope.loadTable = function() {
 					// get list of LOINC codes from rest api
@@ -27,6 +29,8 @@
 								
 							});
 					document.getElementById("commentsID").disabled = true;
+					document.getElementById("quantitativeResultsID").disabled = true;
+					document.getElementById("qualitativeResultsID").disabled = true;
 				}
 				
 				$scope.setSelProcVals = function(procedure) {
@@ -39,6 +43,13 @@
 					$scope.selectedProcedure.patient = procedure.patient.username;
 					$scope.selectedProcedure.visit = procedure.visit.id;
 					$scope.selectedProcedure.labtech = procedure.labtech.username;
+					
+					$scope.selectedLoinc = {};
+					$scope.selectedLoinc = angular.copy(procedure.loinc);
+					$scope.selectedLoinc.loinc = procedure.loinc.id;
+					$scope.selectedLoinc.scale = procedure.loinc.scale;
+					$scope.selectedLoinc.results = procedure.loinc.result;
+					
 					$scope.labStatusChange = procedure.status;
 				}
 				
@@ -109,6 +120,7 @@
 				$scope.submitUpdate = function() {
 					if($scope.selectedProcedure.status == "COMPLETED") {
 						$scope.selectedProcedure.comments = $scope.newcomments;
+						$scope.selectedProcedure.result = $scope.newresults.trim();
 					}
 					$http.put("/iTrust2/api/v1/labprocedures/" + $scope.selectedProcedure.id, $scope.selectedProcedure).then(
 							function(response) {
@@ -125,6 +137,27 @@
 				$scope.selectChange = function(change) {
 					$scope.selectedProcedure.status = $scope.labStatusChange;
 					document.getElementById("commentsID").disabled = !(change == "COMPLETED");
+					document.getElementById("quantitativeResultsID").disabled = !(change == "COMPLETED");
+					document.getElementById("qualitativeResultsID").disabled = !(change == "COMPLETED");
+				}
+				
+				$scope.checkRange = function (value) {
+						var min = $scope.selectedLoinc.results[0].min;
+						var max = $scope.selectedLoinc.results[0].max;
+						var i;
+						for (i of $scope.selectedLoinc.results) {
+							if (i.min < min) {
+								min = i.min;
+							}
+							if (i.max > max) {
+								max = i.max;
+							}
+						}
+						if (value <= max && value >= min) {
+							return true;
+						}
+						$scope.errorUpdating = "Value not in range"
+						return false;
 				}
 					
 				//load table upon loading page, then get all labtechs once
@@ -174,7 +207,8 @@
 								<td name="commentsCell">{{p.comments}}</td>
 								<td name="actionCell"><input type="button" value="Update"
 									class="btn btn-primary" id="update-{{p.loinc.code}}"
-									ng-hide="p.status == 'COMPLETED'" ng-click="trueStatus(p)" /> <input
+									ng-hide="p.status == 'COMPLETED'" ng-click="trueStatus(p)" 
+									name="update"/> <input
 									type="button" value="Reassign" class="btn btn-danger"
 									id="reassign-{{p.loinc.code}}"
 									ng-hide="p.status == 'COMPLETED'" ng-click="trueReassign(p)" />
@@ -203,6 +237,17 @@
 									</select>
 								</div>
 								<div class="form-group" style="padding-left: 30px">
+									<label ng-show="selectedLoinc.scale != 'NONE'">Results</label>
+									<textarea class="form-control" rows="1" id="quantitativeResultsID"
+										name="quantitativeResultsInput" ng-model="newresults" ng-required = "selectedLoinc.scale == 'QUANTITATIVE'"
+										ng-minlength="1" ng-show="selectedLoinc.scale == 'QUANTITATIVE'" 
+										ng-keydown="checkRange(newresults)"></textarea>
+									<select class="form-control" id="qualitativeResultsID"
+										ng-model="newresults" ng-required = "selectedLoinc.scale == 'QUALITATIVE'"
+										ng-show="selectedLoinc.scale == 'QUALITATIVE'">
+										<option ng-repeat="result in selectedLoinc.results.resultEntries">
+										{{result.name}}</option>
+									</select><br>
 									<label>Comments</label>
 									<!-- Info on graying out until certain selection taken from here: 
 										https://stackoverflow.com/questions/43961403/grey-out-a-field-until-a-certain-drop-down-option-is-selected -->

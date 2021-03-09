@@ -15,6 +15,7 @@ import org.junit.Test;
 import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.LabStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Priority;
@@ -93,6 +94,7 @@ public class GeneralCheckupTest {
         loinc.setCommonName( "Swag analysis" );
         loinc.setComponent( "Swagger" );
         loinc.setProperty( "Coolness" );
+        loinc.setScale( LabResultScale.NONE );
 
         loinc.save();
 

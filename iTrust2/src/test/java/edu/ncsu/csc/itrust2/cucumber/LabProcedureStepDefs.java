@@ -3,6 +3,8 @@ package edu.ncsu.csc.itrust2.cucumber;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.text.ParseException;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
@@ -16,9 +18,11 @@ import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.utils.HibernateDataGenerator;
 
 /**
- * Class for Cucumber Testing of Personal Representatives feature.
+ * Class for cucumber testing the lab procedures page
  *
  * @author tadicke3
+ * @author nseamon
+ * @author dmbangol
  */
 public class LabProcedureStepDefs extends CucumberTest {
 
@@ -32,19 +36,24 @@ public class LabProcedureStepDefs extends CucumberTest {
 
     /**
      * Fills in the date and time fields with the specified date and time.
-     * @param date The date to enter.
-     * @param time The time to enter.
+     *
+     * @param date
+     *            The date to enter.
+     * @param time
+     *            The time to enter.
      */
-    private void fillInDateTime(String dateField, String date, String timeField, String time) {
-        fillInDate(dateField, date);
-        fillInTime(timeField, time);
+    private void fillInDateTime ( String dateField, String date, String timeField, String time ) {
+        fillInDate( dateField, date );
+        fillInTime( timeField, time );
     }
 
     /**
      * Fills in the date field with the specified date.
-     * @param date The date to enter.
+     *
+     * @param date
+     *            The date to enter.
      */
-    private void fillInDate(String dateField, String date) {
+    private void fillInDate ( String dateField, String date ) {
         driver.findElement( By.name( dateField ) ).clear();
         final WebElement dateElement = driver.findElement( By.name( dateField ) );
         dateElement.sendKeys( date.replace( "/", "" ) );
@@ -52,9 +61,11 @@ public class LabProcedureStepDefs extends CucumberTest {
 
     /**
      * Fills in the time field with the specified time.
-     * @param time The time to enter.
+     *
+     * @param time
+     *            The time to enter.
      */
-    private void fillInTime(String timeField, String time) {
+    private void fillInTime ( String timeField, String time ) {
         // Zero-pad the time for entry
         if ( time.length() == 7 ) {
             time = "0" + time;
@@ -67,12 +78,16 @@ public class LabProcedureStepDefs extends CucumberTest {
 
     /**
      * Login as HCP Shelly Vang.
+     *
+     * @throws ParseException
+     * @throws NumberFormatException
      */
     @Given ( "I log in to iTrust2 as an HCP" )
-    public void loginAsShelly () {
+    public void loginAsShelly () throws NumberFormatException, ParseException {
         attemptLogout();
 
         HibernateDataGenerator.generateTestLOINC();
+        HibernateDataGenerator.generateTestFaculties();
 
         driver.get( baseUrl );
         waitForAngular();
@@ -95,6 +110,23 @@ public class LabProcedureStepDefs extends CucumberTest {
         waitForAngular();
 
         setTextField( By.name( "username" ), "larrytech" );
+        setTextField( By.name( "password" ), "123456" );
+        driver.findElement( By.className( "btn" ) ).click();
+
+        waitForAngular();
+    }
+
+    /**
+     * Login as labtech
+     */
+    @Given ( "I log in to iTrust2 as a LabTech" )
+    public void logInAsLabTech () {
+        attemptLogout();
+
+        driver.get( baseUrl );
+        waitForAngular();
+
+        setTextField( By.name( "username" ), "labtech" );
         setTextField( By.name( "password" ), "123456" );
         driver.findElement( By.className( "btn" ) ).click();
 
@@ -131,17 +163,20 @@ public class LabProcedureStepDefs extends CucumberTest {
         setTextField( By.name( "notes" ), "Billy has been experiencing symptoms of a cold or flu" );
         waitForAngular();
 
-        driver.findElement( By.id( "patient" ) ).click();
+        driver.findElement( By.id( "BillyBob" ) ).click();
         driver.findElement( By.name( "GENERAL_CHECKUP" ) ).click();
         driver.findElement( By.name( "hospital" ) ).click();
-        
-        fillInDateTime( "date", "10/17/2018", "time", "9:30 AM");
+
+        fillInDateTime( "date", "10/17/2018", "time", "9:30 AM" );
 
         waitForAngular();
         setTextField( By.name( "height" ), "62.3" );
 
         waitForAngular();
         setTextField( By.name( "weight" ), "125" );
+
+        waitForAngular();
+        setTextField( By.name( "head" ), "18" );
 
         waitForAngular();
         setTextField( By.name( "systolic" ), "110" );
@@ -240,6 +275,36 @@ public class LabProcedureStepDefs extends CucumberTest {
     }
 
     /**
+     * Submit an invalid quantitative result
+     *
+     * @param invalid
+     *            the invalid result
+     */
+    @When ( "I submit result \"([^\"]*)\"$" )
+    public void submitInvalidQuantitativeResult ( String invalid ) {
+        final WebElement update = driver.findElement( By.name( "update" ) );
+        update.click();
+
+        final WebElement comment = driver.findElement( By.name( "commentsInput" ) );
+        assert ( !comment.isEnabled() );
+        final WebElement results = driver.findElement( By.name( "quantitativeResultsInput" ) );
+        assert ( !results.isEnabled() );
+
+        final Select status = new Select( driver.findElement( By.id( "selectStatus" ) ) );
+        status.selectByVisibleText( "COMPLETED" );
+
+        assert ( comment.isEnabled() );
+        assert ( results.isEnabled() );
+        comment.clear();
+        comment.sendKeys( "Here is a comment" );
+        results.clear();
+        results.sendKeys( invalid );
+
+        final WebElement submit = driver.findElement( By.name( "submit" ) );
+        submit.click();
+    }
+
+    /**
      * Verify success message of "Office Visit created successfully".
      */
     @Then ( "I recieve a message that office visit details were changed successfully" )
@@ -290,5 +355,58 @@ public class LabProcedureStepDefs extends CucumberTest {
             fail( "Success message: " + driver.findElement( By.id( "succP" ) ).getText() + "; Failure message: "
                     + driver.findElement( By.id( "errP" ) ).getText() );
         }
+    }
+
+    /**
+     * Method is used for labtech to fill out a OGTT
+     *
+     * @param result
+     *            result to input
+     * @throws InterruptedException
+     *             thread sleep throws
+     */
+    @Then ( "^I can submit a \"([^\"]*)\"$" )
+    public void submitResult ( String result ) throws InterruptedException {
+        final WebElement update = driver.findElement( By.name( "update" ) );
+        update.click();
+
+        final WebElement comment = driver.findElement( By.name( "commentsInput" ) );
+        assert ( !comment.isEnabled() );
+        final WebElement results = driver.findElement( By.name( "quantitativeResultsInput" ) );
+        assert ( !results.isEnabled() );
+
+        final Select status = new Select( driver.findElement( By.id( "selectStatus" ) ) );
+        status.selectByVisibleText( "COMPLETED" );
+
+        assert ( comment.isEnabled() );
+        assert ( results.isEnabled() );
+        comment.clear();
+        comment.sendKeys( "Here is a comment" );
+        results.clear();
+        results.sendKeys( result );
+
+        final WebElement submit = driver.findElement( By.name( "submit" ) );
+        submit.click();
+
+        // Give enough time for text to load
+        waitForAngular();
+
+        // Check for success message
+        final String bodyText = driver.findElement( By.name( "body" ) ).getText();
+        assertTrue( bodyText.contains( "Successfully updated procedure" ) );
+    }
+
+    /**
+     * Verify success message of "Successfully added code".
+     */
+    @Then ( "I recieve an error message for the invalid result" )
+    public void invalidResult () throws InterruptedException {
+
+        // Give enough time for text to load
+        waitForAngular();
+
+        // Check for success message
+        final String bodyText = driver.findElement( By.name( "body" ) ).getText();
+        assertTrue( bodyText.contains( "Could not update procedure" ) );
     }
 }

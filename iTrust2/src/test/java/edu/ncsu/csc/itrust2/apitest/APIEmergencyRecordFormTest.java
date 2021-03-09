@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.text.ParseException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Before;
@@ -55,7 +57,6 @@ public class APIEmergencyRecordFormTest {
      */
     @Before
     public void setup () throws NumberFormatException, ParseException {
-        HibernateDataGenerator.refreshDB();
         HibernateDataGenerator.generateTestEHR();
         mvc = MockMvcBuilders.webAppContextSetup( context ).build();
     }
@@ -121,6 +122,16 @@ public class APIEmergencyRecordFormTest {
         // Assert that the getDiagnoses fetch the right Diagnoses
         final List<Diagnosis> recordDiagnoses = form.getDiagnoses();
         final List<Diagnosis> actualDiagnoses = Diagnosis.getForPatient( User.getByName( "onionman" ) );
+
+        /*
+         * If you don't pre-sort the list by id then the check that follows has
+         * a chance of checking in the wrong order, and failing.
+         */
+        final Comparator<Diagnosis> compareDiagById = ( Diagnosis d1, Diagnosis d2 ) -> d1.getId()
+                .compareTo( d2.getId() );
+        Collections.sort( recordDiagnoses, compareDiagById );
+        Collections.sort( actualDiagnoses, compareDiagById );
+
         for ( int i = 0; i < recordDiagnoses.size(); i++ ) {
             assertEquals( recordDiagnoses.get( i ).getId(), actualDiagnoses.get( i ).getId() );
         }
@@ -128,6 +139,16 @@ public class APIEmergencyRecordFormTest {
         // Assert that the getPrescriptions fetch the right Prescriptions
         final List<Prescription> recordPrescriptions = form.getPrescriptions();
         final List<Prescription> actualPrescriptions = Prescription.getForPatient( "onionman" );
+
+        /*
+         * If you don't pre-sort the list by id then the check that follows has
+         * a chance of checking in the wrong order, and failing.
+         */
+        final Comparator<Prescription> comparePrescriptionById = ( Prescription d1, Prescription d2 ) -> d1.getId()
+                .compareTo( d2.getId() );
+        Collections.sort( recordPrescriptions, comparePrescriptionById );
+        Collections.sort( actualPrescriptions, comparePrescriptionById );
+
         for ( int i = 0; i < recordPrescriptions.size(); i++ ) {
             assertEquals( recordPrescriptions.get( i ).getId(), actualPrescriptions.get( i ).getId() );
         }

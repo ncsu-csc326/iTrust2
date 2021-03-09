@@ -14,6 +14,7 @@ import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
 import edu.ncsu.csc.itrust2.models.enums.EyeSurgeryType;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.State;
@@ -130,6 +131,16 @@ public class APIEnumController extends APIController {
         final List<PatientSmokingStatus> ret = Arrays.asList( PatientSmokingStatus.values() ).subList( 1,
                 PatientSmokingStatus.values().length );
         return ret;
+    }
+
+    /**
+     * Gets lab result scales
+     *
+     * @return lab result scale
+     */
+    @GetMapping ( BASE_PATH + "/labresultscale" )
+    public List<LabResultScale> getLabResultScale () {
+        return Arrays.asList( LabResultScale.values() );
     }
 
 }

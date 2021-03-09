@@ -63,6 +63,7 @@ public class APILOINCTest {
         form.setCommonName( "Probe of Adamantium Skeleton" );
         form.setComponent( "Adamantium" );
         form.setProperty( "NCnc" );
+        form.setScale( "None" );
 
         String content = mvc.perform( post( "/api/v1/loinccodes" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andReturn().getResponse().getContentAsString();

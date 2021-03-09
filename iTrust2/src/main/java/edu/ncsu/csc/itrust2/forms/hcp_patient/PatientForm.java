@@ -3,6 +3,9 @@ package edu.ncsu.csc.itrust2.forms.hcp_patient;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
 import org.hibernate.validator.constraints.Length;
@@ -179,6 +182,83 @@ public class PatientForm {
     /** The id of the patient **/
     private Long        id;
 
+    /**
+     * Whether the patient is diabetic/pre-diabetic or not
+     */
+    @NotNull
+    private boolean     isDiabetic;
+
+    /**
+     * Blood sugar limit for fasting
+     */
+    @Min ( 80 )
+    @Max ( 130 )
+    private int         fastingLimit;
+
+    /**
+     * Blood sugar limit for meals
+     */
+    @Min ( 120 )
+    @Max ( 180 )
+    private int         mealLimit;
+
+    /**
+     * Returns whether the patient is diabetic/pre-diabetic or not
+     *
+     * @return true if the patient is diabetic/pre-diabetic
+     */
+    public boolean isDiabetic () {
+        return isDiabetic;
+    }
+
+    /**
+     * Sets the patients diabetic/pre-diabetic status
+     *
+     * @param isDiabetic
+     *            true if the patient is diabetic/pre-diabetic
+     */
+    public void setDiabetic ( final boolean isDiabetic ) {
+        this.isDiabetic = isDiabetic;
+    }
+
+    /**
+     * Returns the fasting blood sugar limit imposed by the HCP
+     *
+     * @return the fasting blood sugar limit
+     */
+    public int getFastingLimit () {
+        return fastingLimit;
+    }
+
+    /**
+     * Sets the fasting blood sugar limit
+     *
+     * @param fastingLimit
+     *            the fasting blood sugar limit
+     */
+    public void setFastingLimit ( final int fastingLimit ) {
+        this.fastingLimit = fastingLimit;
+    }
+
+    /**
+     * Returns the meal blood sugar limit imposed by the HCP
+     *
+     * @return the meal blood sugar limit
+     */
+    public int getMealLimit () {
+        return mealLimit;
+    }
+
+    /**
+     * Sets the meal blood sugar limit
+     *
+     * @param mealLimit
+     *            the meal blood sugar limit
+     */
+    public void setMealLimit ( final int mealLimit ) {
+        this.mealLimit = mealLimit;
+    }
+    
     /**
      * Constructor generates empty sets.
      */

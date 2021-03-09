@@ -145,7 +145,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Checks for text displayed for appointment requests
-     * 
+     *
      * @param text
      *            The text to verify as present
      */
@@ -157,7 +157,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Adds an appointment request.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param hcp
@@ -203,7 +203,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Checks to make sure the appointment request is submitted successfully.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param date
@@ -224,7 +224,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Deletes an appointment request with the specified date using the DOM.
-     * 
+     *
      * @param date
      *            The date of the appointment request to delete.
      */
@@ -248,7 +248,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Adds an appointment request for the patient.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param hcp
@@ -263,51 +263,51 @@ public class AppointmentRequestStepDefs extends CucumberTest {
     @Given ( "^The patient has requested a medical appointment with type (.+), HCP (.+), date (.+), time (.+), and comments (.+)$" )
     public void createAppointmentRequest ( final String type, final String hcp, final String date, String time,
             final String comments ) throws ParseException {
-        DomainObject.deleteAll(AppointmentRequest.class);
+        DomainObject.deleteAll( AppointmentRequest.class );
         loginPatient();
         patientNavigateToView();
-        
-        AppointmentRequestForm form = new AppointmentRequestForm();
-        form.setType(type.toUpperCase().replace(" ", "_"));
-        form.setHcp(hcp);
-        form.setDate(date);
 
-        String[] dateSplit = date.split("/");
-        String month = dateSplit[0].length() == 1 ? "0" + dateSplit[0]: dateSplit[0];
-        String day = dateSplit[1].length() == 1 ? "0" + dateSplit[1]: dateSplit[1];
-        String year = dateSplit[2];
+        final AppointmentRequestForm form = new AppointmentRequestForm();
+        form.setType( type.toUpperCase().replace( " ", "_" ) );
+        form.setHcp( hcp );
+        form.setDate( date );
 
-        time = time.replace(":", " ");
-        String[] timeSplit = time.split(" ");
+        final String[] dateSplit = date.split( "/" );
+        final String month = dateSplit[0].length() == 1 ? "0" + dateSplit[0] : dateSplit[0];
+        final String day = dateSplit[1].length() == 1 ? "0" + dateSplit[1] : dateSplit[1];
+        final String year = dateSplit[2];
+
+        time = time.replace( ":", " " );
+        final String[] timeSplit = time.split( " " );
         String hour = timeSplit[0].length() == 1 ? "0" + timeSplit[0] : timeSplit[0];
-        String minute = timeSplit[1].length() == 1 ? "0" + timeSplit[1] : timeSplit[1];
-        
-        if (timeSplit[2] == "PM") {
-            hour = (Integer.parseInt(hour) + 12) + "";
+        final String minute = timeSplit[1].length() == 1 ? "0" + timeSplit[1] : timeSplit[1];
+
+        if ( timeSplit[2] == "PM" ) {
+            hour = ( Integer.parseInt( hour ) + 12 ) + "";
         }
 
-        LocalDateTime dt = LocalDateTime.now();
-        TimeZone tz = TimeZone.getDefault();
-        ZoneId zone = ZoneId.of(tz.getID());
-        ZonedDateTime zdt = dt.atZone(zone);
-        ZoneOffset offset = zdt.getOffset();
-        String datetime = String.format("%s-%s-%sT%s:%s:00.000%s", year, month, day, hour, minute, offset);
+        final LocalDateTime dt = LocalDateTime.now();
+        final TimeZone tz = TimeZone.getDefault();
+        final ZoneId zone = ZoneId.of( tz.getID() );
+        final ZonedDateTime zdt = dt.atZone( zone );
+        final ZoneOffset offset = zdt.getOffset();
+        final String datetime = String.format( "%s-%s-%sT%s:%s:00.000%s", year, month, day, hour, minute, offset );
 
         form.setDate( datetime );
         form.setComments( comments );
-        form.setStatus("PENDING");
-        form.setPatient(patientString);
+        form.setStatus( "PENDING" );
+        form.setPatient( patientString );
 
-        AppointmentRequest request = new AppointmentRequest(form);
+        final AppointmentRequest request = new AppointmentRequest( form );
         request.save();
-       
-        //addAppointmentRequest( type, hcp, date, time, comments );
+
+        // addAppointmentRequest( type, hcp, date, time, comments );
     }
 
     /**
      * Checks to make sure the patient can view the appointment request
      * submitted.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param date
@@ -329,7 +329,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Logs in as the specified HCP.
-     * 
+     *
      * @param hcp
      *            The HCP username.
      */
@@ -363,7 +363,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Checks to make sure the HCP can view the appointment request submitted.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param date
@@ -383,7 +383,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * HCP selects an appointment request.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param hcp
@@ -398,6 +398,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
     @And ( "^The HCP selects the appointment request with type (.+), HCP (.+), date (.+), time (.+), and comments (.+)$" )
     public void hcpSelectApptRequest ( final String type, final String hcp, final String date, final String time,
             final String comments ) {
+        waitForAngular();
         driver.findElement( By.xpath( "//label[text()[contains(.,'Date: " + date + "')]]" ) ).click();
     }
 
@@ -414,7 +415,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
 
     /**
      * Checks to make sure the appointment request was approved correctly.
-     * 
+     *
      * @param type
      *            The appointment type
      * @param date

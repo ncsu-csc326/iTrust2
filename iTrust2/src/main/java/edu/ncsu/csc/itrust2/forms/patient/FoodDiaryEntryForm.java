@@ -4,6 +4,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 import edu.ncsu.csc.itrust2.models.enums.MealType;
 
+/**
+ * Form for the front end to use to make readable JSON objects
+ * @author Teaching Staff
+ *
+ */
 public class FoodDiaryEntryForm {
 
     /**

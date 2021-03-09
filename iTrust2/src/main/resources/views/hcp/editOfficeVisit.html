@@ -221,14 +221,16 @@
                                                         $scope.showLabProcedures = true;
                                                     }
                                                     for (var i = 0; i < pLength; i++) {
-                                                        $scope.procedures.push({
-                                                            code: $scope.proceduresResponse[i].loinc.code,
-                                                            commonName: $scope.proceduresResponse[i].loinc.commonName,
-                                                            priority: $scope.proceduresResponse[i].priority,
-                                                            comments: $scope.proceduresResponse[i].comments,
-                                                            status: $scope.proceduresResponse[i].status,
-                                                            id: $scope.proceduresResponse[i].id
-                                                        });
+	                                                     $scope.procedures.push({
+	                                                         code: $scope.proceduresResponse[i].loinc.code,
+	                                                         commonName: $scope.proceduresResponse[i].loinc.commonName,
+	                                                         priority: $scope.proceduresResponse[i].priority,
+	                                                         comments: $scope.proceduresResponse[i].comments,
+	                                                         status: $scope.proceduresResponse[i].status,
+	                                                         results: $scope.proceduresResponse[i].result,
+	                                                         id: $scope.proceduresResponse[i].id,
+	                                                         suggestedDiagnosis: $scope.proceduresResponse[i].suggestedDiagnosis
+	                                                     });
                                                     }
                                                 });
 
@@ -565,6 +567,28 @@
                                 })
                                 $scope.procedures.splice($index, 1);
                             }
+							
+							$scope.addDiagnosis = function ($index) {
+                                $scope.codeEntry = $scope.procedures[$index].suggestedDiagnosis;
+								$scope.diagnoses.push({
+                                    note: "",
+                                    code: $scope.codeEntry
+                                });
+                            }
+							
+							//disable event found at https://stackoverflow.com/questions/29984581/how-do-you-disable-the-submit-button-after-a-single-click-to-prevent-multiple-su
+							$scope.disableButton = function($event) {
+								$event.currentTarget.disabled = true;
+							};
+							
+							$scope.checkConfirmActive = function($index) {
+								for (var i = 0; i < $scope.diagnoses.length; i++) {
+									if ($scope.diagnoses[i].code.code == $scope.procedures[$index].suggestedDiagnosis.code) {
+										return false;
+									}
+								}
+								return true;
+							};
 
                             //call initally 
                             resetPrescriptionForm();
@@ -812,7 +836,7 @@
 																		<li ng-repeat="i in icdcodes"><label> <input
 																				type="radio" ng-model="$parent.codeEntry"
 																				name="{{i.code}}" ng-value="i" required="true" />
-																				{{i.code}}
+																				{{i.code}} - {{i.description}}
 																		</label></li>
 																	</ul>
 																</div>
@@ -1171,16 +1195,23 @@
 																		<th>Priority</th>
 																		<th>Comments</th>
 																		<th>Status</th>
-																		<th>Delete</th>
+																		<th>Results</th>
+																		<th>Recommended Diagnosis</th>
+																		<th>Actions</th>
 																	</tr>
 																	<tr ng-repeat="procedure in procedures">
 																		<td>{{procedure.code}}</td>
 																		<td>{{procedure.priority}}</td>
 																		<td>{{procedure.comments}}</td>
 																		<td>{{procedure.status}}</td>
+																		<td>{{procedure.results}}</td>
+																		<td>{{procedure.suggestedDiagnosis.code}} - {{procedure.suggestedDiagnosis.description}}</td>
 																		<td><button class="btn btn-danger btn-xs"
 																				ng-click="removeProcedure($index)"
-																				ng-show="procedure.status == 'ASSIGNED'">Delete</button></td>
+																				ng-show="procedure.status == 'ASSIGNED'">Delete</button>
+																			<button class="btn btn-success btn-xs"
+																				ng-click="addDiagnosis($index); disableButton($event)"
+																				ng-show="procedure.status == 'COMPLETED' && procedure.suggestedDiagnosis && checkConfirmActive($index)" name="confirmButton">Confirm</button></td>
 																	</tr>
 																</table>
 															</div>

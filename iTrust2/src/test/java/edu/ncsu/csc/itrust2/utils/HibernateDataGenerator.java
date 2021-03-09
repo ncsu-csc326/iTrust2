@@ -11,11 +11,14 @@ import org.hibernate.boot.spi.MetadataImplementor;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 import edu.ncsu.csc.itrust2.forms.admin.ICDCodeForm;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm.ResultEntry;
 import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.BloodType;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.State;
@@ -52,7 +55,6 @@ public class HibernateDataGenerator {
      */
     public static void main ( final String args[] ) throws NumberFormatException, ParseException {
         refreshDB();
-        generateUsers();
 
         System.exit( 0 );
         return;
@@ -181,7 +183,8 @@ public class HibernateDataGenerator {
         billyUser.save();
         billy.setSelf( billyUser );
         billy.setLastName( "Bob" );
-        billy.setDateOfBirth( LocalDate.now().minusYears( 40 ) ); // 40 years old
+        billy.setDateOfBirth( LocalDate.now().minusYears( 40 ) ); // 40 years
+                                                                  // old
         billy.save();
 
         final Patient jill = new Patient();
@@ -239,7 +242,8 @@ public class HibernateDataGenerator {
         aliceUser.save();
         alice.setSelf( aliceUser );
         alice.setLastName( "Smith" );
-        alice.setDateOfBirth( LocalDate.now().minusYears( 13 ) ); // 13 years old
+        alice.setDateOfBirth( LocalDate.now().minusYears( 13 ) ); // 13 years
+                                                                  // old
         alice.save();
 
         final Hospital hosp = new Hospital( "General Hospital", "123 Main St", "12345", "NC" );
@@ -250,6 +254,117 @@ public class HibernateDataGenerator {
         d.setName( "Quetiane Fumarate" );
         d.setDescription( "atypical antipsychotic and antidepressant" );
         d.save();
+
+        generateDiabetesTestData();
+    }
+
+    private static void generateDiabetesTestData () {
+        final ICDCode diabetes = new ICDCode();
+        diabetes.setCode( "E11.9" );
+        diabetes.setDescription( "Type 2 Diabetes" );
+        diabetes.save();
+
+        final ICDCode preDiabetes = new ICDCode();
+        preDiabetes.setCode( "R73.03" );
+        preDiabetes.setDescription( "Prediabetes" );
+        preDiabetes.save();
+
+        addOGTT();
+        addA1CTest();
+        fastingBloodSugarTest();
+    }
+
+    private static void addOGTT () {
+        final LOINCForm ogttForm = new LOINCForm();
+        ogttForm.setCode( "20436-2" );
+        ogttForm.setCommonName( "Glucose 2 Hr After Glucose, Blood" );
+        ogttForm.setComponent( "Glucose^2H post dose glucose" );
+        ogttForm.setProperty( "MCnc" );
+        ogttForm.setScale( LabResultScale.QUANTITATIVE.getName() );
+        final List<ResultEntry> resultFormatEntries = new ArrayList<ResultEntry>();
+
+        final ResultEntry entry1 = ogttForm.new ResultEntry();
+        entry1.setMin( "0" );
+        entry1.setMax( "139" );
+        resultFormatEntries.add( entry1 );
+
+        final ResultEntry entry2 = ogttForm.new ResultEntry();
+        entry2.setMin( "140" );
+        entry2.setMax( "199" );
+        entry2.setIcd( "R73.03" );
+        resultFormatEntries.add( entry2 );
+
+        final ResultEntry entry3 = ogttForm.new ResultEntry();
+        entry3.setMin( "200" );
+        entry3.setMax( "5000" );
+        entry3.setIcd( "E11.9" );
+        resultFormatEntries.add( entry3 );
+
+        ogttForm.setResultEntries( resultFormatEntries );
+        final LOINC ogtt = new LOINC( ogttForm );
+        ogtt.save();
+    }
+
+    private static void addA1CTest () {
+        final LOINCForm a1cForm = new LOINCForm();
+        a1cForm.setCode( "4548-4" );
+        a1cForm.setCommonName( "HbA1c, Blood" );
+        a1cForm.setComponent( "Hemoglobin A1c/Hemoglobin.total" );
+        a1cForm.setProperty( "MFr" );
+        a1cForm.setScale( LabResultScale.QUANTITATIVE.getName() );
+        final List<ResultEntry> resultFormatEntries = new ArrayList<ResultEntry>();
+
+        final ResultEntry entry1 = a1cForm.new ResultEntry();
+        entry1.setMin( "0" );
+        entry1.setMax( "5.6" );
+        resultFormatEntries.add( entry1 );
+
+        final ResultEntry entry2 = a1cForm.new ResultEntry();
+        entry2.setMin( "5.7" );
+        entry2.setMax( "6.4" );
+        entry2.setIcd( "R73.03" );
+        resultFormatEntries.add( entry2 );
+
+        final ResultEntry entry3 = a1cForm.new ResultEntry();
+        entry3.setMin( "6.5" );
+        entry3.setMax( "100" );
+        entry3.setIcd( "E11.9" );
+        resultFormatEntries.add( entry3 );
+
+        a1cForm.setResultEntries( resultFormatEntries );
+        final LOINC a1c = new LOINC( a1cForm );
+        a1c.save();
+    }
+
+    private static void fastingBloodSugarTest () {
+        final LOINCForm fastingTestForm = new LOINCForm();
+        fastingTestForm.setCode( "1558-6" );
+        fastingTestForm.setCommonName( "Glucose After Fast, Blood" );
+        fastingTestForm.setComponent( "Glucose^post CFst" );
+        fastingTestForm.setProperty( "MCnc" );
+        fastingTestForm.setScale( LabResultScale.QUANTITATIVE.getName() );
+        final List<ResultEntry> resultFormatEntries = new ArrayList<ResultEntry>();
+
+        final ResultEntry entry1 = fastingTestForm.new ResultEntry();
+        entry1.setMin( "0" );
+        entry1.setMax( "99" );
+        resultFormatEntries.add( entry1 );
+
+        final ResultEntry entry2 = fastingTestForm.new ResultEntry();
+        entry2.setMin( "100" );
+        entry2.setMax( "125" );
+        entry2.setIcd( "R73.03" );
+        resultFormatEntries.add( entry2 );
+
+        final ResultEntry entry3 = fastingTestForm.new ResultEntry();
+        entry3.setMin( "126" );
+        entry3.setMax( "5000" );
+        entry3.setIcd( "E11.9" );
+        resultFormatEntries.add( entry3 );
+
+        fastingTestForm.setResultEntries( resultFormatEntries );
+        final LOINC fastingTest = new LOINC( fastingTestForm );
+        fastingTest.save();
     }
 
     /**
@@ -261,6 +376,7 @@ public class HibernateDataGenerator {
         l.setCommonName( "manual count of white blood cells in cerebral spinal fluid specimen" );
         l.setComponent( "white blood cells" );
         l.setProperty( "manual count" );
+        l.setScale( LabResultScale.NONE );
         l.save();
     }
 
@@ -272,6 +388,9 @@ public class HibernateDataGenerator {
      */
     public static void generateTestEHR () throws NumberFormatException, ParseException {
 
+        Patient.deleteAll();
+        GeneralCheckup.deleteAll();
+
         // Used for APIEmergencyRecordFormTest
         final Patient siegward = new Patient();
         siegward.setFirstName( "SiegwardOf" );
@@ -282,7 +401,8 @@ public class HibernateDataGenerator {
         siegward.setLastName( "Catarina" );
         siegward.setGender( Gender.Male );
         siegward.setBloodType( BloodType.OPos );
-        siegward.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years old
+        siegward.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years
+                                                                     // old
         siegward.save();
 
         final Patient king1 = new Patient();
@@ -294,7 +414,8 @@ public class HibernateDataGenerator {
         king1.setLastName( "One" );
         king1.setGender( Gender.Male );
         king1.setBloodType( BloodType.OPos );
-        king1.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years old
+        king1.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years
+                                                                  // old
         king1.save();
 
         final Patient king2 = new Patient();
@@ -306,7 +427,8 @@ public class HibernateDataGenerator {
         king2.setLastName( "Two" );
         king2.setGender( Gender.Male );
         king2.setBloodType( BloodType.OPos );
-        king2.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years old
+        king2.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years
+                                                                  // old
         king2.save();
 
         final Patient king3 = new Patient();
@@ -318,7 +440,8 @@ public class HibernateDataGenerator {
         king3.setLastName( "Three" );
         king3.setGender( Gender.Male );
         king3.setBloodType( BloodType.OPos );
-        king3.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years old
+        king3.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years
+                                                                  // old
         king3.save();
 
         final Patient king4 = new Patient();
@@ -330,7 +453,8 @@ public class HibernateDataGenerator {
         king4.setLastName( "Four" );
         king4.setGender( Gender.Male );
         king4.setBloodType( BloodType.OPos );
-        king4.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years old
+        king4.setDateOfBirth( LocalDate.now().minusYears( 30 ) ); // 30 years
+                                                                  // old
         king4.save();
 
         // First Prescription for APIEmergencyRecordFormTest
@@ -344,8 +468,11 @@ public class HibernateDataGenerator {
         estusPresc.setDosage( 1 );
         estusPresc.setDrug( estus );
         estusPresc.setRenewals( 20 );
-        estusPresc.setStartDate( LocalDate.now().minusDays( 30 ) ); // Prescribed 30 days ago
-        estusPresc.setEndDate( LocalDate.now().plusDays( 60 ) ); // Ends in 60 days
+        estusPresc.setStartDate( LocalDate.now().minusDays( 30 ) ); // Prescribed
+                                                                    // 30 days
+                                                                    // ago
+        estusPresc.setEndDate( LocalDate.now().plusDays( 60 ) ); // Ends in 60
+                                                                 // days
         estusPresc.setPatient( siegwardUser );
         estusPresc.save();
 
@@ -361,8 +488,12 @@ public class HibernateDataGenerator {
         purpMossPresc.setDrug( purpMoss );
         purpMossPresc.setRenewals( 99 );
 
-        purpMossPresc.setStartDate( LocalDate.now().minusDays( 60 ) ); // Prescribed 60 days ago
-        purpMossPresc.setEndDate( LocalDate.now().plusDays( 30 ) ); // Ends in 30 days
+        purpMossPresc.setStartDate( LocalDate.now().minusDays( 60 ) ); // Prescribed
+                                                                       // 60
+                                                                       // days
+                                                                       // ago
+        purpMossPresc.setEndDate( LocalDate.now().plusDays( 30 ) ); // Ends in
+                                                                    // 30 days
         purpMossPresc.setPatient( siegwardUser );
         purpMossPresc.save();
 

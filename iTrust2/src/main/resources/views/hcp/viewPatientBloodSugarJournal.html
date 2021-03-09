@@ -1,0 +1,683 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{::links})">
+<title>Patient's Blood Sugar Table</title>
+<th:block th:fragment="links">
+	<!-- Minified Moment Javascript -->
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+
+	<!-- Minified Bootstrap-datepicker JavaScript -->
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+		
+	<!-- CanvasJS -->
+	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+	<!-- Minified Bootstrap-datepicker CSS -->
+	<link rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+	<style type="text/css">
+/* Fixes button alignment on Firefox*/
+.btn {
+	line-height: 1.46;
+}
+
+/* Formats the selected week for the datepicker on "Week" view*/
+.week-wrapper .datepicker .datepicker-days tr td.active ~ td,
+	.week-wrapper .datepicker .datepicker-days tr td.active {
+	color: #fff !important;
+	background: #04c linear-gradient(to bottom, #08c, #04c) !important;
+	border-radius: 0 !important;
+}
+
+/* Formats the hovered week for the datepicker on "Week" view*/
+.week-wrapper .datepicker .datepicker-days tr:hover td, .week-wrapper .datepicker table tr td.day:hover,
+	.week-wrapper .datepicker table tr td.focused {
+	color: #000;
+	background: #e5e2e3;
+	border-radius: 0 !important;
+}
+
+/* Formats disabled weeks for the datepicker on "Week" view*/
+.week-wrapper .datepicker .datepicker-days tr:hover td.disabled,
+	.week-wrapper .datepicker table tr td.disabled:hover, .week-wrapper .datepicker table tr td.disabled.focused
+	{
+	color: #999 !important;
+	background: 0 0 !important;
+}
+
+.small-addon {
+	padding: 6px 4px;
+	font-size: 10px
+}
+</style>
+</th:block>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/*<![CDATA[*/
+			var app = angular.module('patientBloodSugarApp', []);
+
+			app.controller('patientBloodSugarCtrl', function($scope, $http, $timeout) {
+				var datepicker = $('.date-picker');
+				var selected = moment().startOf('day');
+				var start_date = selected.clone();
+				var end_date = selected.clone();
+				$scope.active_tab = 2;
+				var entries = [];
+				$scope.entryList = [];
+				$scope.patients = [];
+				$scope.selectedPatient = null;
+				
+				// Graph
+				function loadGraph () {
+						
+						
+					// Making variable to be used with the plotting	
+					dpsFasting = [];
+					dpsFirst = [];
+					dpsSecond = [];
+					dpsThird = [];
+					max = 0;
+					min = 400;
+					$scope.fastingLimit = parseInt($scope.fastingField, 10);
+					$scope.regularLimit = parseInt($scope.afterMealField, 10);
+					
+					// Creating the plotting lists
+					for (var i = 0; i < $scope.entryList.length; i++ ) {
+						
+						// Update the max value that is being plotted
+						updateMax(i);
+						updateMin(i);
+						
+						// Logic to add points the lists
+						
+						// Add to dpsFasting
+						if ( $scope.entryList[i].fastingLevel == undefined ) {
+							point = {x: toDate($scope.entryList[i].date), y: null}
+						} else {
+							point = {x: toDate($scope.entryList[i].date), y: $scope.entryList[i].fastingLevel}
+						}
+						dpsFasting.push(point)
+						
+						// Add to dpsFirst
+						if ( $scope.entryList[i].firstLevel == undefined ) {
+							point = {x: toDate($scope.entryList[i].date), y: null}
+						} else {
+							point = {x: toDate($scope.entryList[i].date), y: $scope.entryList[i].firstLevel}
+						}
+						dpsFirst.push(point)
+						
+						// Add to dpsSecond
+						if ( $scope.entryList[i].secondLevel == undefined ) {
+							point = {x: toDate($scope.entryList[i].date), y: null}
+						} else {
+							point = {x: toDate($scope.entryList[i].date), y: $scope.entryList[i].secondLevel}
+						}
+						dpsSecond.push(point)
+						
+						// Add to dpsThird
+						if ( $scope.entryList[i].thirdLevel == undefined ) {
+							point = {x: toDate($scope.entryList[i].date), y: null}
+						} else {
+							point = {x: toDate($scope.entryList[i].date), y: $scope.entryList[i].thirdLevel}
+						}
+						dpsThird.push(point)
+					} 
+					
+					// Quick fix to make sure limits are always shown even if they are never surpassed
+					if ( max < $scope.fastingLimit ) {
+						max = $scope.fastingLimit + 20;
+					}
+					if ( max < $scope.regularLimit ) {
+						max = $scope.regularLimit;
+					}
+
+					// Create the chart where lines will be plotted
+					// Plotting materials and samples of code were taken from canvasJS website and API
+					var chart = new CanvasJS.Chart("chartContainer", {
+						animationEnabled: true,
+						theme: "light2",
+						title:{
+							text: "Blood Sugar Graphical Display"
+						},axisX: {
+							title: "Date",
+							valueFormatString: "MMM DD YYYY"
+						},
+						axisY2:{
+							title: "Blood Sugar Level",
+							interval: 20,
+							gridThickness: 1,
+							maximum: max + 40,
+							minimum: min - 40,
+							stripLines: [{
+						        label:($scope.fastingLimit != $scope.regularLimit ) ? "Fasting Limit: " + $scope.fastingLimit : "Fasting/Regular Limits: " + $scope.fastingLimit,
+						        thickness: 5,
+						        labelPlacement:"outside",
+								color: "red",
+						        value:$scope.fastingLimit 
+						    },
+						    {
+						    	label:($scope.regularLimit != $scope.fastingLimit ) ? "Regular Limit: " + $scope.regularLimit : "Fasting/Regular Limits: " + $scope.regularLimit,
+						        thickness: 5,
+						        labelPlacement:"outside",
+						    	color: "red",
+						        value:$scope.regularLimit,
+						        
+						    }]
+						},
+						toolTip: {
+							shared: true
+						},
+						legend: {
+							cursor: "pointer",
+							verticalAlign: "top",
+							horizontalAlign: "center",
+							dockInsidePlotArea: true,
+							itemclick: toogleDataSeries
+						},
+						data: [{        
+							type:"line",
+							axisYType: "secondary",
+							name: "Fasting Level",
+							showInLegend: true, 
+							dataPoints: dpsFasting
+						},
+						{
+							type:"line",
+							markerType: "square",
+							axisYType: "secondary",
+							name: "First Meal Level",
+							showInLegend: true, 
+							dataPoints: dpsFirst
+						},
+						{
+							type:"line",
+							markerType: "triangle",
+							axisYType: "secondary",
+							name: "Second Meal Level",
+							showInLegend: true, 
+							dataPoints: dpsSecond
+						},
+						{
+							type:"line",
+							markerType: "cross",
+							axisYType: "secondary",
+							name: "Third Meal Level",
+							showInLegend: true, 
+							dataPoints: dpsThird
+						},
+						]
+					});
+					
+					chart.render();
+					
+					// Functiona taken from canvasJS API
+					function toogleDataSeries(e){
+						if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+							e.dataSeries.visible = false;
+						} else{
+							e.dataSeries.visible = true;
+						}
+						chart.render();
+					}
+					
+					// Code snippet from: https://stackoverflow.com/questions/5619202/converting-a-string-to-a-date-in-javascript
+					function toDate( date ) {
+						var parts = date.split('-');
+
+						return new Date(parts[0], parts[1] - 1, parts[2]); 
+					}
+					
+					// Used to update the max value (this is used to set ylimits)
+					function updateMax( i ) {
+						if ( $scope.entryList[i].fastingLevel > max ) {
+							max = $scope.entryList[i].fastingLevel;
+						}
+						if ( $scope.entryList[i].firstLevel > max ) {
+							max = $scope.entryList[i].firstLevel;
+						}
+						if ( $scope.entryList[i].secondLevel > max ) {
+							max = $scope.entryList[i].secondLevel;
+						}
+						if ( $scope.entryList[i].thirdLevel > max ) {
+							max = $scope.entryList[i].thirdLevel;
+						}
+					}
+					
+					function updateMin( i ) {
+						if ( $scope.entryList[i].fastingLevel < min ) {
+							min = $scope.entryList[i].fastingLevel;
+						}
+						if ( $scope.entryList[i].firstLevel < min ) {
+							min = $scope.entryList[i].firstLevel;
+						}
+						if ( $scope.entryList[i].secondLevel < min ) {
+							min = $scope.entryList[i].secondLevel;
+						}
+						if ( $scope.entryList[i].thirdLevel < min ) {
+							min = $scope.entryList[i].thirdLevel;
+						}
+					}
+
+					}
+
+				// Updates the active_tab and creates a corresponding date_picker
+				$scope.setActiveTab = function(tabToSet) {
+					$scope.active_tab = tabToSet;
+					update_date_picker();
+				}
+
+				// Destroys the current datepicker and creates a new one corresponding to the active_tab
+				function update_date_picker() {
+					datepicker.datepicker('destroy')
+
+					switch ($scope.active_tab) {
+						case 1:
+							datepicker.datepicker({
+								autoclose: true,
+								endDate: '0d',
+								maxViewMode: 2,
+							});
+							break;
+						case 2:
+							datepicker.datepicker({
+								autoclose: true,
+								format: {
+									toDisplay: function(date, format, language) {
+										return start_date.format('MM/DD/YYYY') +
+											' - ' +
+											end_date.format('MM/DD/YYYY');
+									},
+									toValue: function(date, format, language) {
+										var split = date.split(' - ');
+										selected = moment(split[0], ['MM/DD/YYYY', 'MMMM YYYY'], true);
+										start_date = moment(split[0], ['MM/DD/YYYY', 'MMMM YYYY'], true);
+										end_date = moment(split[1], ['MM/DD/YYYY', 'MMMM YYYY'], true);
+										return selected.toDate();
+									}
+								},
+								endDate: moment().endOf('week').toDate(),
+								maxViewMode: 2,
+								container: '.week-wrapper',
+							});
+							break;
+						case 3:
+							datepicker.datepicker({
+								autoclose: true,
+								format: 'MM yyyy',
+								endDate: '0d',
+								minViewMode: 1,
+								maxViewMode: 2,
+							});
+							break;
+						default:
+					}
+					update_range();
+				}
+
+				// Fires when a date change is detected
+				datepicker.on('changeDate', function(e) {
+					selected = moment(e.date);
+					update_range();
+				});
+
+				// Updates the start_date and end_date as well as setting the value seen in the input field
+				function update_range() {
+					switch ($scope.active_tab) {
+						case 1:
+							start_date = selected.clone().startOf('day');
+							end_date = selected.clone().endOf('day');
+							datepicker.datepicker('update', start_date.toDate());
+							break;
+						case 2:
+							selected = moment.min(selected, moment());
+							start_date = selected.clone().startOf('week');
+							end_date = selected.clone().endOf('week');
+							datepicker.datepicker('update', start_date.toDate());
+							break;
+						case 3:
+							start_date = selected.clone().startOf('month');
+							end_date = selected.clone().endOf('month');
+							datepicker.datepicker('update', start_date.toDate());
+							break;
+						default:
+					}
+					updateEntryList();
+				}
+
+				// Repopulates the list used to store entries that the table displays
+				function updateEntryList() {
+					$timeout(function(){
+						var current = start_date.clone();
+						$scope.entryList.length = 0;
+
+						var index = 0;
+						for (; index < entries.length; index++) {
+							if (current.format('YYYY-MM-DD') <= entries[index].date) {
+								break;
+							}
+						}
+
+						for (; end_date.diff(current) >= 0; current.add(1, 'd')) {
+							if (index < entries.length && current.format('YYYY-MM-DD') == entries[index].date) {
+								$scope.entryList.push(entries[index]);
+								index++;
+							} else {
+								var entry = {
+									date: current.format('YYYY-MM-DD')
+								};
+								$scope.entryList.push(entry);
+							}
+						}
+						loadGraph();
+					});
+					
+				}
+
+				// Selects the previous time step corresponding to the active_tab
+				$scope.prev = function() {
+					switch ($scope.active_tab) {
+						case 1:
+							selected.subtract(1, 'd');
+							break;
+						case 2:
+							selected.subtract(1, 'w');
+							break;
+						case 3:
+							selected.subtract(1, 'M');
+							break;
+						default:
+					}
+					update_range();
+				}
+
+				// Selects the next time step corresponding to the active_tab
+				$scope.next = function() {
+					switch ($scope.active_tab) {
+						case 1:
+							selected.add(1, 'd');
+							break;
+						case 2:
+							selected.add(1, 'w');
+							break;
+						case 3:
+							selected.add(1, 'M');
+							break;
+						default:
+					}
+					selected = moment.min(selected, moment());
+					update_range();
+				}
+
+				// Initializes the bootstrap tooltip
+				$('[data-toggle="tooltip"]').tooltip();
+
+				// Gets patient specific data
+				$scope.selectPatient = function(username) {
+					$scope.selectedPatient = username;
+					
+					// Gets the selected patients blood sugar entries
+					$http.get("/iTrust2/api/v1/bloodSugarDiaries/hcp/" + username).then(
+						function(response) {
+							entries = response.data;
+							entries.sort((a, b) => (a.date > b.date) ? 1 : -1);
+							update_date_picker();
+					});
+					
+					// Gets the patient's limits
+					$http.get("/iTrust2/api/v1/bloodSugarDiaries/hcp/limits/" + username)
+						.then(function(response) {
+							$scope.fastingLimit = response.data[0];
+							$scope.afterMealLimit = response.data[1];
+							
+							//These are for the fields
+							$scope.fastingField = response.data[0];
+							$scope.afterMealField = response.data[1];
+					});
+				}
+
+				// Gets a list of all patients
+				$http.get("/iTrust2/api/v1/patients").then(
+					function(response) {
+						$scope.patients = response.data;
+				});
+				
+				// Sets a patient's blood sugar limits
+				$scope.submit = function(){
+					$scope.success = false;
+					$scope.failure = false;
+					
+					var limits = [$scope.fastingField, $scope.afterMealField];
+					$http.post("/iTrust2/api/v1//bloodSugarDiaries/hcp/limits/" + $scope.selectedPatient, limits).then(
+						function success(response) {
+							$scope.success = true;
+							$scope.fastingLimit = $scope.fastingField;
+							$scope.afterMealLimit = $scope.afterMealField;
+							
+							loadGraph();
+// 							$timeout(function() {
+// 								$scope.success = false;
+// 							}, 4000);
+						}, function failure(response) {
+							$scope.success = false;
+							$scope.failure = true;
+						}
+					);
+				}
+				
+			});
+			
+			// Creates a new directive to allow Bootstrap's tooltips to work with Angular
+			// https://stackoverflow.com/questions/20666900/using-bootstrap-tooltip-with-angularjs
+			app.directive('tooltip', function(){
+			    return {
+			        restrict: 'A',
+			        link: function(scope, element, attrs){
+			            $(element).hover(function(){
+			                $(element).tooltip('show');
+			            }, function(){
+			                $(element).tooltip('hide');
+			            });
+			        }
+			    };
+			});
+			/*]]>*/
+		</script>
+
+		<div ng-app="patientBloodSugarApp"
+			ng-controller="patientBloodSugarCtrl">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-3">
+						<div class="panel panel-primary" style="margin-top: 1em;">
+							<div class="panel-heading">
+								<h4>Patients</h4>
+							</div>
+							<div class="panel-body">
+								<div class="form-inline">
+									<div class="form-group"
+										ng-class="{'has-error': !filteredPatients.length}">
+										<label for="searchBar"> Search </label> <input type="search"
+											class="form-control" id="searchBar" ng-model="searchText">
+									</div>
+								</div>
+								<hr />
+								<div class="text-danger" id="searchError"
+									ng-hide="filteredPatients.length">No patient by this name
+									exists in the system</div>
+								<div style="overflow-y: auto; max-height: 260px;">
+									<!-- https://gist.github.com/nadouani/7383600 -->
+									<div class="radio"
+										ng-repeat="patient in filteredPatients = (patients | filter:{self: {username:searchText}})">
+										<label> <input type="radio" name="patientRadios"
+											value="{{patient.self.username}}"
+											id="{{patient.self.username}}"
+											ng-click="selectPatient(patient.self.username)">
+											{{patient.self.username}}
+										</label>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6">
+						<div class="panel panel-primary" style="margin-top: 1em">
+							<div class="panel-heading">
+								<h4 ng-show="selectedPatient">{{selectedPatient}}'s Blood
+									Sugar Journal</h4>
+								<h4 ng-hide="selectedPatient">Blood Sugar Journal</h4>
+							</div>
+							<div class="panel-body">
+								<div class="text-info" id="noPatientSelected"
+									ng-hide="selectedPatient">Please select a patient from
+									the list</div>
+								<div ng-show="selectedPatient">
+									<div class="row">
+										<div class="col-lg-6 col-xs-12 week-wrapper">
+											<div class="input-group">
+												<div class="input-group-btn">
+													<button type="button" class="btn btn-default"
+														ng-click=prev()>&laquo;</button>
+												</div>
+												<input type="text"
+													class="form-control text-center date-picker"
+													id="datePicker" placeholder="Input a Date">
+												<div class="input-group-btn">
+													<button type="button" class="btn btn-default"
+														ng-click=next()>&raquo;</button>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div ng-if="selectedPatient">
+									<ul class="nav nav-tabs">
+										<li class="pull-right"><a data-toggle="tab"
+											ng-click="setActiveTab(3)" id="month" href="">Month</a></li>
+										<li class="active pull-right"><a data-toggle="tab"
+											ng-click="setActiveTab(2)" id="week" href="">Week</a></li>
+										<li class="pull-right"><a data-toggle="tab"
+											ng-click="setActiveTab(1)" id="day" href="">Day</a></li>
+									</ul>
+
+									<div class="tab-content">
+										<div class="tab-pane active">
+											<div class="table-responsive">
+												<table class="table table-bordered">
+													<tr>
+														<th class="col-xs-4">Date</th>
+														<th class="col-xs-2">Fasting</th>
+														<th class="col-xs-2">Meal 1</th>
+														<th class="col-xs-2">Meal 2</th>
+														<th class="col-xs-2">Meal 3</th>
+													</tr>
+													<tr ng-repeat="entry in entryList">
+														<td>{{entry.date}}</td>
+														<td>{{entry.fastingLevel}}<span
+															class="glyphicon glyphicon-warning-sign pull-right"
+															ng-if="entry.fastingLevel > fastingLimit"
+															data-toggle="tooltip" data-placement="auto bottom"
+															title="This value exceeds the upper limit set by your health care provider"
+															style="color: red" tooltip></span></td>
+														<td>{{entry.firstLevel}}<span
+															class="glyphicon glyphicon-warning-sign pull-right"
+															ng-if="entry.firstLevel > afterMealLimit"
+															data-toggle="tooltip" data-placement="auto bottom"
+															title="This value exceeds the upper limit set by your health care provider"
+															style="color: red" tooltip></span></td>
+														<td>{{entry.secondLevel}}<span
+															class="glyphicon glyphicon-warning-sign pull-right"
+															ng-if="entry.secondLevel > afterMealLimit"
+															data-toggle="tooltip" data-placement="auto bottom"
+															title="This value exceeds the upper limit set by your health care provider"
+															style="color: red" tooltip></span></td>
+														<td>{{entry.thirdLevel}}<span
+															class="glyphicon glyphicon-warning-sign pull-right"
+															ng-if="entry.thirdLevel > afterMealLimit"
+															data-toggle="tooltip" data-placement="auto bottom"
+															title="This value exceeds the upper limit set by your health care provider"
+															style="color: red" tooltip></span></td>
+													</tr>
+												</table>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="panel panel-primary" style="margin-top: 1em;">
+							<div class="panel-heading">
+								<h4>Blood Sugar Upper Limits</h4>
+							</div>
+							<div class="panel-body">
+								<form class="form-horizontal" name="limitForm"
+									ng-show="selectedPatient">
+									<div class="form-group">
+										<label class="col-sm-6 control-label" for="fasting">Fasting
+											Limit</label>
+										<div class="col-sm-6">
+											<div class="input-group">
+												<input type="text" class="form-control" name="fasting"
+													id="fasting" ng-model="fastingField" required="0"
+													pattern="(8[0-9]|9[0-9]|1[0-2][0-9]|130)"> <span
+													class="input-group-addon small-addon">mg/dL</span>
+											</div>
+										</div>
+										<div class="col-sm-12 text-danger text-right"
+											ng-show="limitForm.$dirty">
+											<span ng-show="limitForm.fasting.$error.required">This
+												is a required field</span> <span
+												ng-show="limitForm.fasting.$error.pattern">Integer
+												between 80 and 130 mg/dL</span>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-6 control-label" for="afterMeal">After
+											Meal limit</label>
+										<div class="col-sm-6">
+											<div class="input-group">
+												<input type="text" class="form-control" name="afterMeal"
+													id="afterMeal" ng-model="afterMealField" required="0"
+													pattern="(1[2-7][0-9]|180)"><span
+													class="input-group-addon small-addon">mg/dL</span>
+											</div>
+										</div>
+										<div class="col-sm-12 text-danger text-right"
+											ng-show="limitForm.$dirty">
+											<span ng-show="limitForm.afterMeal.$error.required">This
+												is a required field</span> <span
+												ng-show="limitForm.afterMeal.$error.pattern">Integer
+												between 120 and 180 mg/dL</span>
+										</div>
+									</div>
+									<div class="text-right">
+										<input type="submit" value="Update" id="update" ng-click=submit()
+											class="btn btn-primary btn-sm"
+											ng-disabled="limitForm.$invalid" />
+									</div>
+									<div class="text-success" ng-show="success">Blood sugar
+										limits updated</div>
+									<div class="text-danger" ng-show="failure">Error updating
+										blood sugar limits</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="container">
+					<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

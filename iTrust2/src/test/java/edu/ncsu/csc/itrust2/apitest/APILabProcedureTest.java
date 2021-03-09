@@ -1,6 +1,7 @@
 package edu.ncsu.csc.itrust2.apitest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -28,10 +30,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import edu.ncsu.csc.itrust2.config.RootConfiguration;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm.ResultEntry;
 import edu.ncsu.csc.itrust2.forms.admin.UserForm;
 import edu.ncsu.csc.itrust2.forms.personnel.LabProcedureForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
 import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
@@ -44,7 +49,6 @@ import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
 import edu.ncsu.csc.itrust2.models.persistent.Prescription;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
-import edu.ncsu.csc.itrust2.utils.HibernateDataGenerator;
 
 /**
  * Test for the API functionality for interacting with LabProcedures
@@ -70,7 +74,7 @@ public class APILabProcedureTest {
     @Before
     public void setup () throws Exception {
         mvc = MockMvcBuilders.webAppContextSetup( context ).build();
-        HibernateDataGenerator.refreshDB();
+        // HibernateDataGenerator.refreshDB();
     }
 
     /**
@@ -123,6 +127,7 @@ public class APILabProcedureTest {
         l.setCommonName( "Jump around" );
         l.setComponent( "Jump jump jump" );
         l.setProperty( "JUMP" );
+        l.setScale( LabResultScale.NONE );
         l.save();
         form.setLoincId( l.getId() );
         assertEquals( form.getLoincId(), l.getId() );
@@ -163,7 +168,7 @@ public class APILabProcedureTest {
         visit.setType( AppointmentType.GENERAL_CHECKUP );
         visit.setHospital( hosp );
         visit.setPatient( User.getByName( "AliceThirteen" ) );
-        visit.setHcp( User.getByName( "AliceThirteen" ) );
+        visit.setHcp( User.getByName( "hcp" ) );
         visit.setDate( ZonedDateTime.now() );
 
         final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
@@ -246,6 +251,7 @@ public class APILabProcedureTest {
         l.setCommonName( "Jump around" );
         l.setComponent( "Jump jump jump" );
         l.setProperty( "JUMP" );
+        l.setScale( LabResultScale.NONE );
         l.save();
 
         final GeneralCheckup visit = new GeneralCheckup();
@@ -462,6 +468,129 @@ public class APILabProcedureTest {
         mvc.perform( put( "/api/v1/labprocedures/" + id ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isConflict() );
 
+    }
+
+    /**
+     * Tests recording lab results for a lab procedure
+     *
+     * @throws Exception
+     */
+    @Test
+    @WithMockUser ( username = "labtech", roles = { "USER", "LABTECH" } )
+    public void testLabResultAPI () throws Exception {
+
+        final User patient = new User( "patient", "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
+                Role.ROLE_PATIENT, 1 );
+        patient.save();
+        final User assignedTech = new User( "assignedTech",
+                "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.", Role.ROLE_LABTECH, 1 );
+        assignedTech.save();
+
+        final LabProcedureForm form = makeOGTTProcedureForm();
+        final LabProcedure proc = new LabProcedure( form );
+        proc.save();
+
+        form.setId( proc.getId() );
+        form.setStatus( "3" );
+
+        // Check invalid update
+        form.setResult( "String" );
+        mvc.perform( put( "/api/v1/labprocedures/" + proc.getId() ).contentType( MediaType.APPLICATION_JSON )
+                .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isBadRequest() );
+        LabProcedure updatedProcedure = LabProcedure.getById( proc.getId() );
+        assertNull( updatedProcedure.getSuggestedDiagnosis() );
+
+        form.setResult( "-1" );
+        mvc.perform( put( "/api/v1/labprocedures/" + proc.getId() ).contentType( MediaType.APPLICATION_JSON )
+                .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isBadRequest() );
+        updatedProcedure = LabProcedure.getById( proc.getId() );
+        assertNull( updatedProcedure.getSuggestedDiagnosis() );
+
+        form.setResult( "10000" );
+        mvc.perform( put( "/api/v1/labprocedures/" + proc.getId() ).contentType( MediaType.APPLICATION_JSON )
+                .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isBadRequest() );
+        updatedProcedure = LabProcedure.getById( proc.getId() );
+        assertNull( updatedProcedure.getSuggestedDiagnosis() );
+
+        // Check valid update
+        form.setResult( "150" );
+        mvc.perform( put( "/api/v1/labprocedures/" + proc.getId() ).contentType( MediaType.APPLICATION_JSON )
+                .content( TestUtils.asJsonString( form ) ) ).andExpect( status().isOk() )
+                .andExpect( content().contentType( MediaType.APPLICATION_JSON_UTF8_VALUE ) );
+        updatedProcedure = LabProcedure.getById( proc.getId() );
+        assertEquals( "R73.03", updatedProcedure.getSuggestedDiagnosis().getCode() );
+
+    }
+
+    /**
+     * Creates and returns the LOINC for an oral glucose tolerance test, or
+     * retrieves it if it already exists in the DB.
+     *
+     * @return the LOINC for an OGTT
+     */
+    private LOINC makeOGTT () {
+        final LOINC code = (LOINC) LOINC.getBy( LOINC.class, "code", "20436-2" );
+
+        if ( code != null ) {
+            return code;
+        }
+
+        final ICDCode diabetes = new ICDCode();
+        diabetes.setCode( "E11.9" );
+        diabetes.setDescription( "Type 2 Diabetes" );
+        diabetes.save();
+        final ICDCode preDiabetes = new ICDCode();
+        preDiabetes.setCode( "R73.03" );
+        preDiabetes.setDescription( "Prediabetes" );
+        preDiabetes.save();
+
+        final LOINCForm ogttForm = new LOINCForm();
+        ogttForm.setCode( "20436-2" );
+        ogttForm.setCommonName( "Glucose 2 Hr After Glucose, Blood" );
+        ogttForm.setComponent( "Glucose^2H post dose glucose" );
+        ogttForm.setProperty( "MCnc" );
+        ogttForm.setScale( LabResultScale.QUANTITATIVE.getName() );
+        final List<ResultEntry> resultFormatEntries = new ArrayList<ResultEntry>();
+
+        final ResultEntry entry1 = ogttForm.new ResultEntry();
+        entry1.setMin( "0" );
+        entry1.setMax( "139" );
+        resultFormatEntries.add( entry1 );
+
+        final ResultEntry entry2 = ogttForm.new ResultEntry();
+        entry2.setMin( "140" );
+        entry2.setMax( "199" );
+        entry2.setIcd( preDiabetes.getCode() );
+        resultFormatEntries.add( entry2 );
+
+        final ResultEntry entry3 = ogttForm.new ResultEntry();
+        entry3.setMin( "200" );
+        entry3.setMax( "5000" );
+        entry3.setIcd( diabetes.getCode() );
+        resultFormatEntries.add( entry3 );
+
+        ogttForm.setResultEntries( resultFormatEntries );
+        final LOINC ogtt = new LOINC( ogttForm );
+        ogtt.save();
+
+        return ogtt;
+
+    }
+
+    private LabProcedureForm makeOGTTProcedureForm () {
+        // Create LabProcedureForm
+        final LabProcedureForm form = new LabProcedureForm();
+        form.setPatient( "patient" );
+        form.setAssignedTech( "assignedTech" );
+        form.setComments( "Give 'em lots of sugar, then take some blood" );
+        form.setPriority( "1" );
+        form.setStatus( "1" );
+        final LOINC ogttLOINC = makeOGTT();
+        form.setLoincId( ogttLOINC.getId() );
+        final GeneralCheckup of = makeGeneralCheckup();
+        form.setVisitId( of.getId() );
+
+        return form;
     }
 
 }
