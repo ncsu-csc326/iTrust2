@@ -318,7 +318,6 @@ public class PasswordChangeStepDefs extends CucumberTest {
                     return y.getSentDate().compareTo( x.getSentDate() );
                 }
                 catch ( final MessagingException e ) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
                 return 0;

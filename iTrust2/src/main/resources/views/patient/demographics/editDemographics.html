@@ -32,7 +32,7 @@
 		    $scope.patientForm.phone = $scope.patient.phone;
 		    $scope.patientForm.dateOfBirth = new Date($scope.patient.dateOfBirth);
 		    $scope.patientForm.bloodType = getBT($scope.patient.bloodType);
-		    $scope.patientForm.ethnicity = $scope.patient.ethnicity;
+		    $scope.patientForm.ethnicity = $scope.patient.ethnicity.match(/[A-Z][a-z]+/g).join(' ');
 		    $scope.patientForm.gender = $scope.patient.gender;
 			
 		}, function(rejection) {

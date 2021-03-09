@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.BloodSugarLimit;
+import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -66,8 +66,9 @@ public class APIPatientController extends APIController {
                     HttpStatus.NOT_FOUND );
         }
         else {
-            LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, LoggerUtil.currentUser(),
-                    "Retrieved demographics for user " + self.getUsername() );
+            // LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS,
+            // LoggerUtil.currentUser(), "Retrieved demographics for user " +
+            // self.getUsername() );
             patient.setRepresentatives( null );
             patient.setRepresented( null );
             return new ResponseEntity( patient, HttpStatus.OK );
@@ -214,7 +215,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/{username}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity getRepresentatives ( @PathVariable final String username ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
         if ( me.getRole() == Role.ROLE_PATIENT && !me.getUsername().equals( username ) ) {
@@ -249,7 +250,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representing/{username}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity getRepresenting ( @PathVariable final String username ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
         if ( me.getRole() == Role.ROLE_PATIENT && !me.getUsername().equals( username ) ) {
@@ -286,7 +287,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/{patient}/{representative}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity addRepresentative ( @PathVariable final String patient,
             @PathVariable final String representative ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
@@ -354,7 +355,7 @@ public class APIPatientController extends APIController {
      * @return The patient objects for all the users representatives.
      */
     @GetMapping ( BASE_PATH + "/patient/representatives/remove/{patient}/{representative}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity removeRepresentative ( @PathVariable final String patient,
             @PathVariable final String representative ) {
         final User me = User.getByName( LoggerUtil.currentUser() );
@@ -414,4 +415,31 @@ public class APIPatientController extends APIController {
         }
         return new ResponseEntity( errorResponse( "Relationship does not exist." ), HttpStatus.NOT_FOUND );
     }
+
+    /**
+     * Get the patient's zip code to autofill Find Expert Form
+     *
+     * @return Response entity with status and response data (zip or error
+     *         message)
+     *
+     */
+    @GetMapping ( BASE_PATH + "/patient/findexperts/getzip" )
+    @PreAuthorize ( "hasRole( 'ROLE_PATIENT')" )
+    public ResponseEntity getPatientZip () {
+        final String user = LoggerUtil.currentUser();
+        if ( user == null ) {
+            return new ResponseEntity( errorResponse( "Patient not found" ), HttpStatus.NOT_FOUND );
+        }
+        final String zip = Patient.getByName( user ).getZip();
+        if ( zip == null ) {
+            return new ResponseEntity( errorResponse( "Patient does not have zip stored" ), HttpStatus.NO_CONTENT );
+        }
+        else {
+            final String[] zipParts = zip.split( "-" );
+            return new ResponseEntity( zipParts, HttpStatus.OK );
+
+        }
+
+    }
+
 }

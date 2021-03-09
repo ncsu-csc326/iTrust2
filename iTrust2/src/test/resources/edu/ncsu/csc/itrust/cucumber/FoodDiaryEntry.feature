@@ -23,7 +23,6 @@ Examples:
 	| 09/27/2018	| Breakfast		| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
 	| 09/27/2018	| Lunch			| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
 	| 09/27/2018	| Dinner		| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
-	| 09/27/2018	| Snack			| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
 
 Scenario Outline: Invalid add entry as patient
 	Given There exists a patient in the system.
@@ -37,12 +36,7 @@ Examples:
 	| 05/20/2050	| Breakfast		| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
 	| 09/27/2018	| Lunch			| bacon and eggs	| -20		| 400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
 	| 09/27/2018	| Dinner		| bacon and eggs	| 1			| -400	   | 10		| 20		| 15	| 20	 | 0		| 40		|
-	| 09/27/2018	| Snack			| bacon and eggs	| 1			| 400	   | null	| 20		| 15	| 20	 | 0		| 40		|
-	| 09/27/2018	| Lunch			| bacon and eggs	| 1			| 400	   | 10		| -1		| 15	| 20	 | 0		| 40		|
-	| 09/27/2018	| Dinner		| bacon and eggs	| 1			| 400	   | 10		| 20		| **	| 20	 | 0		| 40		|
-	| 09/27/2018	| Snack			| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| null	 | 0		| 40		|
-	| 09/27/2018	| Dinner		| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | @@		| 40		|
-	| 09/27/2018	| Snack			| bacon and eggs	| 1			| 400	   | 10		| 20		| 15	| 20	 | 0		| why		|
+	
 
 Scenario Outline: View entry as a Patient
 	Given There exists a patient in the system.

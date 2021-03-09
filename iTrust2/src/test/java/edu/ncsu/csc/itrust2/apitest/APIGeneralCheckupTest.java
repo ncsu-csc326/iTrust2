@@ -202,7 +202,7 @@ public class APIGeneralCheckupTest {
         assertEquals( vList.get( 0 ).getPatient(), v.getPatient() );
 
         /* Put new user into system */
-        Patient.deleteAll();
+        DomainObject.deleteAll( Patient.class );
         final UserForm p = new UserForm( "antti", "123456", Role.ROLE_PATIENT, 1 );
         mvc.perform( post( "/api/v1/users" ).contentType( MediaType.APPLICATION_JSON )
                 .content( TestUtils.asJsonString( p ) ) );

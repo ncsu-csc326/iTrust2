@@ -17,8 +17,10 @@ import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
+import edu.ncsu.csc.itrust2.models.enums.Specialty;
 import edu.ncsu.csc.itrust2.models.enums.State;
 import edu.ncsu.csc.itrust2.models.enums.Status;
+import edu.ncsu.csc.itrust2.models.enums.SymptomSeverity;
 import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
@@ -141,6 +143,36 @@ public class APIEnumController extends APIController {
     @GetMapping ( BASE_PATH + "/labresultscale" )
     public List<LabResultScale> getLabResultScale () {
         return Arrays.asList( LabResultScale.values() );
+    }
+
+    /**
+     * Get specialty types
+     *
+     * @return list of specialty types
+     */
+    @GetMapping ( BASE_PATH + "/specialties" )
+    public List<Specialty> getSpecialtyTypes () {
+        return Arrays.asList( Specialty.values() );
+    }
+
+    /**
+     * Get specialty type names
+     *
+     * @return list of specialty types
+     */
+    @GetMapping ( BASE_PATH + "/specialtynames" )
+    public List<String> getSpecialtyNames () {
+        return Specialty.getAllNames();
+    }
+
+    /**
+     * Gets symptom severity levels
+     *
+     * @return list of symptom severity levels
+     */
+    @GetMapping ( BASE_PATH + "/symptomseverities" )
+    public List<SymptomSeverity> getSymptomSeverityTypes () {
+        return Arrays.asList( SymptomSeverity.values() );
     }
 
 }

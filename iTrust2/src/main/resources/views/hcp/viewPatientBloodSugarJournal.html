@@ -454,7 +454,7 @@
 					$scope.failure = false;
 					
 					var limits = [$scope.fastingField, $scope.afterMealField];
-					$http.post("/iTrust2/api/v1//bloodSugarDiaries/hcp/limits/" + $scope.selectedPatient, limits).then(
+					$http.post("/iTrust2/api/v1/bloodSugarDiaries/hcp/limits/" + $scope.selectedPatient, limits).then(
 						function success(response) {
 							$scope.success = true;
 							$scope.fastingLimit = $scope.fastingField;

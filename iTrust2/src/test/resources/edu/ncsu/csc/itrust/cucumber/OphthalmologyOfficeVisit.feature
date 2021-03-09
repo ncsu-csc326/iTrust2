@@ -33,21 +33,6 @@ Examples:
 	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| -40			    | 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
 	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| -30			    | 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
 	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 10/40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 10/30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 2000/40			| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 3000			    | 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| bobby				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| bobby				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| sphered	| -1.5		| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| numbre	| 1.0			| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| cylindered	| -1.0			| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| square		| 45		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| -720		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| -600		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 720		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 600		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| angle		| 90		| CATARACT      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| OPHTHALMOLOGY_SURGERY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| angle		| CATARACT      		| Test of invalid visit	|
 
 
 Scenario Outline: HCP documents an ophthalmology office visit
@@ -100,22 +85,7 @@ Examples:
 	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| -40			    | 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
 	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| -30			    | 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
 	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 10/40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 10/30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 2000/40			| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 3000			    | 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| bobby				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| bobby				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| sphered	| -1.5		| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| numbre	| 1.0			| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| cylindered	| -1.0			| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| square		| 45		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| -720		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| -600		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 720		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| 600		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| angle		| 90		| cataracts      		| Test of invalid visit	|
-	| 10/10/2018	| 10:00 am	| bobby			| GENERAL_OPHTHALMOLOGY	| General Hospital 	| 40				| 30				| 1.5		| -1.5		| 1.0			| -1.0			| 45		| angle		| cataracts      		| Test of invalid visit	|
-
+	
 	
 Scenario Outline: HCP edits an ophthalmology office visit
 	Given There exists a patient in the system

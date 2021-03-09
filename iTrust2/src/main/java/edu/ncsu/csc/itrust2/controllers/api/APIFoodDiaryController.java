@@ -74,7 +74,7 @@ public class APIFoodDiaryController extends APIController {
      *            The username of the patient for which to get entries
      * @return a list of patient's food diary entries
      */
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     @GetMapping ( BASE_PATH + "diary/{patient}" )
     public ResponseEntity getEntriesHCP ( @PathVariable final String patient ) {
         if ( null == Patient.getByName( patient ) ) {

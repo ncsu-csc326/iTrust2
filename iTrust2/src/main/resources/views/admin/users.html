@@ -99,6 +99,8 @@
 	        		  return 'Admin';
 	        	  } else if(user.role === "ROLE_ER") {
 	        		  return 'Emergency Responder';
+	        	  } else if (user.role === "ROLE_VIROLOGIST") {
+	        		  return 'Virologist HCP';
 	        	  } else {
 	        		  return 'Lab Tech';
 	        	  }
@@ -205,6 +207,7 @@ input[type=password] {
 														<option value="ROLE_HCP">Healthcare Provider</option>
 														<option value="ROLE_OD">Optometrist HCP</option>
 														<option value="ROLE_OPH">Ophthalmologist HCP</option>
+														<option value="ROLE_VIROLOGIST">Virologist HCP</option>
 														<option value="ROLE_ADMIN">Admin</option>
 														<option value="ROLE_ER">Emergency Responder</option>
 														<option value="ROLE_LABTECH">Lab Technician</option>

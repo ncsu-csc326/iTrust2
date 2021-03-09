@@ -8,7 +8,9 @@ import java.text.ParseException;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
@@ -42,7 +44,8 @@ public class LabProcedureStepDefs extends CucumberTest {
      * @param time
      *            The time to enter.
      */
-    private void fillInDateTime ( String dateField, String date, String timeField, String time ) {
+    private void fillInDateTime ( final String dateField, final String date, final String timeField,
+            final String time ) {
         fillInDate( dateField, date );
         fillInTime( timeField, time );
     }
@@ -53,7 +56,7 @@ public class LabProcedureStepDefs extends CucumberTest {
      * @param date
      *            The date to enter.
      */
-    private void fillInDate ( String dateField, String date ) {
+    private void fillInDate ( final String dateField, final String date ) {
         driver.findElement( By.name( dateField ) ).clear();
         final WebElement dateElement = driver.findElement( By.name( dateField ) );
         dateElement.sendKeys( date.replace( "/", "" ) );
@@ -65,7 +68,7 @@ public class LabProcedureStepDefs extends CucumberTest {
      * @param time
      *            The time to enter.
      */
-    private void fillInTime ( String timeField, String time ) {
+    private void fillInTime ( final String timeField, String time ) {
         // Zero-pad the time for entry
         if ( time.length() == 7 ) {
             time = "0" + time;
@@ -216,7 +219,10 @@ public class LabProcedureStepDefs extends CucumberTest {
         pri.selectByVisibleText( "High" );
 
         waitForAngular();
-        driver.findElement( By.id( "radio-larrytech" ) ).click();
+        final WebDriverWait wait = new WebDriverWait( driver, 20 );
+        wait.until( ExpectedConditions.presenceOfElementLocated( By.name( "larrytech" ) ) );
+        final WebElement btn = driver.findElement( By.name( "larrytech" ) );
+        btn.click();
         driver.findElement( By.name( "addProcedure" ) ).click();
 
         waitForAngular();
@@ -281,7 +287,7 @@ public class LabProcedureStepDefs extends CucumberTest {
      *            the invalid result
      */
     @When ( "I submit result \"([^\"]*)\"$" )
-    public void submitInvalidQuantitativeResult ( String invalid ) {
+    public void submitInvalidQuantitativeResult ( final String invalid ) {
         final WebElement update = driver.findElement( By.name( "update" ) );
         update.click();
 
@@ -366,7 +372,7 @@ public class LabProcedureStepDefs extends CucumberTest {
      *             thread sleep throws
      */
     @Then ( "^I can submit a \"([^\"]*)\"$" )
-    public void submitResult ( String result ) throws InterruptedException {
+    public void submitResult ( final String result ) throws InterruptedException {
         final WebElement update = driver.findElement( By.name( "update" ) );
         update.click();
 

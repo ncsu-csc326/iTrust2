@@ -133,7 +133,7 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
      * ZIP code of the Hospital
      */
     @NotEmpty
-    @Length ( min = 5, max = 5 )
+    @Length ( min = 5, max = 10 )
     private String zip;
 
     /**
@@ -218,6 +218,12 @@ public class Hospital extends DomainObject<Hospital> implements Serializable {
     @Override
     public String getId () {
         return getName();
+    }
+
+    @Override
+    public String toString () {
+        final String s = this.name + "  " + this.address;
+        return s;
     }
 
 }

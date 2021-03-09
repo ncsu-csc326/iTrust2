@@ -22,10 +22,8 @@ Scenario Outline: Create appointment request
 Examples:
 	| type							| hcp				| date			| time 		| comments 														|
 	| General Checkup				| hcp 				| 09/27/2040	| 12:00 PM	| My brain hurt													|								|
-	| General Ophthalmology			| robortOPH 		| 09/27/2040	| 12:00 PM	| My eyes hurt													|
 	| General Ophthalmology			| bobbyOD 			| 09/27/2040	| 1:30 PM	| I'm having trouble seeing										|
 	| Ophthalmology Surgery			| robortOPH			| 12/27/2040	| 11:15 AM	| Is something wrong with my eyes, or AM I just getting old?	|
-	| Ophthalmology Surgery			| robortOPH			| 12/06/2040	| 9:30 AM	| I think I have something stuck in my left eye					|
 
 Scenario Outline: Invalid appointment request
 	Given There exists a patient in the system
@@ -36,10 +34,8 @@ Scenario Outline: Invalid appointment request
 
 Examples:
 	| type							| hcp				| date			| time 		| comments 						|
-	| General Checkup				| hcp 				| 09/27/2010	| 12:00 PM	| My brain hurt					|
 	| General Checkup				| robortOPH 		| 09/27/2010	| 12:00 PM	| My eyes hurt					|
 	| General Ophthalmology			| bobbyOD 			| 09/27/2010	| 12:00 PM	| My eyes hurt					|
-	| General Checkup 				| robortOPH 		| 09/27/2040	| 1:30 PM	| I'm having trouble seeing		|
 	| General Checkup 				| bobbyOD 			| 09/27/2040	| 1:30 PM	| I'm having trouble seeing		|
 
 Scenario Outline: Patient views an appointment request
@@ -79,7 +75,6 @@ Scenario Outline: Approve appointment request as an HCP
 Examples:
 	| type							| hcp				| date			| time 		| comments 		|
 	| General Checkup				| hcp		 		| 10/31/2040	| 10:00 AM	| My brain hurt	|
-	| General Ophthalmology			| bobbyOD		 	| 10/31/2040	| 10:00 AM	| My eyes hurt	|
 	| Ophthalmology Surgery			| robortOPH		 	| 10/31/2040	| 10:00 AM	| My eyes hurt	|
 
 Scenario Outline: Decline appointment request as an ophthalmologist HCP
@@ -96,5 +91,4 @@ Scenario Outline: Decline appointment request as an ophthalmologist HCP
 Examples:
 	| type							| hcp				| date			| time 		| comments 		|
 	| General Checkup				| hcp		 		| 10/31/2040	| 10:00 AM	| My brain hurt	|
-	| General Ophthalmology			| bobbyOD		 	| 10/31/2040	| 10:00 AM	| My eyes hurt	|
 	| Ophthalmology Surgery			| robortOPH		 	| 10/31/2040	| 10:00 AM	| My eyes hurt	|

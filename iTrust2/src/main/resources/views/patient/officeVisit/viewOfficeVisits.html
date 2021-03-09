@@ -142,7 +142,7 @@
                     }
 
                     // Lab procedures
-                    $http.get("/iTrust2/api/v1//labprocedures/byVisit/" + $scope.selectedVisitID).then(
+                    $http.get("/iTrust2/api/v1/labprocedures/byVisit/" + $scope.selectedVisitID).then(
                       function (response) {
                         $scope.proceduresResponse = response.data;
 

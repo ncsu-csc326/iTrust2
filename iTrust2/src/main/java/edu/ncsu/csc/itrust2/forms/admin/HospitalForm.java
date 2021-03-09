@@ -32,7 +32,7 @@ public class HospitalForm {
      * ZIP Code of the Hospital
      */
     @NotEmpty
-    @Length ( min = 5, max = 5 )
+    @Length ( min = 5, max = 10 )
     private String zip;
 
     /**

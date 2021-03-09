@@ -42,7 +42,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public List<AppointmentRequest> getAppointmentRequests () {
         return AppointmentRequest.getAppointmentRequests();
     }
@@ -53,7 +53,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in patient
      */
     @GetMapping ( BASE_PATH + "/appointmentrequest" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public List<AppointmentRequest> getAppointmentRequestsForPatient () {
         return AppointmentRequest.getAppointmentRequestsForPatient( LoggerUtil.currentUser() ).stream()
                 .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
@@ -65,7 +65,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in hcp
      */
     @GetMapping ( BASE_PATH + "/appointmentrequestForHCP" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public List<AppointmentRequest> getAppointmentRequestsForHCP () {
 
         return AppointmentRequest.getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
@@ -82,7 +82,7 @@ public class APIAppointmentRequestController extends APIController {
      *         HttpStatus.NOT_FOUND if no such AppointmentRequest could be found
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity getAppointmentRequest ( @PathVariable ( "id" ) final Long id ) {
         final AppointmentRequest request = AppointmentRequest.getById( id );
         if ( null != request ) {
@@ -136,7 +136,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return response
      */
     @DeleteMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity deleteAppointmentRequest ( @PathVariable final Long id ) {
         final AppointmentRequest request = AppointmentRequest.getById( id );
         if ( null == request ) {
@@ -171,7 +171,7 @@ public class APIAppointmentRequestController extends APIController {
      *         provided
      */
     @PutMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity updateAppointmentRequest ( @PathVariable final Long id,
             @RequestBody final AppointmentRequestForm requestF ) {
 
@@ -234,7 +234,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return reponse
      */
     @DeleteMapping ( BASE_PATH + "/appointmentrequests" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
     public ResponseEntity deleteAppointmentRequests () {
         try {
             DomainObject.deleteAll( AppointmentRequest.class );
@@ -256,7 +256,7 @@ public class APIAppointmentRequestController extends APIController {
      * @return The page to display for the user
      */
     @GetMapping ( BASE_PATH + "/viewAppointments" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public List<AppointmentRequest> upcomingAppointments () {
         final List<AppointmentRequest> appointment = AppointmentRequest
                 .getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()

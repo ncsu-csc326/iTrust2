@@ -17,6 +17,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
@@ -44,10 +46,12 @@ import edu.ncsu.csc.itrust2.models.enums.State;
  * our medical records system.
  *
  * @author Kai Presler-Marshall
+ * @author Ryan Catalfu (rpcatalf)
  *
  */
 @Entity
 @Table ( name = "Patients" )
+@Inheritance ( strategy = InheritanceType.TABLE_PER_CLASS )
 public class Patient extends DomainObject<Patient> implements Serializable {
 
     /**
@@ -242,7 +246,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
     /**
      * The first name of this patient
      */
-    @Length ( max = 20 )
+    @Length ( min = 1 )
     private String       firstName;
 
     /**
@@ -254,7 +258,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
     /**
      * The last name of this patient
      */
-    @Length ( max = 30 )
+    @Length ( min = 1 )
     private String       lastName;
 
     /**
@@ -439,9 +443,9 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the first name to set this patient to
      */
     public void setFirstName ( final String firstName ) {
-        if ( firstName == null || firstName.length() > 20 || !firstName.matches( "[a-zA-Z\\d' -]+" ) ) {
+        if ( firstName == null || !firstName.matches( "[a-zA-Z\\d'. -]+" ) ) {
             throw new IllegalArgumentException(
-                    "First name must contain 1-20 characters (alphanumeric, -, ', or space)" );
+                    "First name must contain at least 1 character ('.',alphanumeric, -, ', or space)" );
         }
         this.firstName = firstName;
     }
@@ -463,7 +467,8 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     public void setPreferredName ( final String preferredName ) {
         // preferred name is optional
-        if ( preferredName != null && ( preferredName.length() > 30 || !preferredName.matches( "[a-zA-Z\\d' -]*" ) ) ) {
+        if ( preferredName != null
+                && ( preferredName.length() > 30 || !preferredName.matches( "[a-zA-Z\\d' -]*" ) ) ) {
             throw new IllegalArgumentException(
                     "Preferred name can contain no more than 30 characters (alphanumeric, -, ', or space)" );
         }
@@ -486,7 +491,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the last name to set this patient to
      */
     public void setLastName ( final String lastName ) {
-        if ( lastName == null || lastName.length() > 30 || !lastName.matches( "[a-zA-Z\\d' -]+" ) ) {
+        if ( lastName == null || lastName.length() > 30 || !lastName.matches( "[a-zA-Z\\d'. -]+" ) ) {
             throw new IllegalArgumentException(
                     "Last name must contain 1-30 characters (alphanumeric, -, ', or space)" );
         }
@@ -578,10 +583,18 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      *            the city of residence to set this patient to
      */
     public void setCity ( final String city ) {
-        if ( city == null || city.length() > 15 || !city.matches( "[a-zA-Z]+" ) ) {
+
+        if ( city == null ) {
             throw new IllegalArgumentException( "City must contain 1-15 alpha characters" );
         }
-        this.city = city;
+
+        final String miniCity = city.trim();
+
+        if ( miniCity.length() > 15 || !miniCity.matches( "[a-zA-Z ]+" ) ) {
+            throw new IllegalArgumentException( "City must contain 1-15 alpha characters" );
+        }
+
+        this.city = miniCity;
     }
 
     /**

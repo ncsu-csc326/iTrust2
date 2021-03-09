@@ -4,6 +4,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
+import edu.ncsu.csc.itrust2.models.persistent.User;
 import edu.ncsu.csc.itrust2.utils.HibernateUtil;
 
 /**
@@ -17,18 +18,39 @@ import edu.ncsu.csc.itrust2.utils.HibernateUtil;
 @WebListener
 public class ContextListener implements ServletContextListener {
 
-    /**
-     * Gracefully tell Hibernate to close the connections to the database rather
-     * than dropping everything on the floor.
-     */
-    @Override
-    public void contextDestroyed ( final ServletContextEvent arg0 ) {
-        HibernateUtil.shutdown();
-    }
+	static private Thread dbThread = new Thread(new Runnable() {
+		@Override
+		public void run() {
+			for (;;) {
+				User.getByName("Wladyslaw Jagiello"); // doesn't matter if they exist or not
 
-    @Override
-    public void contextInitialized ( final ServletContextEvent arg0 ) {
-        // There's nothing that we need to do here
-    }
+				try {
+					Thread.sleep(3 * 60 * 1000); /* 3 minutes to milliseconds */
+				} catch (final InterruptedException e) {
+					// Exception ignored
+				}
+			}
+		}
+	});
+
+	/**
+	 * Gracefully tell Hibernate to close the connections to the database rather
+	 * than dropping everything on the floor.
+	 */
+	@Override
+	public void contextDestroyed(final ServletContextEvent arg0) {
+		HibernateUtil.shutdown();
+
+		dbThread.stop();
+	}
+
+	@Override
+	public void contextInitialized(final ServletContextEvent arg0) {
+
+		dbThread.setName("DBKeepAlive_Thread");
+		dbThread.setPriority(Thread.MIN_PRIORITY);
+		dbThread.setDaemon(true);
+		dbThread.start();
+	}
 
 }

@@ -23,7 +23,7 @@ public class OfficeVisitController {
      * @return Page to display to the user
      */
     @GetMapping ( "/hcp/documentOfficeVisit" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public String documentOfficeVisit ( final Model model ) {
         return "/hcp/documentOfficeVisit";
     }
@@ -36,7 +36,7 @@ public class OfficeVisitController {
      * @return Page to display to the user
      */
     @GetMapping ( "/hcp/editOfficeVisit" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public String getAllOfficeVisits ( final Model model ) {
         return "/hcp/editOfficeVisit";
     }
@@ -49,7 +49,7 @@ public class OfficeVisitController {
      * @return Page to display to the user
      */
     @GetMapping ( "/hcp/viewPatientOfficeVisits" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
     public String getPatientsOfficeVisits ( final Model model ) {
         return "/hcp/viewPatientOfficeVisits";
     }

@@ -1,4 +1,4 @@
-# iTrust2-v6 (Spring 2020)
+# iTrust2-v7 (Fall 2020)
 
 ## Background
 iTrust2 was founded as a class project for [CSC326 Software Engineering](http://courses.ncsu.edu/csc326) in the [Computer Science Department of NC State University](http://www.csc.ncsu.edu) and is maintained primarily by [Kai Presler-Marshall](https://kpresler.github.io/) and [Sarah Heckman](https://www.csc.ncsu.edu/people/sesmith5). The goal of iTrust2 is to engage students with software engineering practices on a significant, relevant, and growing application that includes security and privacy requirements.  Interested in using iTrust2 for your software engineering course?  Feel free to contact us.

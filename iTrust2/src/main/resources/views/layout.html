@@ -104,14 +104,18 @@ a {
 					var hcpdropdown = document.getElementById('hcp-dropdown');
 					var erdropdown = document.getElementById('er-dropdown');
 					var ltdropdown = document.getElementById('labtech-dropdown');
+					var virologistdropdown = document.getElementById('virologist-dropdown');
 					if (!role.includes('PATIENT')) {
 						navbarparent.removeChild(patientdropdown);
 					}
 					if (!role.includes('ADMIN')) {
 						navbarparent.removeChild(admindropdown);
 					}
-					if (!(role.includes('HCP') || role.includes('OD') || role.includes('OPH'))) {
+					if (!(role.includes('HCP') || role.includes('OD') || role.includes('OPH') || role.includes('VIROLOGIST'))) {
 						navbarparent.removeChild(hcpdropdown);
+					}
+					if (!role.includes('VIROLOGIST')) {
+						navbarparent.removeChild(virologistdropdown);
 					}
 					if (!role.includes('ER')) {
 						navbarparent.removeChild(erdropdown);
@@ -134,7 +138,7 @@ a {
 		<nav class="navbar navbar-inverse" style="margin: 0">
 			<div id="navbar-parent" class="container-fluid">
 				<div class="navbar-header">
-					<a class="navbar-brand" th:href="@{/}">iTrust2</a>
+					<a class="navbar-brand" th:href="@{/}" id="homePage">iTrust2</a>
 				</div>
 				<!-- Admin navbar -->
 				<ul id="admin-dropdown" class="nav navbar-nav">
@@ -162,14 +166,13 @@ a {
 				<!-- HCP navbar -->
 				<ul id="hcp-dropdown" class="nav navbar-nav">
 					<li class="dropdown"><a class="dropdown-toggle"
-						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						data-toggle="dropdown" href="#" id="hcpPatientDropDown">Patient<span class="caret"></span></a>
 						<ul class="dropdown-menu">
 							<li><a href="/iTrust2/hcp/appointmentRequests"
 								id="viewrequests">View Appointment Requests and Upcoming
 									Appointments</a></li>
 							<li><a href="/iTrust2/hcp/editPatientDemographics"
 								id="editPatientDemographics">Edit Patient</a></li>
-							<li><a href="#">Add Patient -- Not Implemented</a></li>
 							<li><a href="/iTrust2/hcp/documentOfficeVisit.html"
 								id="documentOfficeVisit">Document Office Visit</a></li>
 							<li><a href="/iTrust2/hcp/personalRepresentatives.html"
@@ -193,7 +196,27 @@ a {
 							<li><a href="/iTrust2/hcp/editPrescriptions"
 								id="editPrescriptions-personnel">Edit Prescriptions</a></li>
 						</ul></li>
+						
+					<li><a href="/iTrust2/findexperts/viewFindExpertFormHCP" id="findExpert">Find an Expert</a></li>
+
+					
 				</ul>
+				
+				<!-- Virologist Dropdown -->
+				<ul id="virologist-dropdown" class="nav navbar-nav">
+				    <li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Disease Control<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/diseasecontrol/uploadPassengerData"
+								id="uploadPassengerData">Upload Patient Data</a></li>
+							<li><a href="/iTrust2/diseasecontrol/viewStatistics"
+								id="viewPatientStatistics">View Patient Statistics</a></li>
+							<li><a href="/iTrust2/diseasecontrol/searchPassengerContacts"
+								id="searchPassengerContacts">Track Previous Contacts</a></li>
+						</ul>
+					</li>
+				</ul>
+				
 				<!-- ER Dropdown -->
 				<ul id="er-dropdown" class="nav navbar-nav">
 					<li class="dropdown"><a class="dropdown-toggle"
@@ -262,8 +285,9 @@ a {
 								id="viewDiagnoses">Diagnoses</a></li>
 							<li><a href="/iTrust2/patient/officeVisit/viewPrescriptions"
 								id="viewPrescriptions">Prescriptions</a></li>
+							<li><a href="/iTrust2/findexperts/viewFindExpertFormPatient" id="findExpert">Find an Expert</a>
 						</ul></li>
-					<li class="dropdown"><a class="dropdown-toggle"
+					<li class="dropdown"><a class="dropdown-toggle" id="edit"
 						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
 						<ul class="dropdown-menu">
 							<li><a href="/iTrust2/patient/demographics/editDemographics"
@@ -272,9 +296,9 @@ a {
 				</ul>
 				<ul id="extra-dropdown" class="nav navbar-nav">
 					<li><a
-						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2/wiki">About</a></li>
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v6/wiki">About</a></li>
 					<li><a
-						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2">View
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v6">View
 							Source</a></li>
 				</ul>
 				<div th:if="${#httpServletRequest.remoteUser != null}">
@@ -304,7 +328,7 @@ a {
 
 	<div id="footer">
 		<div class="container">
-			<p class="muted credit">iTrust2-v3</p>
+			<p class="muted credit">iTrust2-v7</p>
 		</div>
 	</div>
 </body>
