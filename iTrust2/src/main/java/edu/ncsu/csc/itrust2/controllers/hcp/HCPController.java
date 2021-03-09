@@ -100,4 +100,15 @@ public class HCPController {
         return "/hcp/viewPatientFoodDiary";
     }
 
+    /**
+     * Retrieves the page for the HCP to view patient's blood sugar entries.
+     *
+     * @return The page to display to the patient.
+     */
+    @GetMapping ( "/hcp/viewPatientBloodSugarJournal" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH')" )
+    public String viewBloodSugarJournal () {
+        return "/hcp/viewPatientBloodSugarJournal";
+    }
+
 }

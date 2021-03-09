@@ -1,7 +1,5 @@
 package edu.ncsu.csc.itrust2.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,9 +29,8 @@ public class DBUtil {
         final Properties properties = new Properties();
 
         try {
-            final String filename = "src/main/java/db.properties";
-            final File initialFile = new File( filename );
-            input = new FileInputStream( initialFile );
+            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            input = classLoader.getResourceAsStream("db.properties");
             properties.load( input );
             url = properties.getProperty( "url" );
             username = properties.getProperty( "username" );

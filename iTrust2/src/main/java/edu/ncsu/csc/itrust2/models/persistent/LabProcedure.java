@@ -91,6 +91,19 @@ public class LabProcedure extends DomainObject<LabProcedure> {
     private User           patient;
 
     /**
+     * The suggested diagnosis based on the LabProcedure. Will be null until the
+     * LabProcedure is complete.
+     */
+    @ManyToOne
+    @JoinColumn ( name = "suggestedDiagnosis" )
+    private ICDCode        suggestedDiagnosis;
+
+    /**
+     * The result of the LabProcedure
+     */
+    private String         result;
+
+    /**
      * Get a specific lab procedure by the database ID
      *
      * @param id
@@ -216,7 +229,7 @@ public class LabProcedure extends DomainObject<LabProcedure> {
      * @throws NumberFormatException
      *             If the ID cannot be parsed to a Long.
      */
-    public LabProcedure ( final LabProcedureForm lpf ) throws ParseException, NumberFormatException {
+    public LabProcedure ( final LabProcedureForm lpf ) {
         setLoinc( LOINC.getById( lpf.getLoincId() ) );
         setPatient( User.getByName( lpf.getPatient() ) );
         try {
@@ -237,6 +250,59 @@ public class LabProcedure extends DomainObject<LabProcedure> {
         }
         setAssignedTech( User.getByName( lpf.getAssignedTech() ) );
         setVisit( GeneralCheckup.getById( lpf.getVisitId() ) );
+        setResult( lpf.getResult() );
+    }
+
+    /**
+     * Gets the suggested diagnosis based on the result of the procedure.
+     *
+     * @return the suggested diagnosis for the patient based on the results of
+     *         the procedure
+     */
+    public ICDCode getSuggestedDiagnosis () {
+        return suggestedDiagnosis;
+    }
+
+    /**
+     * Sets the suggested diagnosis for the patient based on the result of the
+     * procedure.
+     *
+     * @param result
+     *            the result of the procedure
+     */
+    public void setSuggestedDiagnosis ( String result ) {
+        if ( getStatus() == LabStatus.COMPLETED && getLoinc().getResult() != null ) {
+            if ( result == null ) {
+                throw new IllegalArgumentException( "Lab Procedure must have a result." );
+            }
+            else {
+                this.suggestedDiagnosis = getLoinc().getResult().getDiagnosisForResult( result );
+            }
+        }
+        else {
+            this.suggestedDiagnosis = null;
+        }
+    }
+
+    /**
+     * Gets the result of the procedure
+     *
+     * @return the result of the procedure
+     */
+    public String getResult () {
+        return result;
+    }
+
+    /**
+     * Sets the result of the procedure, then sets the suggested diagnosis based
+     * on the result.
+     *
+     * @param result
+     *            the result to set
+     */
+    public void setResult ( String result ) {
+        this.result = result;
+        setSuggestedDiagnosis( result );
     }
 
     /**

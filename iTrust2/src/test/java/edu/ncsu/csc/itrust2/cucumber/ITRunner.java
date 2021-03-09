@@ -8,7 +8,7 @@ import cucumber.api.CucumberOptions;
 import cucumber.api.junit.Cucumber;
 
 @RunWith ( Cucumber.class )
-@CucumberOptions ( features = "src/test/resources/edu/ncsu/csc/itrust/cucumber/" )
+@CucumberOptions ( features = "src/test/resources/edu/ncsu/csc/itrust/cucumber/")
 public class ITRunner {
 
     @BeforeClass

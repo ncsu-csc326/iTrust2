@@ -24,11 +24,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import com.google.gson.annotations.JsonAdapter;
-
 import org.hibernate.criterion.Criterion;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters.LocalDateConverter;
+
+import com.google.gson.annotations.JsonAdapter;
 
 import edu.ncsu.csc.itrust2.adapters.LocalDateAdapter;
 import edu.ncsu.csc.itrust2.forms.hcp_patient.PatientForm;
@@ -123,6 +123,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      * Empty constructor necessary for Hibernate.
      */
     public Patient () {
+
     }
 
     /**
@@ -169,7 +170,7 @@ public class Patient extends DomainObject<Patient> implements Serializable {
         setPhone( form.getPhone() );
 
         setDateOfBirth( LocalDate.parse( form.getDateOfBirth() ) );
-        
+
         // Patient can't set their date of death
         if ( form.getDateOfDeath() != null ) {
             setDateOfDeath( LocalDate.parse( form.getDateOfDeath() ) );
@@ -303,8 +304,8 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     @Basic
     // Allows the field to show up nicely in the database
-    @Convert(converter = LocalDateConverter.class)
-    @JsonAdapter( LocalDateAdapter.class )
+    @Convert ( converter = LocalDateConverter.class )
+    @JsonAdapter ( LocalDateAdapter.class )
     private LocalDate    dateOfBirth;
 
     /**
@@ -312,8 +313,8 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     @Basic
     // Allows the field to show up nicely in the database
-    @Convert(converter = LocalDateConverter.class)
-    @JsonAdapter( LocalDateAdapter.class )
+    @Convert ( converter = LocalDateConverter.class )
+    @JsonAdapter ( LocalDateAdapter.class )
     private LocalDate    dateOfDeath;
 
     /**
@@ -841,5 +842,39 @@ public class Patient extends DomainObject<Patient> implements Serializable {
      */
     public List<Diagnosis> getDiagnoses () {
         return Diagnosis.getForPatient( this.self );
+    }
+
+    /**
+     * Deletes all Patient objects in the database.
+     */
+    public static void deleteAll () {
+        DomainObject.deleteAll( BloodSugarLimit.class );
+        DomainObject.deleteAll( BloodSugarDiaryEntry.class );
+        DomainObject.deleteAll( Patient.class );
+    }
+
+    @Override
+    public void delete () {
+        final List<BloodSugarDiaryEntry> sgdEntries = BloodSugarDiaryEntry.getByPatient( this );
+        for ( final BloodSugarDiaryEntry entry : sgdEntries ) {
+            entry.delete();
+        }
+
+        final BloodSugarLimit limits = BloodSugarLimit.getByPatient( this );
+        if ( limits != null ) {
+            limits.delete();
+        }
+
+        super.delete();
+    }
+
+    @Override
+    public boolean equals ( final Object other ) {
+        if ( !( other instanceof Patient ) ) {
+            return false;
+        }
+
+        final Patient otherPatient = (Patient) other;
+        return self.equals( otherPatient.getSelf() );
     }
 }

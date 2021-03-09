@@ -143,7 +143,7 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
-			<version>[4.2.12,)</version>
+			<version>4.2.2.RELEASE</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -248,7 +248,7 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-jpa</artifactId>
-			<version>[1.11.22,)</version>
+			<version>1.10.2.RELEASE</version>
 		</dependency>
 
 		<!-- Thymeleaf -->
@@ -279,7 +279,7 @@
 		<dependency>
 			<groupId>io.github.bonigarcia</groupId>
 			<artifactId>webdrivermanager</artifactId>
-			<version>1.7.2</version>
+			<version>3.6.2</version>
 		</dependency>
 		<dependency>
 			<groupId>xml-apis</groupId>
@@ -395,6 +395,13 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
 		</resources>
 		<plugins>
 			<plugin>

@@ -3,20 +3,26 @@ package edu.ncsu.csc.itrust2.unit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
 import org.junit.Test;
 
+import edu.ncsu.csc.itrust2.forms.admin.ICDCodeForm;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm;
+import edu.ncsu.csc.itrust2.forms.admin.LOINCForm.ResultEntry;
 import edu.ncsu.csc.itrust2.forms.hcp.GeneralCheckupForm;
 import edu.ncsu.csc.itrust2.forms.personnel.LabProcedureForm;
 import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
 import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
 import edu.ncsu.csc.itrust2.models.enums.LabStatus;
 import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
 import edu.ncsu.csc.itrust2.models.enums.Priority;
@@ -80,6 +86,7 @@ public class LabProcedureTest {
         l.setCommonName( "Jump around" );
         l.setComponent( "Jump jump jump" );
         l.setProperty( "JUMP" );
+        l.setScale( LabResultScale.NONE );
         l.save();
         form.setLoincId( l.getId() );
         assertEquals( form.getLoincId(), l.getId() );
@@ -104,78 +111,6 @@ public class LabProcedureTest {
     }
 
     /**
-     * Makes an OfficeVisit for testing
-     *
-     * @return The newly created OfficeVisit
-     */
-    private OfficeVisit makeOfficeVisit () {
-        final Hospital hosp = new Hospital( "Dr. Jenkins' Insane Asylum", "123 Main St", "12345", "NC" );
-        hosp.save();
-
-        final GeneralCheckup visit = new GeneralCheckup();
-
-        final BasicHealthMetrics bhm = new BasicHealthMetrics();
-
-        bhm.setDiastolic( 150 );
-        bhm.setDiastolic( 100 );
-        bhm.setHcp( User.getByName( "hcp" ) );
-        bhm.setPatient( User.getByName( "AliceThirteen" ) );
-        bhm.setHdl( 75 );
-        bhm.setHeight( 75f );
-        bhm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
-
-        bhm.save();
-
-        visit.setBasicHealthMetrics( bhm );
-        visit.setType( AppointmentType.GENERAL_CHECKUP );
-        visit.setHospital( hosp );
-        visit.setPatient( User.getByName( "AliceThirteen" ) );
-        visit.setHcp( User.getByName( "AliceThirteen" ) );
-        visit.setDate( ZonedDateTime.now() );
-
-        final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
-
-        final ICDCode code = new ICDCode();
-        code.setCode( "A21" );
-        code.setDescription( "Top Quality" );
-
-        code.save();
-
-        final Diagnosis diagnosis = new Diagnosis();
-
-        diagnosis.setCode( code );
-        diagnosis.setNote( "This is bad" );
-        diagnosis.setVisit( visit );
-
-        diagnoses.add( diagnosis );
-
-        visit.setDiagnoses( diagnoses );
-
-        final Drug drug = new Drug();
-
-        drug.setCode( "1234-4321-89" );
-        drug.setDescription( "Lithium Compounds" );
-        drug.setName( "Li2O8" );
-        drug.save();
-
-        final Prescription pres = new Prescription();
-        pres.setDosage( 3 );
-        pres.setDrug( drug );
-
-        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
-        pres.setPatient( User.getByName( "AliceThirteen" ) );
-        pres.setStartDate( LocalDate.now() );
-        pres.setRenewals( 5 );
-
-        pres.save();
-
-        visit.setPrescriptions( Collections.singletonList( pres ) );
-
-        visit.save();
-        return visit;
-    }
-
-    /**
      * Tests that you can get LOINC codes.
      *
      * @throws ParseException
@@ -190,6 +125,7 @@ public class LabProcedureTest {
         l.setCommonName( "Jump around" );
         l.setComponent( "Jump jump jump" );
         l.setProperty( "JUMP" );
+        l.setScale( LabResultScale.NONE );
         l.save();
         patient.save();
         assignedTech.save();
@@ -198,7 +134,8 @@ public class LabProcedureTest {
         patient3.save();
         assignedTech3.save();
         final GeneralCheckupForm visitForm = new GeneralCheckupForm();
-        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
+        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50
+                                                              // AM
         visitForm.setHcp( "hcp" );
         visitForm.setPatient( "patient" );
         visitForm.setNotes( "Test office visit" );
@@ -302,11 +239,13 @@ public class LabProcedureTest {
         l.setCommonName( "Jump around" );
         l.setComponent( "Jump jump jump" );
         l.setProperty( "JUMP" );
+        l.setScale( LabResultScale.NONE );
         l.save();
         patient.save();
         assignedTech.save();
         final GeneralCheckupForm visitForm = new GeneralCheckupForm();
-        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50 AM
+        visitForm.setDate( "2048-04-16T09:50:00.000-04:00" ); // 4/16/2048 9:50
+                                                              // AM
         visitForm.setHcp( "hcp" );
         visitForm.setPatient( "patient" );
         visitForm.setNotes( "Test office visit" );
@@ -354,5 +293,186 @@ public class LabProcedureTest {
 
         LabProcedure.deleteAll();
         assertEquals( 0, LabProcedure.getLabProcedures().size() );
+    }
+
+    /**
+     * Tests creating and updating a lab procedure that has results.
+     *
+     * @throws ParseException
+     * @throws NumberFormatException
+     */
+    @Test
+    public void testLabResults () throws NumberFormatException, ParseException {
+        LabProcedure.deleteAll();
+        LOINC.deleteAll();
+        patient.save();
+        assignedTech.save();
+
+        // New quantitative loinc
+        final LOINC loinc = makeLOINC();
+
+        // New office visit
+        final OfficeVisit visit = makeOfficeVisit();
+
+        // New Lab Procedure
+        final LabProcedureForm form = new LabProcedureForm();
+        form.setLoincId( loinc.getId() );
+        form.setVisitId( visit.getId() );
+        form.setPriority( Priority.CRITICAL.toString() );
+        form.setStatus( LabStatus.ASSIGNED.toString() );
+        form.setAssignedTech( assignedTech.getId() );
+        form.setPatient( patient.getId() );
+        final LabProcedure procedure = new LabProcedure( form );
+
+        // Complete procedure and add results
+        form.setId( procedure.getId() );
+        form.setStatus( LabStatus.COMPLETED.toString() );
+        form.setResult( "150" );
+        final LabProcedure completedProcedure = new LabProcedure( form );
+        completedProcedure.save();
+
+        assertEquals( "R73.03", completedProcedure.getSuggestedDiagnosis().getCode() );
+
+        // Check invalid results
+        form.setResult( "String" );
+        try {
+            new LabProcedure( form );
+            fail( "Gave a qualitative result to a quantitative procedure" );
+        }
+        catch ( final IllegalArgumentException e ) {
+            assertEquals( "Quantitative result must be parsable as a float.", e.getMessage() );
+        }
+
+        form.setResult( "10000" );
+        try {
+            new LabProcedure( form );
+            fail( "Accepted out of range result" );
+        }
+        catch ( final IllegalArgumentException e ) {
+            assertEquals( "Invalid result value", e.getMessage() );
+        }
+
+    }
+
+    /**
+     * Makes an OfficeVisit for testing
+     *
+     * @return The newly created OfficeVisit
+     */
+    private OfficeVisit makeOfficeVisit () {
+        final Hospital hosp = new Hospital( "Dr. Jenkins' Insane Asylum", "123 Main St", "12345", "NC" );
+        hosp.save();
+
+        final GeneralCheckup visit = new GeneralCheckup();
+
+        final BasicHealthMetrics bhm = new BasicHealthMetrics();
+
+        bhm.setDiastolic( 150 );
+        bhm.setDiastolic( 100 );
+        bhm.setHcp( User.getByName( "hcp" ) );
+        bhm.setPatient( User.getByName( "AliceThirteen" ) );
+        bhm.setHdl( 75 );
+        bhm.setHeight( 75f );
+        bhm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+
+        bhm.save();
+
+        visit.setBasicHealthMetrics( bhm );
+        visit.setType( AppointmentType.GENERAL_CHECKUP );
+        visit.setHospital( hosp );
+        visit.setPatient( User.getByName( "AliceThirteen" ) );
+        visit.setHcp( User.getByName( "AliceThirteen" ) );
+        visit.setDate( ZonedDateTime.now() );
+
+        final List<Diagnosis> diagnoses = new Vector<Diagnosis>();
+
+        final ICDCode code = new ICDCode();
+        code.setCode( "A21" );
+        code.setDescription( "Top Quality" );
+
+        code.save();
+
+        final Diagnosis diagnosis = new Diagnosis();
+
+        diagnosis.setCode( code );
+        diagnosis.setNote( "This is bad" );
+        diagnosis.setVisit( visit );
+
+        diagnoses.add( diagnosis );
+
+        visit.setDiagnoses( diagnoses );
+
+        final Drug drug = new Drug();
+
+        drug.setCode( "1234-4321-89" );
+        drug.setDescription( "Lithium Compounds" );
+        drug.setName( "Li2O8" );
+        drug.save();
+
+        final Prescription pres = new Prescription();
+        pres.setDosage( 3 );
+        pres.setDrug( drug );
+
+        pres.setEndDate( LocalDate.now().plusDays( 10 ) );
+        pres.setPatient( User.getByName( "AliceThirteen" ) );
+        pres.setStartDate( LocalDate.now() );
+        pres.setRenewals( 5 );
+
+        pres.save();
+
+        visit.setPrescriptions( Collections.singletonList( pres ) );
+
+        visit.save();
+        return visit;
+    }
+
+    private LOINC makeLOINC () {
+        // New LOINC with Quantitative results
+        final LOINCForm loincForm = new LOINCForm();
+        loincForm.setCode( "20436-2" );
+        loincForm.setCommonName( "Glucose 2 Hr After Glucose, Blood" );
+        loincForm.setProperty( "MCnc" );
+        loincForm.setComponent( "Glucose^2H post dose glucose" );
+        loincForm.setScale( LabResultScale.QUANTITATIVE.getName() );
+
+        final List<ResultEntry> resultEntries = new ArrayList<ResultEntry>();
+        loincForm.setResultEntries( resultEntries );
+
+        final ICDCode prediabetesICD = makeICD( "R73.03", "Prediabetes" );
+        final ICDCode diabetesICD = makeICD( "E11.9", "Diabetes" );
+
+        this.addResultEntry( loincForm, resultEntries, "0", "139", null );
+        this.addResultEntry( loincForm, resultEntries, "140", "199", prediabetesICD );
+        this.addResultEntry( loincForm, resultEntries, "200", "5000", diabetesICD );
+        loincForm.setResultEntries( resultEntries );
+
+        final LOINC code = new LOINC( loincForm );
+        code.save();
+        return code;
+    }
+
+    private ICDCode makeICD ( String code, String description ) {
+        ICDCode icd = (ICDCode) ICDCode.getBy( ICDCode.class, "code", code );
+
+        if ( icd == null ) {
+            final ICDCodeForm form = new ICDCodeForm();
+            form.setCode( code );
+            form.setDescription( description );
+            icd = new ICDCode( form );
+            icd.save();
+        }
+
+        return icd;
+    }
+
+    private void addResultEntry ( LOINCForm form, List<ResultEntry> resultEntries, String min, String max,
+            ICDCode icd ) {
+        final ResultEntry entry = form.new ResultEntry();
+        entry.setMin( min );
+        entry.setMax( max );
+        if ( icd != null ) {
+            entry.setIcd( icd.getCode() );
+        }
+        resultEntries.add( entry );
     }
 }

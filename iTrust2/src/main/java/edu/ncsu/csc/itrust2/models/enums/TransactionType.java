@@ -446,7 +446,35 @@ public enum TransactionType {
     /**
      * ophthalmology surgery is deleted
      */
-    OPHTHALMOLOGY_SURGERY_DELETE( 2211, "ophthalmology surgery deleted", true );
+    OPHTHALMOLOGY_SURGERY_DELETE( 2211, "ophthalmology surgery deleted", true ),
+	/**
+	 * Blood Sugar Diary entry is created
+	 */
+    CREATE_BLOOD_SUGAR_DIARY( 2501, "Blood Sugar Diary Entry Created", true ),
+    /**
+     * Patient views their blood sugar diary entries
+     */
+    VIEW_BLOOD_SUGAR_DIARY_PATIENT( 2503, "Patient views blood sugar diary", true ),
+    /**
+     * HCP views blood sugar diary entries for a patient
+     */
+    VIEW_BLOOD_SUGAR_DIARY_HCP( 2504, "HCP views blood sugar diary of a patient", true),
+    /**
+     * Patient edits the blood sugar diary entry for the current date
+     */
+    EDIT_BLOOD_SUGAR_DIARY( 2505, "Patient edits their blood sugar diary entry for the present date.", true),
+    /**
+     * Patient views their own blood sugar limits
+     */
+    VIEW_BLOOD_SUGAR_LIMITS_PATIENT( 2506, "Patient views their blood sugar limits set by their HCP.", true),
+    /**
+     * HCP views blood sugar limits for a specified patient
+     */
+    VIEW_BLOOD_SUGAR_LIMITS_HCP( 2507, "HCP views the blood sugar limits for a patient.", false),
+    /**
+     * HCP adds blood sugar limits for a patient
+     */
+    ADD_BLOOD_SUGAR_LIMITS( 2508, "HCP enters limits for a patient's blood sugar levels.", true);
     
     /**
      * Creates a TransactionType for logging events

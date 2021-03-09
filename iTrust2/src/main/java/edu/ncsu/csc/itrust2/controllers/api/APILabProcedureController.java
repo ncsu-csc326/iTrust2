@@ -1,5 +1,6 @@
 package edu.ncsu.csc.itrust2.controllers.api;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -16,11 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ncsu.csc.itrust2.forms.personnel.LabProcedureForm;
+import edu.ncsu.csc.itrust2.models.enums.LabStatus;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.TransactionType;
 import edu.ncsu.csc.itrust2.models.persistent.LabProcedure;
 import edu.ncsu.csc.itrust2.models.persistent.OfficeVisit;
 import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.itrust2.utils.EmailUtil;
 import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 
 /**
@@ -295,6 +298,16 @@ public class APILabProcedureController extends APIController {
                 LoggerUtil.log( TransactionType.LABTECH_REASSIGN_PROC, LoggerUtil.currentUser(),
                         lp.getAssignedTech().getUsername(), "LabTech " + LoggerUtil.currentUser()
                                 + " Reassigns Procedure To " + lp.getAssignedTech().getUsername() );
+            }
+
+            // Email HCP about new results
+            if ( !original.getStatus().equals( LabStatus.COMPLETED ) && lp.getStatus().equals( LabStatus.COMPLETED ) ) {
+                final String hcpEmail = EmailUtil.getEmailByUsername( lp.getVisit().getHcp().getId() );
+                if ( hcpEmail != null ) {
+                    EmailUtil.sendEmail( hcpEmail, "Lab Results Updated",
+                            "New lab results are available for your office visit on "
+                                    + lp.getVisit().getDate().format( DateTimeFormatter.RFC_1123_DATE_TIME ) + "." );
+                }
             }
             return new ResponseEntity( lp, HttpStatus.OK );
         }

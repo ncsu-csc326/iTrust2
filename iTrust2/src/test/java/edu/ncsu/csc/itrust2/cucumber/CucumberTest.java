@@ -11,7 +11,7 @@ import io.github.bonigarcia.wdm.ChromeDriverManager;
 public abstract class CucumberTest {
 
     static {
-        ChromeDriverManager.getInstance().setup();
+        ChromeDriverManager.chromedriver().setup();
     }
 
     final static private String   BASE_URL = "http://localhost:8080/iTrust2/";
@@ -35,7 +35,7 @@ public abstract class CucumberTest {
         final ChromeOptions options = new ChromeOptions();
         options.addArguments( "headless" );
         options.setExperimentalOption( "useAutomationExtension", false );
-        options.addArguments( "window-size=1200x600" );
+        options.addArguments( "window-size=2000x1000" );
         options.addArguments( "blink-settings=imagesEnabled=false" );
         options.addArguments( "--no-sandbox" );
         options.addArguments( "--disable-dev-shm-usage" );

@@ -772,7 +772,7 @@
 																<li ng-repeat="i in icdcodes"><label> <input
 																		type="radio" ng-model="$parent.codeEntry"
 																		id="{{i.code}}" name="{{i.description}}" ng-value="i"
-																		required="true" /> {{i.description}}
+																		required="true" /> {{i.code}} - {{i.description}}
 																</label></li>
 															</ul>
 														</div>
@@ -1181,21 +1181,14 @@
 															<div class="panel-heading">Added Procedures</div>
 															<div class="panel-body">
 																<div class="row" ng-repeat="p in procedures">
-																	<div class="col-md-3">
-																		<b>Code:</b> {{p.loinc.code}} <br> <b>Name:
-																			{{p.commonName}}</b>
+																	<div>
+																		<b>Code:</b> {{p.loinc.code}} <br> 
+																		<b>Common Name:</b> {{p.loinc.commonName}} <br>
+																		<b>Priority:</b> {{p.priority}} <br>
+																		<b>Status:</b> {{p.status}} <br>
+																		<b>Comments:</b> {{p.comments}} <br>
 																	</div>
 																	<br>
-																	<div class="row" ng-repeat="p in procedures">
-																		<div class="col-md-2">
-																			<!-- "tabs" over the columns -->
-																		</div>
-																		<div class="col-md-8">
-																			<b>Common Name:</b> {{p.commonName}} <br> <b>Priority:</b>
-																			{{p.priority}} <br> <b>Status:</b> {{p.status}}
-																			<br> <b>Comments:</b> {{p.comments}}
-																		</div>
-																	</div>
 																</div>
 															</div>
 														</div>

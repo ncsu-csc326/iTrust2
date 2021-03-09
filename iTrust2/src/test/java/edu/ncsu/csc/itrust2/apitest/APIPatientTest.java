@@ -31,7 +31,6 @@ import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
 import edu.ncsu.csc.itrust2.models.enums.Gender;
 import edu.ncsu.csc.itrust2.models.enums.Role;
 import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
 import edu.ncsu.csc.itrust2.models.persistent.Patient;
 import edu.ncsu.csc.itrust2.mvc.config.WebMvcConfiguration;
 
@@ -80,7 +79,7 @@ public class APIPatientTest {
     @WithMockUser ( username = "hcp", roles = { "HCP" } )
     public void testPatientAPI () throws Exception {
         // Clear out all patients before running these tests.
-        DomainObject.deleteAll( Patient.class );
+        Patient.deleteAll();
 
         final UserForm p = new UserForm( "antti", "123456", Role.ROLE_PATIENT, 1 );
         mvc.perform( post( "/api/v1/users" ).contentType( MediaType.APPLICATION_JSON )
@@ -141,7 +140,7 @@ public class APIPatientTest {
     @WithMockUser ( username = "hcp", roles = { "HCP" } )
     public void testRepresentativeAPIHCP () throws Exception {
         // Clear out all patients before running these tests.
-        DomainObject.deleteAll( Patient.class );
+        Patient.deleteAll();
 
         // Create patient
         final UserForm p = new UserForm( "bobbo", "123456", Role.ROLE_PATIENT, 1 );
@@ -291,7 +290,7 @@ public class APIPatientTest {
     @WithMockUser ( username = "antti", roles = { "PATIENT" } )
     public void testRepresentativeAPIPatient () throws Exception {
         // Clear out all patients before running these tests.
-        DomainObject.deleteAll( Patient.class );
+        Patient.deleteAll();
 
         // Create patient
         final UserForm p = new UserForm( "bobbo", "123456", Role.ROLE_PATIENT, 1 );

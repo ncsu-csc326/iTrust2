@@ -10,14 +10,152 @@
 		/*<![CDATA[*/
 			var app = angular.module("manageLOINCCodesApp", []);
 			app.controller('manageLOINCCodesCtrl', function($scope, $http) {
+
+
+				//Values used for subform for results
+				$scope.selectedLonicScale = null;
+				$scope.property_types = [];
+				$scope.qualitative_values = [];
+				$scope.quantative_values = [];
+				
+				$scope.code = {};
+				$scope.code.resultEntries = [];
+				$scope.invalid_range = false;
+				$scope.dupRangeMessage = false;
+				$scope.dupValMessage = false;
+				$scope.invalid_start = false;
+				$scope.invalid_end = false;
+				$scope.ICD_list = [];
+
+				$scope.rangeCode = null;
+				$scope.val_icd = null;
+
+				//gets scale types
+				$http.get("/iTrust2/api/v1/labresultscale").then(
+		            function (response) {
+		            	$scope.property_types = response.data
+		            });
+				
+		        //Loads the ICD-10 code enumeration values for drop down menus
+		        $http.get("/iTrust2/api/v1/icdcodes").then(
+		            function (response) {
+		                $scope.ICD_list = response.data;
+		                $scope.ICD_list.push({code: null})
+		            });
+
+
+				//Submits a new range to the list of ranges
+				$scope.submitRange = function(){
+					$scope.invalid_range = false;
+					$scope.dupRangeMessage = false;
+
+					//get min and max values as integers
+					var min = parseFloat($scope.rangeStart);
+					var max = parseFloat($scope.rangeEnd);
+
+					//make sure this isnt a duplicate entry
+					for (var i = 0; i < $scope.quantative_values.length; i ++){
+						
+						//check for min value
+						if ($scope.quantative_values[i]['min'] <= min){
+							if ($scope.quantative_values[i]['max'] >= min){
+								$scope.dupRangeMessage = true;
+								return;
+							}
+						} 
+						
+						//check for max value
+						if ($scope.quantative_values[i]['min'] <= max){
+							if ($scope.quantative_values[i]['max'] >= max){
+								$scope.dupRangeMessage = true;
+								return;
+							}
+						} 
+					}
+
+					//Make sure the min is less than max
+					if (min > max) {
+						$scope.invalid_range = true;
+
+					//everything checks out. We add this to our local list, and to the code form
+					} else {
+						$scope.quantative_values.push({ min: min, max: max, icd: {code: $scope.rangeCode}});
+						$scope.code.scale = "QUANTITATIVE";
+						$scope.rangeStart = "";
+						$scope.rangeEnd = "";
+						$scope.rangeCode = null;
+						$scope.code.resultEntries = $scope.quantative_values;
+					}
+				}
+
+				//add a new qualative value entry
+				$scope.submitQual = function() {
+					$scope.dupValMessage = false;
+					
+					//check for duplicate names
+					for (var i = 0; i < $scope.qualitative_values.length; i ++){
+						if ($scope.qualitative_values[i]['name'] === $scope.val_name){
+							$scope.dupValMessage = true;
+							return;
+						}
+					}
+
+					//Add the new qualitative result
+					$scope.qualitative_values.push({name: $scope.val_name, icd: {code: $scope.val_icd}});
+					$scope.code.scale = "QUALITATIVE";
+					$scope.code.resultEntries = $scope.qualitative_values;
+					$scope.val_name = "";
+					$scope.val_icd = null;
+				}
+
+				//Delete qualitative result from list
+				$scope.deleteQualatativeValue = function(name){
+
+					//if the list only has one element, make a new list
+					if ($scope.qualitative_values.length === 1){
+						$scope.code.resultEntries = [];
+						$scope.qualitative_values = [];
+
+					//more than one element, so we search for our value
+					} else {
+						for (var i = 0; i < $scope.qualitative_values.length; i ++){
+							if ($scope.qualitative_values[i]['name'] === name){
+								$scope.qualitative_values.splice(i, 1);
+							}
+						}
+						$scope.code.resultEntries = $scope.qualitative_values;
+
+					}
+					$scope.code.scale = "QUALITATIVE";
+				}
+
+				//deletes range from resultEntries
+				$scope.deleteRange = function(min, max) {
+
+					//if the list only has one element, make a new list
+					if ($scope.quantative_values.length === 1){
+						$scope.code.resultEntries = [];
+						$scope.quantative_values = [];
+					} else {
+						for (var i = 0; i < $scope.quantative_values.length; i ++){
+							if ($scope.quantative_values[i]['min'] === min){
+								if ($scope.quantative_values[i]['max'] === max){
+										$scope.quantative_values.splice(i, 1); 
+								}
+							} 
+						}
+						$scope.code.resultEntries = $scope.quantative_values;
+					}
+					$scope.code.scale = "QUANTITATIVE";
+				}
+
 				$scope.editMode = false;
 				$scope.codes = [];
 				$scope.loadTable = function() {
 					// get list of icd codes from rest api
 					$http.get("/iTrust2/api/v1/loinccodes").then(
 							function(response) {
-								$scope.codes = response.data; // or just response?
-										
+								$scope.codes = response.data; 
 								$scope.message = "";
 							}, function(rejection) {
 								$scope.codes = [];
@@ -27,6 +165,32 @@
 				
 				// handle add code button click
 				$scope.addCode = function() {
+					$scope.errorAdding = "";
+					$scope.success = "";
+					if ($scope.code.resultEntries){
+						for (var i = 0; i < $scope.code.resultEntries.length; i++){
+						    if ($scope.code.resultEntries[i].hasOwnProperty('icd')){
+								$scope.code.resultEntries[i].icd = $scope.code.resultEntries[i].icd.code
+						    }
+						}
+					}
+					if ($scope.selectedScale === "QUANTITATIVE"){
+						if($scope.quantative_values.length === 0){
+							$scope.errorAdding = "Must have quantitative entries";
+							return;
+						}
+						$scope.code.scale = "Quantitative"; 
+					} else if ($scope.selectedScale === "QUALITATIVE"){
+						if($scope.qualitative_values.length === 0){
+							$scope.errorAdding = "Must have qualitative entries";
+							return;
+						}
+						$scope.code.scale = "Qualitative"; 
+					} else {
+						$scope.code.scale = null;
+						$scope.code.result = null;
+					}
+					
 					$scope.oldcode = angular.copy($scope.code);
 					if (/^[0-9]{1,5}[\-][0-9]$/.test($scope.code.code) == false){
 						$scope.errorAdding = "Code doesn't meet format specifications";
@@ -45,8 +209,7 @@
 										$scope.success = "";
 										$scope.resetAll();
 									})
-							
-							
+
 						} else {
 							$http.post("/iTrust2/api/v1/loinccodes", $scope.code).then(
 									function(response) {
@@ -61,13 +224,51 @@
 						}
 					}
 				}
-				
+
+				//function used to populate values when editing code
 				$scope.editRow = function(code) {
 					$scope.code = code;
+					$scope.selectedLonicScale = code.scale
+					$scope.selectedScale = code.scale
+					$scope.quantative_values = [];
+					$scope.qualitative_values = [];
+					
+					//parse quantitative values
+					if (code.scale === "QUANTITATIVE"){
+					    for (var i = 0; i < code.result.resultRanges.length; i ++) {
+					    	if (code.result.resultRanges[i].hasOwnProperty('icd') && code.result.resultRanges[i].icd.hasOwnProperty('code')) {
+						        $scope.quantative_values.push({ min: code.result.resultRanges[i].min, max: code.result.resultRanges[i].max, icd: {code: code.result.resultRanges[i].icd.code}});   
+						    } else {
+						        $scope.quantative_values.push({ min: code.result.resultRanges[i].min, max: code.result.resultRanges[i].max});  
+						    }
+						}	
+						$scope.code.scale = "QUANTITATIVE";
+						$scope.code.resultEntries = $scope.quantative_values;
+						
+					//parse qualitative values
+					} else if (code.scale === "QUALITATIVE"){
+					    for (var i = 0; i < code.result.resultEntries.length; i ++) {
+					        if (code.result.resultEntries[i].hasOwnProperty('icd') && code.result.resultEntries[i].icd.hasOwnProperty('code')){
+					            $scope.qualitative_values.push({name: code.result.resultEntries[i].name, icd: code.result.resultEntries[i].icd});
+					        } else {
+					            $scope.qualitative_values.push({name: code.result.resultEntries[i].name});
+					        }					    
+					    }
+						$scope.code.scale = "QUALITATIVE";
+						$scope.code.resultEntries = $scope.qualitative_values;
+					
+					//this means no scale
+					} else {
+					    $scope.code.scale = "NONE"
+						$scope.qualitative_values = [];
+						$scope.quantative_values = [];
+					}
+
 					$scope.currentlyEditing = code.id;
 					$scope.editMode = true;
 				} 
-				
+
+				//Deletes a code
 				$scope.removeRow = function(code) {
 					$http.delete('/iTrust2/api/v1/loinccode/' + code.id).then(
 							function(response) {
@@ -81,7 +282,8 @@
 								$scope.errorAdding = "";
 							})
 				}
-				
+
+				//resest fields 
 				$scope.resetAll = function() {
 					$scope.editMode = false;
 					$scope.currentlyEditing = "";
@@ -91,100 +293,292 @@
 					$scope.code.component = "";
 					$scope.code.property = "";
 					$scope.currentlyEditing = "";
+					$scope.selectedScale = "";
+					$scope.qualitative_values = [];
+					$scope.quantative_values = [];
 					$scope.loadTable();
 				}
-				
+
 				// load table upon page loading
 				$scope.loadTable();
-				
+
 			});
 			/*]]>*/
 		</script>
 
 		<div ng-app="manageLOINCCodesApp" ng-controller="manageLOINCCodesCtrl">
 			<!-- Info on tables from https://hello-angularjs.appspot.com/removetablerow -->
-			<h4 style="color: red" ng-model="message"></h4>
+			<div class="container">
+				<h4 style="color: red" ng-model="message"></h4>
+				<div class="panel panel-primary" style="margin-top: 1em;">
+					<div class="panel-heading">
+						<h4>Manage LOINC Codes</h4>
+					</div>
+					<div class="panel-body">
+						<div class="row">
+							<div class="col-md-8">
+								<table class="table table-striped table-bordered">
+									<thead>
+										<tr>
+											<th>LOINC Code</th>
+											<th>Common Name</th>
+											<th>Component</th>
+											<th>Property</th>
+											<th>Action</th>
+										</tr>
+									</thead>
+									<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'"
+										codeId={{c.id}}>
+										<td name="codeCell">{{c.code}}</td>
+										<td name="comNameCell">{{c.commonName}}</td>
+										<td name="componentCell">{{c.component}}</td>
+										<td name="property">{{c.property}}</td>
+										<td><input type="button" value="Edit" name="editCode"
+											class="btn btn-primary btn-xs" ng-click="editRow(c)" /> <input
+											type="button" value="Remove" class="btn btn-danger btn-xs"
+											ng-click="removeRow(c)" /></td>
+									</tr>
+								</table>
+							</div>
+							<div class="col-md-4">
+								<div class="panel panel-primary">
+									<div class="panel-heading">
+										<div class="pull-right" ng-show="editMode">
+											<button class="btn btn-default" name="back"
+												ng-click="resetAll()">Back</button>
+										</div>
+										<h4 ng-hide="editMode">Add a LOINC Code</h4>
+										<h4 ng-show="editMode">Edit LOINC Code</h4>
+									</div>
+									<div class="panel-body">
+										<form class="form-horizontal" role="form" name="addCodeForm"
+											ng-submit="">
+											<div class="form-group">
+												<label class="col-sm-5 control-label">LOINC Code</label>
+												<div class="col-sm-7">
+													<input type="text" class="form-control" name="iCode"
+														ng-model="code.code" />
+												</div>
+											</div>
+											<div class="form-group">
+												<label class="col-sm-5 control-label">Common Name</label>
+												<div class="col-sm-7">
+													<input type="text" class="col-sm-7 form-control"
+														name="iComName" ng-model="code.commonName" />
+												</div>
+											</div>
+											<div class="form-group">
+												<label class="col-sm-5 control-label">Component</label>
+												<div class="col-sm-7">
+													<input type="text" class="form-control" name="iComponent"
+														ng-model="code.component" />
+												</div>
+											</div>
+											<div class="form-group">
+												<label class="col-sm-5 control-label">Property</label>
+												<div class="col-sm-7">
+													<input type="text" class="form-control" name="iProperty"
+														ng-model="code.property" />
+												</div>
+											</div>
+											<div class="form-group">
+												<label class="col-sm-5 control-label">Scale</label>
+												<div class="col-sm-7">
+													<select class="form-control" required="true" name="iScale"
+														ng-model="selectedScale">
+														<option ng-repeat="type in property_types">{{type}}</option>
+													</select>
+												</div>
+											</div>
 
-			<h1>
-				Manage LOINC Codes
-				<div style="display: inline-block; padding-left: 500px"
-					ng-show="editMode" ng-hide="!editMode">
-					<button class="btn btn-primary" name="back" ng-click="resetAll()">Back</button>
-				</div>
-			</h1>
-			<table style="width: 100%">
-				<tr>
-					<td style="vertical-align: top">
-						<table class="table">
-							<tr>
-								<th>LOINC Code</th>
-								<th>Common Name</th>
-								<th>Component</th>
-								<th>Property</th>
-								<th>Action</th>
-							</tr>
-							<tr name="codeRow" ng-repeat="c in codes | orderBy: 'code'"
-								codeId={{c.id}}>
-								<td name="codeCell">{{c.code}}</td>
-								<td name="comNameCell">{{c.commonName}}</td>
-								<td name="componentCell">{{c.component}}</td>
-								<td name="property">{{c.property}}</td>
-								<td><input type="button" value="Edit"
-									class="btn btn-primary" ng-click="editRow(c)" /> <input
-									type="button" value="Remove" class="btn btn-danger"
-									ng-click="removeRow(c)" /></td>
-							</tr>
-						</table>
-					</td>
-					<td style="width: 35%; vertical-align: top">
-						<div style="padding: 0px 0px 20px 30px">
-							<h3 ng-hide="editMode" ng-show="!editMode">Add a LOINC Code</h3>
-							<h3 ng-hide="!editMode" ng-show="editMode">Edit LOINC Code</h3>
-						</div>
-						<form class="form-horizontal" role="form" name="addCodeForm"
-							ng-submit="">
-							<div class="form-group" style="padding-left: 30px">
-								<label>LOINC Code</label> <input type="text"
-									class="form-control" name="iCode" ng-model="code.code" required />
-							</div>
-							<div class="form-group" style="padding-left: 30px">
-								<label>Common Name</label> <input type="text"
-									class="form-control" name="iComName" ng-model="code.commonName"
-									required />
-								<!-- 								<textarea class="form-control" rows="5" name="description" ng-model="code.description" required ng-minlength="1"></textarea>
- -->
-							</div>
-							<div class="form-group" style="padding-left: 30px">
-								<label>Component</label> <input type="text" class="form-control"
-									name="iComponent" ng-model="code.component" required />
-							</div>
-							<div class="form-group" style="padding-left: 30px">
-								<label>Property</label> <input type="text" class="form-control"
-									name="iProperty" ng-model="code.property" required />
-							</div>
-							<div class="form-group" style="padding-left: 30px">
-								<div style="padding-left: 170px">
-									<button class="btn btn-primary" name="submit" id="submitLOINC"
-										ng-click="addCode()">{{ editMode ? "Edit Code" : "Add
-										Code" }}</button>
+											<div ng-show="selectedScale == 'QUALITATIVE'">
+												<div class="form-group">
+													<div class="col-xs-12">
+														<label class="control-label"> Values: </label>
+														<table class="table table-striped table-bordered">
+															<thead>
+																<tr>
+																	<th scope="col">Name</th>
+																	<th scope="col">ICD-10</th>
+																	<th scope="col">Delete</th>
+																</tr>
+															</thead>
+
+															<tr ng-repeat="val in qualitative_values">
+																<td>{{val.name}}</td>
+																<td>{{val.icd.code}}</td>
+																<td><input type="button" value="Delete"
+																	class="btn btn-danger btn-xs"
+																	ng-click="deleteQualatativeValue(val.name)" /></td>
+															</tr>
+														</table>
+													</div>
+												</div>
+												<div class="panel panel-default">
+													<div class="panel-heading">
+														<h4 class="panel-title">Add a value</h4>
+													</div>
+													<div class="panel-body">
+														<div class="form-group">
+															<label class="col-sm-3 control-label"> Name: </label>
+															<div class="col-sm-9">
+																<input type="text" required="true" class="form-control"
+																	ng-model="val_name" name="val_name">
+																<div class="has-error">
+																	<span ng-show="addCodeForm.val_name.$error.required"
+																		class="text-danger"> Required value. </span>
+																</div>
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="col-sm-3 control-label"> ICD-10: </label>
+															<div class="col-sm-9">
+																<select class="form-control" ng-model="val_icd"
+																	name="val_icd">
+																	<option ng-repeat="type in ICD_list">{{type.code}}</option>
+																</select>
+															</div>
+														</div>
+														<div class="form-group">
+															<div class="col-xs-12">
+																<button class="btn btn-primary pull-right"
+																	name="submitQual" id="submitQual"
+																	ng-click="submitQual()"
+																	ng-disabled="addCodeForm.val_icd.$error.required || addCodeForm.val_name.$error.required">
+																	Add Value</button>
+															</div>
+															<div class="col-xs-12">
+																<div class="text-danger pull-right"
+																	ng-show="dupValMessage" id="dupValMessage">Name
+																	already used.</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+
+											<div ng-show="selectedScale == 'QUANTITATIVE'">
+												<div class="form-group">
+													<div class="col-xs-12">
+														<label class="control-label"> Values: </label>
+														<table class="table table-striped table-bordered"
+															name="QuantitativeRangeTable">
+															<thead>
+																<tr>
+																	<th scope="col">Start</th>
+																	<th scope="col">End</th>
+																	<th scope="col">ICD-10</th>
+																	<th scope="col">Delete</th>
+																</tr>
+															</thead>
+
+															<tr ng-repeat="val in quantative_values">
+																<td>{{val.min}}</td>
+																<td>{{val.max}}</td>
+																<td>{{val.icd.code}}</td>
+																<td><input type="button" value="Delete"
+																	class="btn btn-danger btn-xs"
+																	ng-click="deleteRange(val.min, val.max)"
+																	name="DeleteButton" /></td>
+															</tr>
+														</table>
+													</div>
+												</div>
+												<div class="panel panel-default">
+													<div class="panel-heading">
+														<h4 class="panel-title">Add a value</h4>
+													</div>
+													<div class="panel-body">
+														<div class="form-group">
+															<label class="col-sm-3 control-label"> Min: </label>
+															<div class="col-sm-9">
+																<input type="text" pattern="^(?:[1-9]\d*|0)?(?:\.\d+)?"
+																	required="true" class="form-control"
+																	ng-model="rangeStart" name="rangeStart">
+																<div class="has-error">
+																	<span ng-show="addCodeForm.rangeStart.$error.required"
+																		class="text-danger"> Required value. </span> <span
+																		ng-show="addCodeForm.rangeStart.$error.pattern"
+																		class="text-danger"> Must be a number </span>
+																</div>
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="col-sm-3 control-label"> Max: </label>
+															<div class="col-sm-9">
+																<input type="text" required="true" class="form-control"
+																	pattern="^(?:[1-9]\d*|0)?(?:\.\d+)?$"
+																	ng-model="rangeEnd" name="rangeEnd">
+																<div class="has-error">
+																	<span ng-show="addCodeForm.rangeEnd.$error.required"
+																		class="text-danger"> Required value. </span> <span
+																		ng-show="addCodeForm.rangeEnd.$error.pattern"
+																		class="text-danger"> Must be a number </span>
+																</div>
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="col-sm-3 control-label"> ICD-10: </label>
+															<div class="col-sm-9">
+																<select class="form-control" ng-model="rangeCode"
+																	ng-value="$scope.rangeCode" name="rangeCode">
+																	<option ng-repeat="type in ICD_list">{{type.code}}</option>
+																</select>
+															</div>
+														</div>
+														<div class="form-group">
+															<div class="col-xs-12">
+																<button class="btn btn-primary pull-right"
+																	name="submitRange" id="submitQuant"
+																	ng-click="submitRange()"
+																	ng-disabled="addCodeForm.rangeStart.$error.pattern || addCodeForm.rangeEnd.$error.pattern
+													                                       || addCodeForm.rangeStart.$error.required || addCodeForm.rangeEnd.$error.required
+													                                       || addCodeForm.rangeCode.$error.required">
+																	Add Range</button>
+															</div>
+															<div class="col-xs-12">
+																<div class="text-danger pull-right"
+																	ng-show="invalid_range" id="invalidRangeMessage">Start
+																	value must be less than end value.</div>
+																<div class="text-danger pull-right"
+																	ng-show="dupRangeMessage" id="dupRangeMessage">Values
+																	in range already used.</div>
+																<div class="text-danger pull-right"
+																	ng-show="startAndEndIntegers" id="s">Start and
+																	end values must are required fields</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="form-group">
+												<div class="col-xs-12">
+													<button class="btn btn-primary pull-right" name="submit"
+														id="submitLOINC" ng-click="addCode()">{{ editMode
+														? "Edit Code" : "Add Code" }}</button>
+												</div>
+											</div>
+										</form>
+										<div>
+											<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+											<p style="color: green" ng-model="success" id="succP">{{success}}</p>
+										</div>
+										<div>
+											<!-- Format guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
+											<h4>LOINC Code Format:</h4>
+											<ul>
+												<li>(Up to 5 digits) - 1 digit</li>
+												<li>Numeric values only</li>
+											</ul>
+										</div>
+									</div>
 								</div>
 							</div>
-						</form>
-						<div>
-							<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
-							<p style="color: green" ng-model="success" id="succP">{{success}}</p>
 						</div>
-						<div>
-							<!-- Formate guidelines from https://www.cms.gov/Medicare/Coding/ICD10/downloads/ICD-10Overview.pdf -->
-							<h4>LOINC Code Format:</h4>
-							<ul>
-								<li>(Up to 5 digits) - 1 digit</li>
-								<li>Numeric values only</li>
-							</ul>
-						</div>
-					</td>
-				</tr>
-			</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
