@@ -1,125 +1,57 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.logging.Level;
 
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.models.persistent.BasicHealthMetrics;
-import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
-import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
-import edu.ncsu.csc.itrust2.models.persistent.Hospital;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
-import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.iTrust2.models.BasicHealthMetrics;
+import edu.ncsu.csc.iTrust2.models.Drug;
+import edu.ncsu.csc.iTrust2.models.Hospital;
+import edu.ncsu.csc.iTrust2.models.OfficeVisit;
+import edu.ncsu.csc.iTrust2.models.Patient;
+import edu.ncsu.csc.iTrust2.models.Prescription;
+import edu.ncsu.csc.iTrust2.models.enums.AppointmentType;
+import edu.ncsu.csc.iTrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.iTrust2.models.enums.PatientSmokingStatus;
+import edu.ncsu.csc.iTrust2.models.enums.State;
+import edu.ncsu.csc.iTrust2.services.BasicHealthMetricsService;
+import edu.ncsu.csc.iTrust2.services.DrugService;
+import edu.ncsu.csc.iTrust2.services.HospitalService;
+import edu.ncsu.csc.iTrust2.services.OfficeVisitService;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 public class DocumentOfficeVisitStepDefs extends CucumberTest {
 
-    static {
-        java.util.logging.Logger.getLogger( "com.gargoylesoftware" ).setLevel( Level.OFF );
-    }
+    private static final String       VIEW_URL = BASE_URL + "patient/officeVisit/viewPrescriptions";
 
-    private final String baseUrl      = "http:localhost:8080/iTrust2";
+    private BasicHealthMetrics        expectedBhm;
 
-    private final String hospitalName = "Office Visit Hospital" + ( new Random() ).nextInt();
-    BasicHealthMetrics   expectedBhm;
+    @Autowired
+    private BasicHealthMetricsService bhmService;
 
-    @Given ( "The required facilities exist" )
-    public void personnelExists () throws Exception {
-        attemptLogout();
+    @Autowired
+    private DrugService               drugService;
 
-        GeneralCheckup.deleteAll();
-        DomainObject.deleteAll( BasicHealthMetrics.class );
+    @Autowired
+    private OfficeVisitService        officeVisitService;
 
-        // All tests can safely assume the existence of the 'hcp', 'admin', and
-        // 'patient' users
-
-        /* Make sure we create a Hospital and Patient record */
-
-        final Hospital hospital = new Hospital( hospitalName, "Bialystok", "10101", State.NJ.toString() );
-        hospital.save();
-
-        /* Create patient record */
-
-        final Patient patient = new Patient();
-        patient.setSelf( User.getByName( "patient" ) );
-        patient.setFirstName( "Karl" );
-        patient.setLastName( "Liebknecht" );
-        patient.setEmail( "karl_liebknecht@mail.de" );
-        patient.setAddress1( "Karl Liebknecht Haus. Alexanderplatz" );
-        patient.setCity( "Berlin" );
-        patient.setState( State.DE );
-        patient.setZip( "91505" );
-        patient.setPhone( "123-456-7890" );
-        patient.setDateOfBirth( LocalDate.parse( "1871-08-13" ) );
-
-        patient.save();
-
-    }
-
-    /**
-     * Fills in the date and time fields with the specified date and time.
-     * @param date The date to enter.
-     * @param time The time to enter.
-     */
-    private void fillInDateTime(String dateField, String date, String timeField, String time) {
-        fillInDate(dateField, date);
-        fillInTime(timeField, time);
-    }
-
-    /**
-     * Fills in the date field with the specified date.
-     * @param date The date to enter.
-     */
-    private void fillInDate(String dateField, String date) {
-        driver.findElement( By.name( dateField ) ).clear();
-        final WebElement dateElement = driver.findElement( By.name( dateField ) );
-        dateElement.sendKeys( date.replace( "/", "" ) );
-    }
-
-    /**
-     * Fills in the time field with the specified time.
-     * @param time The time to enter.
-     */
-    private void fillInTime(String timeField, String time) {
-        // Zero-pad the time for entry
-        if ( time.length() == 7 ) {
-            time = "0" + time;
-        }
-
-        driver.findElement( By.name( timeField ) ).clear();
-        final WebElement timeElement = driver.findElement( By.name( timeField ) );
-        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
-    }
-
-    @When ( "I log in to iTrust2 as a HCP" )
-    public void loginAsHCP () {
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "hcp" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-        waitForAngular();
-    }
+    @Autowired
+    private HospitalService           hospitalService;
 
     @When ( "I navigate to the Document Office Visit page" )
     public void navigateDocumentOV () {
@@ -245,6 +177,11 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         driver.findElement( By.name( "submit" ) ).click();
     }
 
+    @When ( "I submit the office visit" )
+    public void submitOV () {
+        driver.findElement( By.name( "submit" ) ).click();
+    }
+
     @Then ( "The office visit is documented successfully" )
     public void documentedSuccessfully () {
         waitForAngular();
@@ -256,6 +193,8 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         catch ( final Exception e ) {
             fail();
         }
+
+        Assert.assertEquals( 1, officeVisitService.count() );
     }
 
     /**
@@ -265,19 +204,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
      */
     @Then ( "The basic health metrics for the infant are correct" )
     public void healthMetricsCorrectInfant () throws InterruptedException {
-        BasicHealthMetrics actualBhm = null;
-        for ( int i = 1; i <= 10; i++ ) {
-            try {
-                actualBhm = BasicHealthMetrics.getBasicHealthMetrics().get( 0 );
-                break;
-            }
-            catch ( final Exception e ) {
-                if ( i == 10 && actualBhm == null ) {
-                    fail( "Could not get basic health metrics out of database" );
-                }
-                waitForAngular();
-            }
-        }
+        final BasicHealthMetrics actualBhm = getMetrics();
         assertEquals( expectedBhm.getWeight(), actualBhm.getWeight() );
         assertEquals( expectedBhm.getHeight(), actualBhm.getHeight() );
         assertEquals( expectedBhm.getHeadCircumference(), actualBhm.getHeadCircumference() );
@@ -291,11 +218,23 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
      */
     @Then ( "The basic health metrics for the child are correct" )
     public void healthMetricsCorrectChild () throws InterruptedException {
+        final BasicHealthMetrics actualBhm = getMetrics();
+
+        assertEquals( expectedBhm.getWeight(), actualBhm.getWeight() );
+        assertEquals( expectedBhm.getHeight(), actualBhm.getHeight() );
+        assertEquals( expectedBhm.getSystolic(), actualBhm.getSystolic() );
+        assertEquals( expectedBhm.getDiastolic(), actualBhm.getDiastolic() );
+        assertEquals( expectedBhm.getHouseSmokingStatus(), actualBhm.getHouseSmokingStatus() );
+    }
+
+    private BasicHealthMetrics getMetrics () {
         BasicHealthMetrics actualBhm = null;
         for ( int i = 1; i <= 10; i++ ) {
             try {
-                actualBhm = BasicHealthMetrics.getBasicHealthMetrics().get( 0 );
-                break;
+                actualBhm = (BasicHealthMetrics) bhmService.findAll().get( 0 );
+                if ( null != actualBhm ) {
+                    return actualBhm;
+                }
             }
             catch ( final Exception e ) {
                 if ( i == 10 && actualBhm == null ) {
@@ -304,11 +243,8 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
                 waitForAngular();
             }
         }
-        assertEquals( expectedBhm.getWeight(), actualBhm.getWeight() );
-        assertEquals( expectedBhm.getHeight(), actualBhm.getHeight() );
-        assertEquals( expectedBhm.getSystolic(), actualBhm.getSystolic() );
-        assertEquals( expectedBhm.getDiastolic(), actualBhm.getDiastolic() );
-        assertEquals( expectedBhm.getHouseSmokingStatus(), actualBhm.getHouseSmokingStatus() );
+        fail( "Could not get basic health metrics out of database" );
+        return null;
     }
 
     /**
@@ -318,19 +254,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
      */
     @Then ( "The basic health metrics for the adult are correct" )
     public void healthMetricsCorrectAdult () throws InterruptedException {
-        BasicHealthMetrics actualBhm = null;
-        for ( int i = 1; i <= 10; i++ ) {
-            try {
-                actualBhm = BasicHealthMetrics.getBasicHealthMetrics().get( 0 );
-                break;
-            }
-            catch ( final Exception e ) {
-                if ( i == 10 && actualBhm == null ) {
-                    fail( "Could not get basic health metrics out of database" );
-                }
-                waitForAngular();
-            }
-        }
+        final BasicHealthMetrics actualBhm = getMetrics();
         assertEquals( expectedBhm.getWeight(), actualBhm.getWeight() );
         assertEquals( expectedBhm.getHeight(), actualBhm.getHeight() );
         assertEquals( expectedBhm.getSystolic(), actualBhm.getSystolic() );
@@ -349,8 +273,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
     public void notDocumented () {
         waitForAngular();
 
-        final List<BasicHealthMetrics> list = BasicHealthMetrics.getBasicHealthMetrics();
-        assertTrue( 0 == list.size() );
+        Assert.assertEquals( 0, bhmService.count() );
     }
 
     /**
@@ -362,24 +285,24 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
      *            The birthday of the patient.
      * @throws ParseException
      */
-    @Given ( "^A patient exists with name: (.+) and date of birth: (.+)$" )
+    @Given ( "^The patient has name: (.+) and date of birth: (.+)$" )
     public void patientExistsWithName ( final String name, final String birthday ) throws ParseException {
         attemptLogout();
 
-        final Patient patient = new Patient();
-        patient.setSelf( User.getByName( "patient" ) );
+        final Patient patient = (Patient) userService.findByName( "patient" );
+
+        patient.setEmail( "karl_liebknecht@mail.de" );
+        patient.setAddress1( "Karl Liebknecht Haus. Alexanderplatz" );
+        patient.setCity( "Berlin" );
+        patient.setState( State.DE );
+        patient.setZip( "91505" );
+        patient.setPhone( "123-456-7890" );
 
         patient.setFirstName( name.split( " " )[0] );
         patient.setLastName( name.split( " " )[1] );
-        patient.setEmail( "email@mail.com" );
-        patient.setAddress1( "address place. address" );
-        patient.setCity( "citytown" );
-        patient.setState( State.CA );
-        patient.setZip( "91505" );
-        patient.setPhone( "123-456-7890" );
         patient.setDateOfBirth( LocalDate.parse( birthday, DateTimeFormatter.ofPattern( "MM/dd/yyyy" ) ) );
 
-        patient.save();
+        userService.save( patient );
 
     }
 
@@ -525,7 +448,7 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
 
-        fillInDateTime( "date", dateString, "time", "9:30 AM");
+        fillInDateTime( "date", dateString, "time", "9:30 AM" );
 
         expectedBhm = new BasicHealthMetrics();
 
@@ -649,8 +572,8 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         waitForAngular();
         final WebElement hospital = driver.findElement( By.name( "hospital" ) );
         hospital.click();
-        
-        fillInDateTime( "date", dateString, "time", "9:30 AM");
+
+        fillInDateTime( "date", dateString, "time", "9:30 AM" );
 
         expectedBhm = new BasicHealthMetrics();
 
@@ -777,7 +700,102 @@ public class DocumentOfficeVisitStepDefs extends CucumberTest {
         }
 
         waitForAngular();
-        final WebElement submit = driver.findElement( By.name( "submit" ) );
-        submit.click();
     }
+
+    @Given ( "^A drug named (.+) exists in iTrust2$" )
+    public void drugExists ( final String drugName ) {
+        final Drug drug = new Drug();
+        drug.setName( drugName );
+        drug.setCode( "1234-1234-12" );
+        drug.setDescription( "May induce haluncinations" );
+
+        drugService.save( drug );
+
+    }
+
+    @When ( "^I add a prescription for (.+) with a dosage of (.+) starting on (.+) and ending on (.+) with (.+) renewals$" )
+    public void addPrescription ( final String drug, final String dosage, final String startDate, final String endDate,
+            final String renewals ) {
+        waitForAngular();
+
+        enterValue( "dosageEntry", dosage );
+        fillInDate( "startEntry", startDate );
+        fillInDate( "endEntry", endDate );
+        enterValue( "renewalEntry", renewals );
+        selectName( drug );
+        driver.findElement( By.name( "fillPrescription" ) ).click();
+        assertEquals( "", driver.findElement( By.name( "errorMsg" ) ).getText() );
+    }
+
+    @Given ( "^I have been prescribed the drug (.+) with a dosage of (.+) starting on (.+) and ending on (.+) with (.+) renewals$" )
+    public void prescriptionAdded ( final String drug, final String dosage, final String startDate,
+            final String endDate, final String renewals ) {
+        final Drug drugObj = drugService.findByCode( "1234-1234-12" );
+
+        final Hospital hospital = hospitalService.findByName( "iTrust Test Hospital 2" );
+
+        final OfficeVisit visit = new OfficeVisit();
+        final BasicHealthMetrics bhm = new BasicHealthMetrics();
+
+        bhm.setDiastolic( 150 );
+        bhm.setDiastolic( 100 );
+        bhm.setHcp( userService.findByName( "hcp" ) );
+        bhm.setPatient( userService.findByName( "patient" ) );
+        bhm.setHdl( 75 );
+        bhm.setHeight( 75f );
+        bhm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+
+        visit.setBasicHealthMetrics( bhm );
+        visit.setType( AppointmentType.GENERAL_CHECKUP );
+        visit.setHospital( hospital );
+        visit.setPatient( userService.findByName( "patient" ) );
+        visit.setHcp( userService.findByName( "hcp" ) );
+        visit.setDate( ZonedDateTime.now() );
+        officeVisitService.save( visit );
+
+        officeVisitService.save( visit );
+
+        final Prescription pres = new Prescription();
+        pres.setDosage( Integer.valueOf( dosage ) );
+        pres.setDrug( drugObj );
+
+        final LocalDate now = LocalDate.now();
+        pres.setEndDate( now.plus( Period.ofWeeks( 5 ) ) );
+        pres.setPatient( userService.findByName( "patient" ) );
+        pres.setStartDate( now );
+        pres.setRenewals( Integer.valueOf( renewals ) );
+
+        final List<Prescription> pr = new ArrayList<Prescription>();
+        pr.add( pres );
+        visit.setPrescriptions( pr );
+
+        officeVisitService.save( visit );
+
+    }
+
+    @Then ( "^I see a prescription for (.+) with a dosage of (.+) starting on (.+) and ending on (.+) with (.+) renewals$" )
+    public void prescriptionVisible ( final String drug, final String dosage, final String startDate,
+            final String endDate, final String renewals ) {
+        waitForAngular();
+        final List<WebElement> rows = driver.findElements( By.name( "prescriptionTableRow" ) );
+
+        List<WebElement> data = null;
+        for ( final WebElement r : rows ) {
+            if ( r.getText().contains( drug ) ) {
+                waitForAngular();
+                data = r.findElements( By.tagName( "td" ) );
+                break;
+            }
+        }
+
+        assertEquals( drug, data.get( 0 ).getText() );
+        assertEquals( dosage, data.get( 1 ).getText() );
+        assertEquals( renewals, data.get( 4 ).getText() );
+    }
+
+    @When ( "I choose to view my prescriptions" )
+    public void viewPrescriptions () {
+        driver.get( VIEW_URL );
+    }
+
 }

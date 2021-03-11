@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -9,44 +9,36 @@ import java.time.LocalDate;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebElement;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.models.enums.BloodType;
-import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
-import edu.ncsu.csc.itrust2.models.enums.Gender;
-import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
-import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.iTrust2.forms.UserForm;
+import edu.ncsu.csc.iTrust2.models.Patient;
+import edu.ncsu.csc.iTrust2.models.Personnel;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.BloodType;
+import edu.ncsu.csc.iTrust2.models.enums.Ethnicity;
+import edu.ncsu.csc.iTrust2.models.enums.Gender;
+import edu.ncsu.csc.iTrust2.models.enums.Role;
+import edu.ncsu.csc.iTrust2.models.enums.State;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 /**
- * Step Definitions for Edit Demographics class
  *
  * @author Kai Presler-Marshall
  * @author 201-1 Fall 2017
- *
- */
+ **/
 public class HCPEditPatientStepDefs extends CucumberTest {
 
-    private final String baseUrl = "http://localhost:8080/iTrust2";
-
-    private void setTextField ( final By byval, final String value ) {
-        final WebElement elem = driver.findElement( byval );
-        elem.clear();
-        elem.sendKeys( value );
-    }
-
-    @Given ( "the required users exist" )
+    @Given ( "^Jim Nellie and Shelly exist$" )
     public void loadRequiredUsers () throws ParseException {
-        attemptLogout();
-
         // make sure the users we need to login exist
 
-        final Patient dbJim = Patient.getByName( "jbean" );
-        final Patient jbean = null == dbJim ? new Patient() : dbJim;
-        jbean.setSelf( User.getByName( "jbean" ) );
+        final User svang = new Personnel( new UserForm( "svang", "123456", Role.ROLE_HCP, 1 ) );
+
+        userService.save( svang );
+
+        final Patient jbean = new Patient( new UserForm( "jbean", "123456", Role.ROLE_PATIENT, 1 ) );
         jbean.setFirstName( "Jim" );
         jbean.setLastName( "Bean" );
         jbean.setEmail( "jbean@gmail.com" );
@@ -62,14 +54,11 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         jbean.setEthnicity( Ethnicity.Caucasian );
         jbean.setGender( Gender.Male );
 
-        jbean.save();
+        userService.save( jbean );
 
         // set Nellie Sanderson's demographics
 
-        final Patient dbNellie = Patient.getByName( "nsanderson" );
-
-        final Patient nsanderson = null == dbNellie ? new Patient() : dbNellie;
-        nsanderson.setSelf( User.getByName( "nsanderson" ) );
+        final Patient nsanderson = new Patient( new UserForm( "nsanderson", "123456", Role.ROLE_PATIENT, 1 ) );
         nsanderson.setFirstName( "Nellie" );
         nsanderson.setLastName( "Sanderson" );
         nsanderson.setEmail( "nsanderson@gmail.com" );
@@ -83,23 +72,24 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         nsanderson.setEthnicity( Ethnicity.Caucasian );
         nsanderson.setGender( Gender.Female );
 
-        nsanderson.save();
+        userService.save( nsanderson );
 
     }
 
-    @Given ( "Dr Shelly Vang has logged in and chosen to edit a patient" )
+    @Given ( "^Dr Shelly Vang has logged in and chosen to edit a patient$" )
     public void gotoEditPage () throws Exception {
         attemptLogout();
 
-        driver.get( baseUrl );
-        setTextField( By.name( "username" ), "svang" );
-        setTextField( By.name( "password" ), "123456" );
+        driver.get( BASE_URL );
+        waitForAngular();
+        enterValue( "username", "svang" );
+        enterValue( "password", "123456" );
         driver.findElement( By.className( "btn" ) ).click();
 
         ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('editPatientDemographics').click();" );
     }
 
-    @When ( "she selects the patient with first name: (.+) and last name: (.+)" )
+    @When ( "^she selects the patient with first name: (.+) and last name: (.+)$" )
     public void selectPatient ( final String first, final String last ) throws Exception {
         final String username = first.toLowerCase().charAt( 0 ) + last.toLowerCase();
 
@@ -108,19 +98,19 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         driver.findElement( By.cssSelector( "input[type=radio][value=" + username + "]" ) ).click();
     }
 
-    @When ( "she changes the zip code to: (.+)" )
+    @When ( "^she changes the zip code to: (.+)$" )
     public void changeZipcode ( final String zip ) throws Exception {
         waitForAngular();
-        setTextField( By.name( "zip" ), zip );
+        enterValue( "zip", zip );
     }
 
-    @When ( "she submits the changes" )
+    @When ( "^she submits the changes$" )
     public void submitChanges () {
         waitForAngular();
         driver.findElement( By.name( "submit" ) ).click();
     }
 
-    @Then ( "a success message is displayed" )
+    @Then ( "^a success message is displayed$" )
     public void checkSuccessMessage () {
         waitForAngular();
 
@@ -134,7 +124,7 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         }
     }
 
-    @Then ( "an error message is displayed" )
+    @Then ( "^an error message is displayed$" )
     public void checkErrorMessage () {
         waitForAngular();
 
@@ -148,7 +138,7 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         }
     }
 
-    @Then ( "if she changes to patient to (.+) (.+), a popup indicates her changes will be lost" )
+    @Then ( "^if she changes to patient to (.+) (.+), a popup indicates her changes will be lost$" )
     public void checkWarningMessage ( final String first, final String last ) throws Exception {
         // headless webdrivers do not support alerts, so override the confirm
         // function to automatically accept, but still display the message on
@@ -172,13 +162,13 @@ public class HCPEditPatientStepDefs extends CucumberTest {
         }
     }
 
-    @When ( "she chooses to continue" )
+    @When ( "^she chooses to continue$" )
     public void ignoreWarning () {
         // alert has already been overridden to automatically accept in method
         // above (checkWarningMessage)
     }
 
-    @Then ( "the zip code has the value: (.+)" )
+    @Then ( "^the zip code has the value: (.+)$" )
     public void checkZipcode ( final String zip ) throws Exception {
         assertEquals( zip, driver.findElement( By.name( "zip" ) ).getAttribute( "value" ) );
     }

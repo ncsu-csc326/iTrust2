@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.models.enums;
+package edu.ncsu.csc.iTrust2.models.enums;
 
 /**
  * For keeping track of various types of users that are known to the system.

@@ -1,0 +1,257 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="log">
+
+	<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+
+	<!-- main function that loads logView.html -->
+	<div ng-app="logsApp" ng-controller="logsCtrl as ctrl">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+
+						<!-- log entry header -->
+						<div class="panel-heading">
+							<h3>Log History</h3>
+						</div>
+						<div class="panel-body">
+							<table class="table table-bordered" name="log_table">
+
+								<!-- table column headers -->
+								<thead>
+									<tr>
+										<th>Transaction Type</th>
+										<th>Primary User</th>
+										<th>Secondary User</th>
+										<th>Date & Time</th>
+										<th ng-if="ctrl.isPatient">Role</th>
+									</tr>
+								</thead>
+
+								<!-- log entry for every row, ordered by date -->
+								<tbody>
+									<tr name="logTableRow" ng-repeat="l in ctrl.logs">
+										<td name="transactionTypeCell">{{l.transactionType}}</td>
+										<td name="primaryUserCell">{{l.primary}}</td>
+										<td name="secondaryUserCell">{{l.secondary}}</td>
+										<td name="dateCell">{{l.dateTime | date : 'EEE MMM dd
+											h:mm:ss a yyyy'}}</td>
+										<td ng-if="ctrl.isPatient" name="roleCell">{{l.role}}</td>
+									</tr>
+								</tbody>
+							</table>
+
+							<br>
+
+							<!-- container for searching transactions -->
+							<div class="row">
+								<div class="col-md-12">
+									<div class="panel panel-default">
+										<div class="panel-heading ">Search Logs by Date</div>
+										<div class="panel-body">
+											<form class="form-horizontal" role="form" name="viewLogForm"
+												ng-submit="ctrl.searchByDate()">
+												<br>
+
+												<!-- row that contains all interactive fields -->
+												<div class="row">
+
+													<!-- start date -->
+													<div class="col-md-5">
+														<label>From:</label>
+														<div class="row">
+															<div class="col-md-7">
+																<input type="date" class="form-control" name="startDate"
+																	ng-model="ctrl.startDate" ng-max="ctrl.endDate"
+																	required />
+															</div>
+														</div>
+													</div>
+
+													<!-- end date -->
+													<div class="col-md-5">
+														<label>To:</label>
+														<div class="row">
+															<div class="col-md-7">
+																<input type="date" class="form-control" name="endDate"
+																	ng-model="ctrl.endDate" required />
+															</div>
+														</div>
+													</div>
+
+													<!-- submit button -->
+													<div class="col-md-2">
+														<label>Submit:</label>
+														<div class="row">
+															<div class="col-md-4">
+																<button type="submit" class="btn btn-success"
+																	ng-disabled="!viewLogForm.$valid" name="submit">Search
+																	By Date</button>
+															</div>
+														</div>
+													</div>
+
+													<!-- row that contains interactive fields -->
+													<div class="row">
+														<div class="col-md-12"></div>
+													</div>
+
+												</div>
+											</form>
+
+											<br />
+
+
+										</div>
+
+
+									</div>
+
+									<div class="row" style="width: 300px; margin: 0 auto;">
+										<button class="btn btn-success" style="float: left;"
+											ng-click="ctrl.prevPage()">Previous</button>
+										<button class="btn btn-success" style="float: right"
+											ng-click="ctrl.nextPage()">Next</button>
+										<p style="margin: 10 auto; width: 100px; text-align: center;"
+											ng-bind="ctrl.pageString">Page: 1</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+		
+		var App = angular.module('logsApp',['dateTimeServices']);
+		
+		angular.module("logsApp").controller('logsCtrl', function($scope, $http, $filter, dateTimeService) {
+			var self = this;
+			self.logs = [];
+			self.isPatient = false;
+			self.numPages = 1;
+			self.requestParams = {startDate: "", endDate: "", page: 1, pageLength: 10};
+			self.pageString = "Page: 1";
+			
+			self.startDate = "";
+			self.endDate   = "";
+			
+			self.updateTable = function() {
+				$http.post("/iTrust2/api/v1/logentries/range", self.requestParams).then(function (response) {
+					self.logs = response.data;
+					if(self.logs.length > 0){
+						self.isPatient = self.logs[0].isPatient;
+						self.numPages = self.logs[0].numPages;
+					}else{
+						self.numPages = 1;
+					}
+					self.updatePageString();
+				});	
+			}
+			
+			self.updatePageString = function(){
+				self.pageString = "Page: " + self.requestParams.page + " of " + self.numPages;
+			}
+			
+			self.nextPage = function(){
+				if(self.requestParams.page >= self.numPages) return;
+				self.requestParams.page++;
+				
+				self.updateTable();
+			}
+			
+			self.prevPage = function(){
+				if(self.requestParams.page <= 1) return;
+				self.requestParams.page--;
+				
+				self.updateTable();
+			}
+			
+			self.searchByDate = function(){
+				self.requestParams.page = 1;
+				self.pageString = "Page: " + self.requestParams.page;
+				
+				self.requestParams.startDate = self.startDate.toISOString();
+				self.requestParams.endDate = self.endDate.toISOString();
+				
+				self.updateTable();
+			}
+
+			var checkValidDateRange = function(dateRange) {
+				var err = [];
+				if (!dateTimeService.isValidDate(dateRange.startDate)) {
+					err.push("Start date is in an invalid format");
+				}
+				if (!dateTimeService.isValidDate(dateRange.endDate)) {
+					err.push("End date is in an invalid format");
+				}
+				if (dateRange.startDate.getFullYear() > dateRange.endDate
+						.getFullYear()) {
+					err.push("Start date must come before end date.");
+				}
+				if (dateRange.startDate.getFullYear() == dateRange.endDate
+						.getFullYear()
+						&& dateRange.startDate.getFullMonth() > dateRange.endDate
+								.getMonth()) {
+					err.push("Start date must come before end date.");
+				}
+				if (dateRange.startDate.getFullYear() == dateRange.endDate
+						.getFullYear()
+						&& dateRange.startDate.getFullMonth() == dateRange.endDate
+								.getMonth()
+						&& dateRange.startDate.getDate() > dateRange.endDate
+								.getDate()) {
+					err.push("Start date must come before end date.");
+				}
+
+				return err.join(". ");
+			}
+
+			
+			self.updateTable();
+			
+			/*
+			$scope.loadTable = function() {
+				$http.get("/iTrust2/api/v1/logs").then(function(response) {
+					$scope.logs = response.data;
+					$scope.message = "";
+				}, function(rejection) {
+					$scope.logs = [];
+					$scope.message = "Could not display logs";
+				});
+			}
+			
+			$scope.searchLogs = function() {
+				var err = checkValidDateRange($scope.dateRange);
+				if (err) {
+					$scope.errorSearching = err;
+					return;
+				}
+				$http.get("/iTrust2/api/v1/logs").then(function(response) {
+					$scope.logs = response.data;
+					$scope.message = "";
+					for (log in $scope.logs) {
+						if (log.getTime() < $scope.dateRange.startDate
+								&& log.getTime() > $scope.dateRange.endDate) {
+							var index = $scope.logs
+									.indedOf(log);
+							$scope.logs
+									.splice(index, 1);
+						}
+					}
+				},
+				function(rejection) {
+					$scope.logs = [];
+					$scope.errorGetting = "Could not obtain log table";
+				});
+			}
+			*/
+			
+		});
+	</script>
+	</div>
+</div>
+</html>

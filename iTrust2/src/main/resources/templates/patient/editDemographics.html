@@ -1,0 +1,276 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title>Edit My Demographics</title>
+<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+	    /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+	    /*<![CDATA[*/
+	    var app = angular.module("editPatientApp", ['dateTimeServices']);
+	    app.controller("editPatientCtrl", function($scope, $http, dateTimeService) {
+		
+		$scope.err = [];
+		for(var i = 0; i < 12; i++) {
+		    $scope.err[i] = "";
+		}
+		$http.get("/iTrust2/api/v1/patient").then(function(response) {
+		    $scope.patient = response.data;
+		    $scope.patientForm = {};
+		    
+		    Object.assign($scope.patientForm, $scope.patient);
+		    
+		    $scope.patientForm.dateOfBirth = new Date($scope.patient.dateOfBirth);
+		    $scope.patientForm.bloodType = getBT($scope.patient.bloodType);
+		    if ($scope.patient.ethnicity){
+		    	$scope.patientForm.ethnicity = $scope.patient.ethnicity.match(/[A-Z][a-z]+/g).join(' ');
+		    }
+		    
+		    return;
+		    
+			
+		}, function(rejection) {
+		    console.err("Could not retrieve expected Patient record");
+
+		});
+
+		$http.get("/iTrust2/api/v1/state").then(function(response) {
+		    $scope.states = response.data;
+		});
+
+		$http.get("/iTrust2/api/v1/bloodtype").then(function(response) {
+		    $scope.bloodTypes = response.data;
+		});
+
+		$http.get("/iTrust2/api/v1/ethnicity").then(function(response) {
+		    $scope.ethnicities = response.data;
+		});
+
+		$http.get("/iTrust2/api/v1/gender").then(function(response) {
+		    $scope.genders = response.data;
+		});
+		
+		$http.get("/iTrust2/api/v1/patients").then(function(response) {
+		    var patients = response.data;
+		    var patientNames = [];
+		    for(var i = 0; i < patients.length; i++) {
+			   patientNames[i] = patients[i].username;
+		    }
+		    $scope.nameOfpatients = patientNames;
+		});
+		
+		function checkValidForm(form) {
+		    var valid = true;
+		    if(!form.firstName || form.firstName.length > 20) {
+			    $scope.err[0] = ("first name can not be empty or longer than 20 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[0] = "";
+		    }
+		    if(!form.lastName || form.lastName.length > 30) {
+			    $scope.err[1] = ("last name can not be empty or longer than 30 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[1] = "";
+		    }
+		    if(form.preferredName && form.preferredName.length > 20) {
+			    $scope.err[2] = ("preferred name can be no longer than 20 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[2] = "";
+		    }
+		    if(!form.email || form.email.length > 30) {
+			    $scope.err[5] = ("email can not be empty or longer than 30 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[5] = "";
+		    }
+		    if(!form.address1 || form.address1.length > 50) {
+			    $scope.err[6] = ("primary address can not be empty or longer than 50 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[6] = "";
+		    }
+		    if(form.address2 && form.address2.length > 50) {
+			    $scope.err[7] = ("secondary address can not be longer than 50 characters");
+			    valid = false;
+		    } else {
+			    $scope.err[7] = "";
+		    }
+		    if(!form.city || form.city.length > 15) {
+			    $scope.err[8] = ("city can not be empty or longer than 15 characters");	
+			    valid = false;
+		    } else {
+			    $scope.err[8] = "";
+		    }
+		    if(!/(^\d{5}$)|(^\d{5}-\d{4}$)/.test(form.zip) ) {
+				$scope.err[9] = ("zipcode must be 5 numbers");
+				valid = false;
+			} else {
+			    $scope.err[9] = "";
+			    }
+		    if(!/(^[0-9]{3}-[0-9]{3}-[0-9]{4}$)/.test(form.phone) || !form.phone) {
+			    $scope.err[10] = ("phone can not be empty and must have correct format (e.g. 123-456-7890)");
+			    valid = false;
+		    } else {
+			    $scope.err[10] = "";
+			}
+		    if(!dateTimeService.isValidDate(form.dateOfBirth)) {
+			    $scope.err[11] = ("date of birth can't be empty and must be written as mm/dd/yyyy");
+			    valid = false;
+		    } else {
+			    $scope.err[11] = "";
+		    }
+		    return valid;
+		}
+
+		$scope.submit = function() {
+		    var valid = checkValidForm($scope.patientForm);
+		    if (!valid) {
+				$scope.message = "";
+		    } else {
+			    var form = angular.copy($scope.patientForm);
+				form.dateOfBirth = dateTimeService.toDateString(form.dateOfBirth);
+				    
+				$http.put("/iTrust2/api/v1/patients/" + $scope.patient.username, form).then(
+					function(response) {
+						$scope.message = "Your demographics were updated successfully."
+					}, function(rejection) {
+						$scope.message = "Failed to update demographics."
+				});
+				
+		    }
+		}
+			
+		function getBT(bloodtype) {
+		    if (bloodtype == null || bloodtype == undefined){
+			    return "";
+		    }
+			var pos = bloodtype.replace("Pos", "+");
+			var neg = pos.replace("Neg", "-");
+			return neg;
+		}
+
+	    });
+	    /*]]>*/
+	</script>
+
+
+
+		<div ng-app="editPatientApp" ng-controller="editPatientCtrl">
+			<div
+				style="float: left; width: 100%; border-left: 1px solid #bbb; padding-left: 3%; height: 100%; overflow-y: auto">
+				<h2 id="header0">Edit My Demographics</h2>
+				<table>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>First Name:</b></td>
+						<td><input type="text" name="firstName" id="firstName"
+							value="{{patientForm.firstName}}"
+							ng-model="patientForm.firstName" /></td>
+						<td style="color: red;" ng-show="err[0]">{{err[0]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Last Name:</b></td>
+						<td><input type="text" name="lastName" id="lastName"
+							ng-model="patientForm.lastName" /></td>
+						<td style="color: red;" ng-show="err[1]">{{err[1]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Preferred
+								Name:</b></td>
+						<td><input type="text" name="preferredName"
+							id="preferredName" ng-model="patientForm.preferredName" /></td>
+						<td style="color: red;" ng-show="err[2]">{{err[2]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Email:</b></td>
+						<td><input type="text" name="email" id="email"
+							ng-model="patientForm.email" /></td>
+						<td style="color: red;" ng-show="err[5]">{{err[5]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Address
+								Line 1:</b></td>
+						<td><input type="text" name="address1" id="address1"
+							value="{{patientForm.address1}}" ng-model="patientForm.address1" /></td>
+						<td style="color: red;" ng-show="err[6]">{{err[6]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Address
+								Line 2:</b></td>
+						<td><input type="text" name="address2" id="address2"
+							ng-model="patientForm.address2" /></td>
+						<td style="color: red;" ng-show="err[7]">{{err[7]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>City:</b></td>
+						<td><input type="text" name="city" id="city"
+							ng-model="patientForm.city" /></td>
+						<td style="color: red;" ng-show="err[8]">{{err[8]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>State:</b></td>
+						<td><select name="state" id="state"
+							ng-model="patientForm.state">
+								<option ng-repeat="st in states">{{st.id}}</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Zip:</b></td>
+						<td><input type="text" name="zip" id="zip"
+							ng-model="patientForm.zip" /></td>
+						<td style="color: red;" ng-show="err[9]">{{err[9]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Phone:</b></td>
+						<td><input type="text" name="phone" id="phone"
+							placeholder="xxx-xxx-xxxx" ng-model="patientForm.phone" /></td>
+						<td style="color: red;" ng-show="err[10]">{{err[10]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Date of
+								Birth:</b></td>
+						<td><input type="date" name="dateOfBirth" id="dateOfBirth"
+							ng-model="patientForm.dateOfBirth" /></td>
+						<td style="color: red;" ng-show="err[11]">{{err[11]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Blood Type:</b></td>
+						<td><select name="bloodType" id="bloodType"
+							ng-model="patientForm.bloodType">
+								<option ng-repeat="bt in bloodTypes">{{bt.name}}</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Ethnicity:</b></td>
+						<td><select name="ethnicity" id="ethnicity"
+							ng-model="patientForm.ethnicity">
+								<option ng-repeat="eth in ethnicities">{{eth.name}}</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Gender:</b></td>
+						<td><select name="gender" id="gender"
+							ng-model="patientForm.gender">
+								<option ng-repeat="gen in genders">{{gen.name}}</option>
+						</select></td>
+					</tr>
+				</table>
+
+				<br />
+				<button ng-click="submit()" class="btn" name="submit">Submit</button>
+
+				<div name="success" style="color: green;">{{message}}</div>
+			</div>
+		</div>
+
+
+
+
+	</div>
+	</div>
+</body>
+</html>

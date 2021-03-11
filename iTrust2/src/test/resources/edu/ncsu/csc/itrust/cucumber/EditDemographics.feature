@@ -7,19 +7,6 @@ Feature: Edit demographics
 	I want to edit my demographics
 	So that my information is stored and HCPs can make the best decisions about my health
 	
-# test for #49 bug
-Scenario Outline: Viewing logs with edits
-	Given A patient exists in the system
-	When I log in as a patient
-	And I navigate to the Edit My Demographics page
-	And I fill in new, updated demographics
-	Then The demographics are updated
-	And I go to the Edit My Demographics page and back to the log and check the last 3 messages, <first> and <second> and <third>
-
-Examples:
-	| first    						| second   							|  third   							| 
-	|Demographics viewed by user	| HCP edits patient's demographics 	| Demographics viewed by user	    | 
-
 Scenario: Add my demographics
 	Given A patient exists in the system
 	When I log in as a patient

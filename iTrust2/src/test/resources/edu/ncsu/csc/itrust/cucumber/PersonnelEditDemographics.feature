@@ -6,8 +6,8 @@ Feature: Personnel edit demographics
 	So that my information is stored for regulatory purposes
 
 Scenario: Add my demographics
-Given An admin exists in the system
-When I log in as a personnel admin
+Given An Admin exists in iTrust2
+When I log in as admin
 When I navigate to the Personnel Edit My Demographics page
 When I fill in new, updated personnel demographics
 Then The personnel demographics are updated

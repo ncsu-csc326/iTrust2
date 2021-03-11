@@ -9,14 +9,6 @@ local.properties
 .settings/
 .loadpath
 .recommenders
-src/main/java/db.properties
-src/main/java/email.properties
-src/main/resources/hibernate.properties
-/src/main/resources/ClassDiagramTester.*
-target/
-WebRoot/
-.classpath
-*.log
 
 # External tool builders
 .externalToolBuilders/
@@ -56,10 +48,11 @@ WebRoot/
 .scala_dependencies
 .worksheet
 
-# IntelliJ
-.iml
+target/
+target/*
 
-/target/
-.DS_Store
-/.checkstyle
-/javadoc
+# Cucumber testing
+\\CoffeeMaker_JUnit_Cucumber\\cucumberTest.xml
+
+# Hibernate configuration with password
+src/main/resources/application.yml

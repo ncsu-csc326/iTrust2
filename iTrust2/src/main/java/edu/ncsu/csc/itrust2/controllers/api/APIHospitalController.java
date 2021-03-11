@@ -1,7 +1,8 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,10 +14,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.forms.admin.HospitalForm;
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.Hospital;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.forms.HospitalForm;
+import edu.ncsu.csc.iTrust2.models.Hospital;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.services.HospitalService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Class that provides REST API endpoints for the Hospital model. In all
@@ -30,6 +32,12 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 @SuppressWarnings ( { "unchecked", "rawtypes" } )
 public class APIHospitalController extends APIController {
 
+    @Autowired
+    private LoggerUtil      loggerUtil;
+
+    @Autowired
+    private HospitalService hospitalService;
+
     /**
      * Retrieves a list of all Hospitals in the database
      *
@@ -37,7 +45,7 @@ public class APIHospitalController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/hospitals" )
     public List<Hospital> getHospitals () {
-        return Hospital.getHospitals();
+        return (List<Hospital>) hospitalService.findAll();
     }
 
     /**
@@ -49,9 +57,9 @@ public class APIHospitalController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/hospitals/{id}" )
     public ResponseEntity getHospital ( @PathVariable ( "id" ) final String id ) {
-        final Hospital hospital = Hospital.getByName( id );
+        final Hospital hospital = hospitalService.findByName( id );
         if ( null != hospital ) {
-            LoggerUtil.log( TransactionType.VIEW_HOSPITAL, LoggerUtil.currentUser() );
+            loggerUtil.log( TransactionType.VIEW_HOSPITAL, LoggerUtil.currentUser() );
         }
         return null == hospital
                 ? new ResponseEntity( errorResponse( "No hospital found for name " + id ), HttpStatus.NOT_FOUND )
@@ -66,17 +74,18 @@ public class APIHospitalController extends APIController {
      * @return response
      */
     @PostMapping ( BASE_PATH + "/hospitals" )
-    @PreAuthorize ( "hasRole('ROLE_ADMIN') ")
+    @PreAuthorize ( "hasAnyRole('ROLE_ADMIN') " )
     public ResponseEntity createHospital ( @RequestBody final HospitalForm hospitalF ) {
-        final Hospital hospital = new Hospital( hospitalF );
-        if ( null != Hospital.getByName( hospital.getName() ) ) {
+        Hospital hospital = hospitalService.findByName( hospitalF.getName() );
+        if ( null != hospital ) {
             return new ResponseEntity(
                     errorResponse( "Hospital with the name " + hospital.getName() + " already exists" ),
                     HttpStatus.CONFLICT );
         }
         try {
-            hospital.save();
-            LoggerUtil.log( TransactionType.CREATE_HOSPITAL, LoggerUtil.currentUser() );
+            hospital = new Hospital( hospitalF );
+            hospitalService.save( hospital );
+            loggerUtil.log( TransactionType.CREATE_HOSPITAL, LoggerUtil.currentUser() );
             return new ResponseEntity( hospital, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -97,22 +106,17 @@ public class APIHospitalController extends APIController {
      * @return response
      */
     @PutMapping ( BASE_PATH + "/hospitals/{id}" )
-    @PreAuthorize ( "hasRole('ROLE_ADMIN') ")
+    @PreAuthorize ( "hasRole('ROLE_ADMIN') " )
     public ResponseEntity updateHospital ( @PathVariable final String id, @RequestBody final HospitalForm hospitalF ) {
-        final Hospital hospital = new Hospital( hospitalF );
-        final Hospital dbHospital = Hospital.getByName( id );
+        final Hospital dbHospital = hospitalService.findByName( id );
         if ( null == dbHospital ) {
             return new ResponseEntity( errorResponse( "No hospital found for name " + id ), HttpStatus.NOT_FOUND );
         }
         try {
-            hospital.save(); /* Will overwrite existing request */
-            if ( !hospital.getName().equals( id ) ) {
-                // If we are editing the name, we have to delete the old record,
-                // because name is used as the primary key in hibernate.
-                dbHospital.delete();
-            }
-            LoggerUtil.log( TransactionType.EDIT_HOSPITAL, LoggerUtil.currentUser() );
-            return new ResponseEntity( hospital, HttpStatus.OK );
+            dbHospital.update( hospitalF );
+            hospitalService.save( dbHospital );
+            loggerUtil.log( TransactionType.EDIT_HOSPITAL, LoggerUtil.currentUser() );
+            return new ResponseEntity( dbHospital, HttpStatus.OK );
         }
         catch ( final Exception e ) {
             return new ResponseEntity( errorResponse( "Could not update " + id + " because of " + e.getMessage() ),
@@ -132,19 +136,19 @@ public class APIHospitalController extends APIController {
     @DeleteMapping ( BASE_PATH + "/hospitals/{id}" )
     public ResponseEntity deleteHospital ( @PathVariable final String id ) {
         try {
-            final Hospital hospital = Hospital.getByName( id );
+            final Hospital hospital = hospitalService.findByName( id );
             if ( hospital == null ) {
-                LoggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(),
+                loggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(),
                         "Could not find hospital with id " + id );
                 return new ResponseEntity( errorResponse( "No hospital found with name " + id ), HttpStatus.NOT_FOUND );
             }
-            hospital.delete();
-            LoggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(),
+            hospitalService.delete( hospital );
+            loggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(),
                     "Deleted hospital with name " + hospital.getName() );
             return new ResponseEntity( id, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            LoggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(), "Failed to delete hospital" );
+            loggerUtil.log( TransactionType.DELETE_HOSPITAL, LoggerUtil.currentUser(), "Failed to delete hospital" );
             return new ResponseEntity( errorResponse( "Could not delete hospital: " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }

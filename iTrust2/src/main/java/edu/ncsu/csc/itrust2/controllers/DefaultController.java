@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.controllers;
+package edu.ncsu.csc.iTrust2.controllers;
 
 import java.util.List;
 
@@ -7,8 +7,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.view.RedirectView;
+
+import edu.ncsu.csc.iTrust2.models.enums.Role;
 
 /**
  * Default controller that handles redirecting the logged-in user to one of the
@@ -26,6 +29,11 @@ import org.springframework.web.servlet.view.RedirectView;
 @Controller
 public class DefaultController {
 
+    @GetMapping ( { "login", "login.html" } )
+    public String login ( final Model model ) {
+        return "login";
+    }
+
     /**
      * This controller is used to redirect the authenticated user to the
      * appropriate landing screen based on their role.
@@ -38,7 +46,13 @@ public class DefaultController {
     public RedirectView index ( final Model model ) {
         final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         final List< ? extends GrantedAuthority> auths = (List< ? extends GrantedAuthority>) auth.getAuthorities();
-        final GrantedAuthority ga = auths.get( 0 );
-        return new RedirectView( edu.ncsu.csc.itrust2.models.enums.Role.valueOf( ga.toString() ).getLanding() );
+        final Role role = auths.stream().map( e -> e.toString() ).map( Role::valueOf ).filter( e -> null != e )
+                .findAny().get();
+        return new RedirectView( role.getLanding() );
+    }
+
+    @RequestMapping ( value = "/viewEmails" )
+    public String getEmails ( final Model model ) {
+        return "viewEmails";
     }
 }

@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.config;
+package edu.ncsu.csc.iTrust2.config;
 
 import java.io.IOException;
 
@@ -9,24 +9,24 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.GenericFilterBean;
 
-import edu.ncsu.csc.itrust2.models.persistent.LoginBan;
-import edu.ncsu.csc.itrust2.models.persistent.LoginLockout;
+import edu.ncsu.csc.iTrust2.services.security.LoginBanService;
+import edu.ncsu.csc.iTrust2.services.security.LoginLockoutService;
 
-/**
- * Custom Http Filter to redirect all requests from banned or locked out IP
- * addresses.
- *
- * @author Thomas
- *
- */
 public class IPFilter extends GenericFilterBean {
+
+    @Autowired
+    private LoginBanService     loginBanService;
+
+    @Autowired
+    private LoginLockoutService loginLockoutService;
+
     /*
      * Source for filter setup:
      * http://www.baeldung.com/spring-security-custom-filter
      */
-    // Handle IP locking/banning here
     @Override
     public void doFilter ( final ServletRequest request, final ServletResponse response, final FilterChain chain )
             throws IOException, ServletException {
@@ -37,13 +37,13 @@ public class IPFilter extends GenericFilterBean {
         final String addr = request.getRemoteAddr();
 
         // Redirect all banned IPs to /login?ipbanned
-        if ( LoginBan.isIPBanned( addr )
+        if ( loginBanService.isIPBanned( addr )
                 && ( !relative.contains( "/login" ) || !httpRequest.getParameterMap().containsKey( "ipbanned" ) ) ) {
             httpRequest.getSession().invalidate();
             httpResponse.sendRedirect( httpRequest.getContextPath() + "/login?ipbanned" );
         }
         // redirect all locked out IPs to /login?iplocked
-        else if ( LoginLockout.isIPLocked( addr )
+        else if ( loginLockoutService.isIPLocked( addr )
                 && ( !relative.contains( "/login" ) || !httpRequest.getParameterMap().containsKey( "iplocked" ) ) ) {
             httpRequest.getSession().invalidate();
             httpResponse.sendRedirect( httpRequest.getContextPath() + "/login?iplocked" );
@@ -54,4 +54,5 @@ public class IPFilter extends GenericFilterBean {
         }
 
     }
+
 }

@@ -1,0 +1,244 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Manage Users</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<script th::inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+ 			var app = angular.module("manageUsersApp", []);
+			app.controller("manageUsersCtrl", function($scope, $http) {
+				
+				var checkValidUserForm = function(user) {
+					var err = [];
+					for(var i = 0; i < $scope.users.length; i++ ) {
+						if( $scope.user.username === $scope.users[i].username) {
+						    err.push("Username already exists");
+						}
+					}
+	       	        if( $scope.user.password === $scope.user.password2) {
+					    // do nothing
+					} else {
+						err.push("passwords do not match" );
+					}
+	 				if( $scope.user.password.length < 6)
+	 					err.push("Password must be more than 6 characters long");
+					return err.join(".  ");
+				}
+				
+			
+		    $scope.users = [];
+	        $scope.loadUsers = function () {
+	          $http.get("/iTrust2/api/v1/users").then(
+	            function (response) {
+	              $scope.users = response.data;
+	              $scope.message = "";
+	            }, function (rejection) {
+	              $scope.users = [];
+	              $scope.message = "Could not display users";
+	            });
+	        }
+	        
+	        $scope.addUser = function () {
+	        	
+	        	let roles = [];
+	        	
+				for (let [key, value] of Object.entries($scope.user.roles)) {
+					  if(value === true) roles.push(key);
+				}
+				
+				$scope.user.roles = roles;
+	        	
+		          var err = checkValidUserForm($scope.user);
+		          if (err) {
+		            $scope.errorAdding = err;
+		            $scope.successMessage = "";
+		          } else {
+		            $http.post("/iTrust2/api/v1/users", $scope.user).then(
+		              function (response) {
+		            	    $scope.loadUsers();
+		                $scope.user.username = "";
+		                $scope.user.password = "";
+		                $scope.user.password2 = "";
+		                $scope.user.enabled = false;
+		                $scope.user.role = "ROLE_PATIENT";
+		                $scope.errorAdding = "";
+		                $scope.successMessage = "User added successfully.";
+		              }, function (rejection) {
+		            	    $scope.loadUsers();
+		                $scope.errorAdding = "Could not add User.";
+		                $scope.successMessage = "";
+		              });
+		          }
+	        }
+			
+	        $scope.deleteUser = function(user) {
+	            $http.delete('/iTrust2/api/v1/users/' + user.username).then(
+	              function (response) {
+	                $scope.loadUsers();
+	              }, function (rejection) {
+	            	    $scope.loadUsers();
+	                $scope.message = "Could not remove user";
+	              });
+	          }
+	        
+	        $scope.editRoles = function (user){
+	        	
+	        }
+
+	        $scope.getTemplate = function (user) {
+	          return 'view';
+	        };
+	        
+	        $scope.enabledText = function(user) {
+	        	  if(user.enabled) {
+	        		  return 'yes';        		  
+	        	  } else {
+	        		  return 'no';
+	        	  }
+	        }
+	        
+        	$scope.roles = [
+	        	    "ROLE_PATIENT",
+	        	    "ROLE_HCP" ,
+	        	    "ROLE_OD" ,
+	        	    "ROLE_OPH" ,
+	        	    "ROLE_ADMIN", 
+	        	    "ROLE_ER",
+	        	    "ROLE_VIROLOGIST", 
+	        	    "ROLE_LABTECH" ,
+	        ];
+        	
+        	
+	        
+	        $scope.getRole = function(user) {
+	        	return user.roles.join(", ");
+	        }
+			
+		$scope.loadUsers();
+		});
+			
+</script>
+		<div ng-app="manageUsersApp" ng-controller="manageUsersCtrl">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3>Admin Manage Users</h3>
+							</div>
+							<div class="panel-body">
+								<table class="table table-bordered">
+									<caption>Existing Users:</caption>
+									<thead>
+										<tr>
+											<th>Username</th>
+											<th>Role(s)</th>
+											<th>Enabled</th>
+											<th>Delete User</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr name="userTableRow"
+											ng-repeat="u in users | orderBy: 'name'"
+											ng-include="getTemplate(u)" userId={{u.username}}>
+										</tr>
+									</tbody>
+								</table>
+								<script type="text/ng-template" id="view">
+                <td name="nameCell">{{u.username}}</td>
+			    <td name="roleCell">{{getRole(u)}}</td>
+				<td name="enabledCell">{{enabledText(u)}}</td>
+                <td> 
+                  <div class="row text-center">
+                    <div class="col-md-6">
+                      <input type="button" value="Delete" class="btn btn-danger" name="deleteUser" ng-click="deleteUser(u)"/>                          
+                    </div>
+                  </div>
+                </td>
+                </script>
+								<br>
+								<style>
+form {
+	width: 400px;
+}
+
+.label {
+	float: right;
+	text-align: left;
+	width: 200px;
+	height: 20px;
+	color: #000000
+}
+
+input[type=text] {
+	float: right;
+	text-align: left;
+	width: 200px;
+	height: 20px
+}
+
+input[type=password] {
+	float: right;
+	text-align: left;
+	width: 200px;
+	height: 20px
+}
+
+.clear {
+	clear: both;
+	height: 0;
+	line-height: 0;
+}
+
+.floatright {
+	float: right;
+}
+</style>
+
+
+								<div class="row">
+									<div class="col-md-12">
+										<div class="panel panel-default">
+											<div class="panel-heading ">Add a User</div>
+											<div class="panel-body">
+												<form name="addUserForm"
+													ng-submit="addUser(addUserForm.$valid)">
+													<b>Username:</b> <input type="text" name="username"
+														id="username" ng-model="user.username" /> <br> <br>
+													<b>Password:</b> <input type="password" name="password"
+														id="password" ng-model="user.password" /> <br> <br>
+													<b>Password (again):</b> <input type="password"
+														name="password2" id="password2" ng-model="user.password2" />
+													<br> <br> <b>Role:</b>
+
+													<div ng-repeat="role in roles track by $index">
+														<input type="checkbox" id="{{role}}" ng-model="$parent.user.roles[role]"><i>
+															{{role}}</i></input>
+													</div>
+
+
+													<br> <br> <b>Enabled?:</b> <input type="checkbox"
+														name="enabled" class="checkbox" ng-model="user.enabled" />
+													<br> <input type="submit" id="submit" value="Add User" />
+												</form>
+												<div>
+													<p style="color: red" ng-model="errorAdding" id="error">{{errorAdding}}</p>
+												</div>
+												<div>
+													<p style="color: green" ng-model="successMessage"
+														id="success">{{successMessage}}</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+</body>
+</html>

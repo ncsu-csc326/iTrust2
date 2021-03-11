@@ -1,268 +1,64 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
-import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.iTrust2.models.BasicHealthMetrics;
+import edu.ncsu.csc.iTrust2.models.Diagnosis;
+import edu.ncsu.csc.iTrust2.models.Hospital;
+import edu.ncsu.csc.iTrust2.models.ICDCode;
+import edu.ncsu.csc.iTrust2.models.OfficeVisit;
+import edu.ncsu.csc.iTrust2.models.enums.AppointmentType;
+import edu.ncsu.csc.iTrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.iTrust2.services.HospitalService;
+import edu.ncsu.csc.iTrust2.services.ICDCodeService;
+import edu.ncsu.csc.iTrust2.services.OfficeVisitService;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 public class DiagnosesStepDefs extends CucumberTest {
 
-    private static boolean initialized = false;
+    @Autowired
+    private ICDCodeService     icdCodeService;
 
-    private final String   baseUrl     = "http://localhost:8080/iTrust2";
+    @Autowired
+    private HospitalService    hospitalService;
 
-    private void setTextField ( final By byVal, final Object value ) {
-        final WebElement elem = driver.findElement( byVal );
-        elem.clear();
-        elem.sendKeys( value.toString() );
-    }
+    @Autowired
+    private OfficeVisitService officeVisitService;
 
-    /**
-     * Fills in the date and time fields with the specified date and time.
-     * @param date The date to enter.
-     * @param time The time to enter.
-     */
-    private void fillInDateTime(String dateField, String date, String timeField, String time) {
-        fillInDate(dateField, date);
-        fillInTime(timeField, time);
-    }
-
-    /**
-     * Fills in the date field with the specified date.
-     * @param date The date to enter.
-     */
-    private void fillInDate(String dateField, String date) {
-        driver.findElement( By.name( dateField ) ).clear();
-        final WebElement dateElement = driver.findElement( By.name( dateField ) );
-        dateElement.sendKeys( date.replace( "/", "" ) );
-    }
-
-    /**
-     * Fills in the time field with the specified time.
-     * @param time The time to enter.
-     */
-    private void fillInTime(String timeField, String time) {
-        // Zero-pad the time for entry
-        if ( time.length() == 7 ) {
-            time = "0" + time;
-        }
-
-        driver.findElement( By.name( timeField ) ).clear();
-        final WebElement timeElement = driver.findElement( By.name( timeField ) );
-        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
-    }
-
-    @Given ( "The required diagnosis facilities exist" )
-    public void requirementsExist () {
-        attemptLogout();
-
-        if ( initialized ) {
-            // no need to initialize again
-            return;
-        }
-
-        // login as admin
-        adminLogin();
-        adminNavigate();
-
-        enterDiagnosisInfo( "J18", "Pneumonia" );
-        checkDiagnosisAdd();
-
-        driver.findElement( By.id( "logout" ) ).click();
-
-        initialized = true;
-    }
-
-    @Given ( "A patient exists with the name: (.+) and DOB: (.+)" )
-    public void patientExists ( final String name, final String birthday ) throws ParseException {
-        attemptLogout();
-
-        /* Create patient record */
-        final Patient patient = new Patient();
-        patient.setSelf( User.getByName( "patient" ) );
-        patient.setFirstName( name.split( " " )[0] );
-        patient.setLastName( name.split( " " )[1] );
-        patient.setEmail( "email@mail.com" );
-        patient.setAddress1( "847 address place" );
-        patient.setCity( "citytown" );
-        patient.setState( State.CA );
-        patient.setZip( "91505" );
-        patient.setPhone( "123-456-7890" );
-        patient.setDateOfBirth( LocalDate.parse( birthday, DateTimeFormatter.ofPattern("MM/dd/yyyy") ) );
-
-        patient.save();
-
-    }
-
-    @When ( "I log into iTrust2 as an HCP" )
-    public void hcpLogin () {
-        driver.get( baseUrl );
-        waitForAngular();
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "hcp" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-        waitForAngular();
-
-    }
-
-    @When ( "I navigate to the Document Office Visit Page" )
-    public void navigateToOfficeVisit () {
-        waitForAngular();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('documentOfficeVisit').click();" );
-        waitForAngular();
-    }
-
-    @When ( "I fill in information on the office visit with date: (.+), weight: (.+), height: (.+), systolic blood pressure: (.+), diastolic blood pressure: (.+), household smoking status: (.+), patient smoking status: (.+), HDL cholesterol: (.+), LDL cholesterol: (.+), triglycerides: (.+), diagnosis: (.+), diagnosis note: (.+), and visit note: (.+)" )
-    public void fillInfo ( final String date, final String weight, final String height, final String sys,
-            final String dia, final String householdSmoking, final String patientSmoking, final String hdl,
-            final String ldl, final String triglycerides, final String diagnosis, final String diagnosisNote,
-            final String note ) {
-
-        waitForAngular();
-
-        setTextField( By.name( "notes" ), note );
-        driver.findElement( By.cssSelector( "input[type=radio][value=patient]" ) ).click();
-        driver.findElement( By.name( "GENERAL_CHECKUP" ) ).click();
-        driver.findElement( By.name( "hospital" ) ).click();
-        
-        fillInDateTime( "date", date, "time", "9:30 AM" );
-
-        waitForAngular();
-        setTextField( By.name( "height" ), height );
-
-        waitForAngular();
-        setTextField( By.name( "weight" ), weight );
-
-        waitForAngular();
-        setTextField( By.name( "systolic" ), sys );
-
-        waitForAngular();
-        setTextField( By.name( "diastolic" ), dia );
-
-        waitForAngular();
-        setTextField( By.name( "hdl" ), hdl );
-
-        waitForAngular();
-        setTextField( By.name( "ldl" ), ldl );
-
-        waitForAngular();
-        setTextField( By.name( "tri" ), triglycerides );
-
-        waitForAngular();
-        final WebElement houseSmokeElement = driver.findElement(
-                By.cssSelector( "input[value=\"" + HouseholdSmokingStatus.NONSMOKING.toString() + "\"]" ) );
-        houseSmokeElement.click();
-
-        waitForAngular();
-        final WebElement patientSmokeElement = driver
-                .findElement( By.cssSelector( "input[value=\"" + PatientSmokingStatus.NEVER.toString() + "\"]" ) );
-        patientSmokeElement.click();
-
-        // add the diagnosis
-        waitForAngular();
-        driver.findElement( By.name( diagnosis ) ).click();
-        setTextField( By.name( "notesEntry" ), diagnosisNote );
-        driver.findElement( By.name( "fillDiagnosis" ) ).click();
-
-        waitForAngular();
-        driver.findElement( By.name( "submit" ) ).click();
-    }
-
-    @Then ( "The office visit is documented sucessfully" )
-    public void visitSuccess () {
-        waitForAngular();
-        try {
-            assertTrue( driver.findElement( By.name( "success" ) ).getText()
-                    .contains( "Office visit created successfully" ) );
-        }
-        catch ( final Exception e ) {
-            fail( driver.findElement( By.name( "success" ) ).getText() );
-        }
-    }
-
-    @When ( "I log into iTrust2 as a patient" )
-    public void patientLogin () {
-        driver.get( baseUrl );
-        waitForAngular();
-        setTextField( By.name( "username" ), "patient" );
-        setTextField( By.name( "password" ), "123456" );
-        driver.findElement( By.className( "btn" ) ).click();
-        waitForAngular();
-    }
-
-    @When ( "I navigate to my past diagnoses" )
-    public void patientNavigate () {
-        waitForAngular();
-        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('viewDiagnoses').click();" );
-        waitForAngular();
-    }
-
-    @Then ( "I see the list of my diagnoses" )
-    public void seeList () {
-        waitForAngular();
-
-        try {
-            driver.findElement( By.name( "diagnosis" ) );
-        }
-        catch ( final Exception e ) {
-            fail( driver.findElement( By.name( "success" ) ).getText() );
-        }
-    }
-
-    @Then ( "The (.+), (.+), (.+), and (.+) are correct" )
-    public void checkList ( final String date, final String hcp, final String description, final String note ) {
+    @Then ( "^The (.+), and (.+), are correct$" )
+    public void checkList ( final String description, final String note ) {
         final long time = System.currentTimeMillis();
         waitForAngular();
         while ( System.currentTimeMillis() - time < 5000 ) {
             for ( final WebElement diag : driver.findElements( By.name( "diagnosis" ) ) ) {
                 final String text = diag.getText();
-                if ( text.contains( date ) && text.contains( hcp ) && text.contains( description )
-                        && text.contains( note ) ) {
+                if ( text.contains( description ) && text.contains( note ) ) {
                     // we found the right diganosis
                     return;
                 }
             }
         }
-        // fail( "failed to find specified diagnosis" );
+        Assert.fail( "failed to find specified diagnosis" );
     }
 
-    @When ( "I log into iTrust2 as an admin" )
-    public void adminLogin () {
-        driver.get( baseUrl );
-        waitForAngular();
-        setTextField( By.name( "username" ), "admin" );
-        setTextField( By.name( "password" ), "123456" );
-        driver.findElement( By.className( "btn" ) ).click();
-        waitForAngular();
-    }
-
-    @When ( "I navigate to the list of diagnoses" )
+    @When ( "^I navigate to the list of diagnoses$" )
     public void adminNavigate () {
         waitForAngular();
         ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('manageICDCodes').click();" );
@@ -274,7 +70,7 @@ public class DiagnosesStepDefs extends CucumberTest {
     String       expectedCode;
     String       expectedDescription;
 
-    @When ( "I enter the info for a diagnosis with code: (.+), and description: (.+)" )
+    @When ( "^I enter the info for a diagnosis with code: (.+), and description: (.+)$" )
     public void enterDiagnosisInfo ( final String code, final String description ) {
 
         expectedCode = code;
@@ -375,6 +171,77 @@ public class DiagnosesStepDefs extends CucumberTest {
     public void checkFailMessage () {
         waitForAngular();
         assertTrue( driver.getPageSource().contains( "Diagnosis must be associated with a diagnosis code" ) );
+    }
+
+    @Given ( "A diagnosis code exists in iTrust2" )
+    public void codeAdded () {
+        final ICDCode code = new ICDCode();
+        code.setCode( "T16" );
+        code.setDescription( "Pneumonia" );
+        icdCodeService.save( code );
+    }
+
+    @Given ( "The patient has been diagnosed with the code" )
+    public void diagCreated () {
+
+        final ICDCode code = icdCodeService.findByCode( "T16" );
+
+        final Hospital hospital = hospitalService.findByName( "iTrust Test Hospital 2" );
+
+        final OfficeVisit visit = new OfficeVisit();
+        final BasicHealthMetrics bhm = new BasicHealthMetrics();
+
+        bhm.setDiastolic( 150 );
+        bhm.setDiastolic( 100 );
+        bhm.setHcp( userService.findByName( "hcp" ) );
+        bhm.setPatient( userService.findByName( "patient" ) );
+        bhm.setHdl( 75 );
+        bhm.setHeight( 75f );
+        bhm.setHouseSmokingStatus( HouseholdSmokingStatus.NONSMOKING );
+
+        visit.setBasicHealthMetrics( bhm );
+        visit.setType( AppointmentType.GENERAL_CHECKUP );
+        visit.setHospital( hospital );
+        visit.setPatient( userService.findByName( "patient" ) );
+        visit.setHcp( userService.findByName( "hcp" ) );
+        visit.setDate( ZonedDateTime.now() );
+
+        final Diagnosis diag = new Diagnosis();
+        diag.setCode( code );
+        diag.setNote( "Patient should avoid contact with others for first 24 hours and take prescribed antibiotics" );
+        diag.setVisit( visit );
+
+        visit.setDiagnoses( List.of( diag ) );
+
+        officeVisitService.save( visit );
+    }
+
+    @When ( "I navigate to my past diagnoses" )
+    public void patientNavigate () {
+        waitForAngular();
+        ( (JavascriptExecutor) driver ).executeScript( "document.getElementById('viewDiagnoses').click();" );
+        waitForAngular();
+    }
+
+    @Then ( "I see the list of my diagnoses" )
+    public void seeList () {
+        waitForAngular();
+
+        try {
+            driver.findElement( By.name( "diagnosis" ) );
+        }
+        catch ( final Exception e ) {
+            fail( driver.findElement( By.name( "success" ) ).getText() );
+        }
+    }
+
+    @When ( "^I fill in information on the diagnosis (.+), diagnosis note: (.+)$" )
+    public void fillDiagnosis ( final String diagnosis, final String diagnosisNote ) {
+        // add the diagnosis
+        waitForAngular();
+        driver.findElement( By.name( diagnosis ) ).click();
+        setTextField( By.name( "notesEntry" ), diagnosisNote );
+        driver.findElement( By.name( "fillDiagnosis" ) ).click();
     }
 
 }

@@ -1,52 +1,122 @@
-package edu.ncsu.csc.itrust2.unit;
+package edu.ncsu.csc.iTrust2.unit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.transaction.annotation.Transactional;
 
-import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.iTrust2.TestConfig;
+import edu.ncsu.csc.iTrust2.forms.UserForm;
+import edu.ncsu.csc.iTrust2.models.Patient;
+import edu.ncsu.csc.iTrust2.models.Personnel;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.Role;
+import edu.ncsu.csc.iTrust2.services.UserService;
 
-/**
- * Unit tests for the User class.
- *
- * @author jshore
- *
- */
+@RunWith ( SpringRunner.class )
+@EnableAutoConfiguration
+@SpringBootTest ( classes = TestConfig.class )
 public class UserTest {
 
-    /**
-     * Tests equals comparison of two user objects. Also verifies getters and
-     * setters of the used properties.
-     */
-    @Test
-    public void testEqualsAndProperties () {
-        final User u1 = new User();
-        final User u2 = new User();
+    @Autowired
+    private UserService         service;
 
-        assertFalse( u1.equals( new Object() ) );
-        assertFalse( u1.equals( null ) );
-        assertTrue( u1.equals( u1 ) );
+    private static final String USER_1 = "testUser1";
 
-        u1.setEnabled( 1 );
-        assertTrue( 1 == u1.getEnabled() );
-        u2.setEnabled( 1 );
+    private static final String USER_2 = "testUser2";
 
-        u1.setPassword( "abcdefg" );
-        assertEquals( "abcdefg", u1.getPassword() );
-        u2.setPassword( "abcdefg" );
+    private static final String USER_3 = "testUser3";
 
-        u1.setRole( Role.valueOf( "ROLE_PATIENT" ) );
-        assertEquals( Role.valueOf( "ROLE_PATIENT" ), u1.getRole() );
-        u2.setRole( Role.valueOf( "ROLE_PATIENT" ) );
+    private static final String PW     = "123456";
 
-        u1.setUsername( "abcdefg" );
-        assertEquals( "abcdefg", u1.getUsername() );
-        u2.setUsername( "abcdefg" );
-
-        assertTrue( u1.equals( u2 ) );
+    @Before
+    public void setup () {
+        service.deleteAll();
     }
 
+    @Test
+    @Transactional
+    public void testUserRoles () {
+
+        Assert.assertEquals( "There should be no users in the system", 0, service.count() );
+
+        final User user1 = new Personnel( new UserForm( USER_1, PW, Role.ROLE_HCP, 1 ) );
+
+        service.save( user1 );
+
+        Assert.assertEquals( "Creating a user should result in its presence in the database", 1, service.count() );
+
+        user1.addRole( Role.ROLE_ER );
+
+        service.save( user1 );
+
+        Assert.assertEquals( "Giving a user a second role should still result in just a single user", 1,
+                service.count() );
+
+        Assert.assertEquals( "A user with two roles should be retrieved with two roles", 2,
+                service.findByName( USER_1 ).getRoles().size() );
+
+        final User user2 = new Patient( new UserForm( USER_2, PW, Role.ROLE_PATIENT, 1 ) );
+
+        User user3 = new Personnel( new UserForm( USER_3, PW, Role.ROLE_LABTECH, 1 ) );
+        service.saveAll( List.of( user2, user3 ) );
+
+        Assert.assertEquals( "Creating multiple users should save them as expected", 3, service.count() );
+
+        Assert.assertFalse( "A LabTech should not be a Doctor by default", user3.isDoctor() );
+
+        user3 = service.findByName( USER_3 );
+
+        user3.addRole( Role.ROLE_HCP );
+
+        Assert.assertTrue( "A user with multiple roles should identify as a Doctor properly", user3.isDoctor() );
+
+    }
+
+    @Test
+    @Transactional
+    public void testIllegalRoleCombinations () {
+        try {
+            final UserForm uf = new UserForm( USER_2, PW, Role.ROLE_ADMIN, 1 );
+            uf.addRole( Role.ROLE_LABTECH.toString() );
+
+            final User user2 = new Personnel( uf );
+
+            Assert.fail( "It should not be possible to create an Admin with a secondary role!" );
+        }
+        catch ( final Exception e ) {
+            // expected
+        }
+
+        try {
+            final UserForm uf = new UserForm( USER_2, PW, Role.ROLE_ADMIN, 1 );
+            final User user2 = new Personnel( uf );
+
+            user2.addRole( Role.ROLE_ER );
+
+            Assert.fail( "It should not be possible to add another Role to an Admin user!" );
+        }
+        catch ( final Exception e ) {
+            // expected
+        }
+
+        try {
+            final UserForm uf = new UserForm( USER_2, PW, Role.ROLE_ER, 1 );
+            final User user2 = new Personnel( uf );
+
+            user2.addRole( Role.ROLE_ADMIN );
+
+            Assert.fail( "It should not be possible to add the Admin role to any user!" );
+        }
+        catch ( final Exception e ) {
+            // expected
+        }
+    }
 }

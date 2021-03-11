@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.models.enums;
+package edu.ncsu.csc.iTrust2.models.enums;
 
 /**
  * Enum representing the status of smokers in a patient's house.

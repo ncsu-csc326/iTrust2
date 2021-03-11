@@ -1,19 +1,14 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-import java.util.Random;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.models.persistent.Hospital;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 /**
  * Step definitions for AddHosptial feature
@@ -22,44 +17,7 @@ import edu.ncsu.csc.itrust2.models.persistent.Hospital;
  */
 public class AddHospitalStepDefs extends CucumberTest {
 
-    private final String baseUrl      = "http://localhost:8080/iTrust2";
-
-    private final String hospitalName = "TimHortons" + ( new Random() ).nextInt();
-
-    /**
-     * Hospital doesn't exist
-     */
-    @Given ( "The desired hospital doesn't exist" )
-    public void noHospital () {
-        attemptLogout();
-
-        final List<Hospital> hospitals = Hospital.getHospitals();
-        for ( final Hospital hospital : hospitals ) {
-            try {
-                hospital.delete();
-            }
-            catch ( final Exception e ) {
-                // Assume this hospital is in use & can't be deleted.
-            }
-        }
-
-    }
-
-    /**
-     * Admin login
-     */
-    @When ( "I log in as an admin" )
-    public void loginAdminH () {
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "admin" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-    }
+    private final String hospitalName = "TimHortons";
 
     /**
      * Add hospital page

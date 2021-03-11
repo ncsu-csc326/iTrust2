@@ -1,10 +1,9 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.mail.MessagingException;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,13 +15,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
-import edu.ncsu.csc.itrust2.models.enums.Status;
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.AppointmentRequest;
-import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
-import edu.ncsu.csc.itrust2.utils.EmailUtil;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.forms.AppointmentRequestForm;
+import edu.ncsu.csc.iTrust2.models.AppointmentRequest;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.Role;
+import edu.ncsu.csc.iTrust2.models.enums.Status;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.services.AppointmentRequestService;
+import edu.ncsu.csc.iTrust2.services.UserService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Class that provides REST API endpoints for the AppointmentRequest model. In
@@ -36,15 +37,29 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 @SuppressWarnings ( { "unchecked", "rawtypes" } )
 public class APIAppointmentRequestController extends APIController {
 
+    @Autowired
+    private AppointmentRequestService service;
+
+    @Autowired
+    private LoggerUtil                loggerUtil;
+
+    @Autowired
+    private UserService               userService;
+
     /**
      * Retrieves a list of all AppointmentRequests in the database
      *
      * @return list of appointment requests
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP')" )
     public List<AppointmentRequest> getAppointmentRequests () {
-        return AppointmentRequest.getAppointmentRequests();
+        final List<AppointmentRequest> requests = (List<AppointmentRequest>) service.findAll();
+
+        requests.stream().map( AppointmentRequest::getPatient ).distinct().forEach( e -> loggerUtil
+                .log( TransactionType.APPOINTMENT_REQUEST_VIEWED, LoggerUtil.currentUser(), e.getUsername() ) );
+
+        return requests;
     }
 
     /**
@@ -53,10 +68,11 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in patient
      */
     @GetMapping ( BASE_PATH + "/appointmentrequest" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_PATIENT')" )
     public List<AppointmentRequest> getAppointmentRequestsForPatient () {
-        return AppointmentRequest.getAppointmentRequestsForPatient( LoggerUtil.currentUser() ).stream()
-                .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
+        final User patient = userService.findByName( LoggerUtil.currentUser() );
+        return service.findByPatient( patient ).stream().filter( e -> e.getStatus().equals( Status.PENDING ) )
+                .collect( Collectors.toList() );
     }
 
     /**
@@ -65,11 +81,13 @@ public class APIAppointmentRequestController extends APIController {
      * @return list of appointment requests for the logged in hcp
      */
     @GetMapping ( BASE_PATH + "/appointmentrequestForHCP" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP')" )
     public List<AppointmentRequest> getAppointmentRequestsForHCP () {
 
-        return AppointmentRequest.getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
-                .filter( e -> e.getStatus().equals( Status.PENDING ) ).collect( Collectors.toList() );
+        final User hcp = userService.findByName( LoggerUtil.currentUser() );
+
+        return service.findByHcp( hcp ).stream().filter( e -> e.getStatus().equals( Status.PENDING ) )
+                .collect( Collectors.toList() );
 
     }
 
@@ -82,11 +100,17 @@ public class APIAppointmentRequestController extends APIController {
      *         HttpStatus.NOT_FOUND if no such AppointmentRequest could be found
      */
     @GetMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_PATIENT')" )
     public ResponseEntity getAppointmentRequest ( @PathVariable ( "id" ) final Long id ) {
-        final AppointmentRequest request = AppointmentRequest.getById( id );
+        final AppointmentRequest request = (AppointmentRequest) service.findById( id );
         if ( null != request ) {
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_VIEWED, request.getPatient(), request.getHcp() );
+            loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_VIEWED, request.getPatient(), request.getHcp() );
+
+            /* Patient can't look at anyone else's requests */
+            final User self = userService.findByName( LoggerUtil.currentUser() );
+            if ( self.getRoles().contains( Role.ROLE_PATIENT ) && !request.getPatient().equals( self ) ) {
+                return new ResponseEntity( HttpStatus.UNAUTHORIZED );
+            }
         }
         return null == request
                 ? new ResponseEntity( errorResponse( "No AppointmentRequest found for id " + id ),
@@ -111,14 +135,14 @@ public class APIAppointmentRequestController extends APIController {
     @PreAuthorize ( "hasRole('ROLE_PATIENT')" )
     public ResponseEntity createAppointmentRequest ( @RequestBody final AppointmentRequestForm requestForm ) {
         try {
-            final AppointmentRequest request = new AppointmentRequest( requestForm );
-            if ( null != AppointmentRequest.getById( request.getId() ) ) {
+            final AppointmentRequest request = service.build( requestForm );
+            if ( null != service.findById( request.getId() ) ) {
                 return new ResponseEntity(
                         errorResponse( "AppointmentRequest with the id " + request.getId() + " already exists" ),
                         HttpStatus.CONFLICT );
             }
-            request.save();
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_SUBMITTED, request.getPatient(), request.getHcp() );
+            service.save( request );
+            loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_SUBMITTED, request.getPatient(), request.getHcp() );
             return new ResponseEntity( request, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -136,16 +160,22 @@ public class APIAppointmentRequestController extends APIController {
      * @return response
      */
     @DeleteMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_PATIENT')" )
     public ResponseEntity deleteAppointmentRequest ( @PathVariable final Long id ) {
-        final AppointmentRequest request = AppointmentRequest.getById( id );
+        final AppointmentRequest request = (AppointmentRequest) service.findById( id );
         if ( null == request ) {
-            return new ResponseEntity( errorResponse( "No appointmentrequest found for id " + id ),
+            return new ResponseEntity( errorResponse( "No AppointmentRequest found for id " + id ),
                     HttpStatus.NOT_FOUND );
         }
+
+        /* Patient can't look at anyone else's requests */
+        final User self = userService.findByName( LoggerUtil.currentUser() );
+        if ( self.getRoles().contains( Role.ROLE_PATIENT ) && !request.getPatient().equals( self ) ) {
+            return new ResponseEntity( HttpStatus.UNAUTHORIZED );
+        }
         try {
-            request.delete();
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DELETED, request.getPatient(), request.getHcp() );
+            service.delete( request );
+            loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DELETED, request.getPatient(), request.getHcp() );
             return new ResponseEntity( id, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -171,12 +201,11 @@ public class APIAppointmentRequestController extends APIController {
      *         provided
      */
     @PutMapping ( BASE_PATH + "/appointmentrequests/{id}" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_PATIENT')" )
     public ResponseEntity updateAppointmentRequest ( @PathVariable final Long id,
             @RequestBody final AppointmentRequestForm requestF ) {
-
         try {
-            final AppointmentRequest request = new AppointmentRequest( requestF );
+            final AppointmentRequest request = service.build( requestF );
             request.setId( id );
 
             if ( null != request.getId() && !id.equals( request.getId() ) ) {
@@ -184,37 +213,26 @@ public class APIAppointmentRequestController extends APIController {
                         errorResponse( "The ID provided does not match the ID of the AppointmentRequest provided" ),
                         HttpStatus.CONFLICT );
             }
-            final AppointmentRequest dbRequest = AppointmentRequest.getById( id );
+
+            /* Patient can't look at anyone else's requests */
+            final User self = userService.findByName( LoggerUtil.currentUser() );
+            if ( self.getRoles().contains( Role.ROLE_PATIENT ) && !request.getPatient().equals( self ) ) {
+                return new ResponseEntity( HttpStatus.UNAUTHORIZED );
+            }
+
+            final AppointmentRequest dbRequest = (AppointmentRequest) service.findById( id );
             if ( null == dbRequest ) {
-                return new ResponseEntity( errorResponse( "No appointmentrequest found for id " + id ),
+                return new ResponseEntity( errorResponse( "No AppointmentRequest found for id " + id ),
                         HttpStatus.NOT_FOUND );
             }
 
-            request.save();
-            LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getPatient(), request.getHcp() );
+            service.save( request );
+            loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_UPDATED, request.getPatient(), request.getHcp() );
             if ( request.getStatus().getCode() == Status.APPROVED.getCode() ) {
-                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_APPROVED, request.getPatient(), request.getHcp() );
+                loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_APPROVED, request.getPatient(), request.getHcp() );
             }
             else {
-                LoggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DENIED, request.getPatient(), request.getHcp() );
-            }
-
-            if ( dbRequest.getStatus() != request.getStatus() ) {
-                final String name = request.getPatient().getUsername();
-                final String email = EmailUtil.getEmailByUsername( name );
-                if ( email != null ) {
-                    try {
-                        EmailUtil.sendEmail( email, "iTrust2: Appointment Status Updated",
-                                "The status of one of your appointments has been updated." );
-                        LoggerUtil.log( TransactionType.CREATE_APPOINTMENT_REQUEST_EMAIL, name );
-                    }
-                    catch ( final MessagingException e ) {
-                        e.printStackTrace();
-                    }
-                }
-                else {
-                    LoggerUtil.log( TransactionType.CREATE_MISSING_EMAIL_LOG, name );
-                }
+                loggerUtil.log( TransactionType.APPOINTMENT_REQUEST_DENIED, request.getPatient(), request.getHcp() );
             }
 
             return new ResponseEntity( request, HttpStatus.OK );
@@ -228,27 +246,6 @@ public class APIAppointmentRequestController extends APIController {
     }
 
     /**
-     * Deletes _all_ of the AppointmentRequests stored in the system. Exercise
-     * caution before calling this method.
-     *
-     * @return reponse
-     */
-    @DeleteMapping ( BASE_PATH + "/appointmentrequests" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST', 'ROLE_PATIENT')" )
-    public ResponseEntity deleteAppointmentRequests () {
-        try {
-            DomainObject.deleteAll( AppointmentRequest.class );
-            return new ResponseEntity( successResponse( "Successfully deleted all AppointmentRequests" ),
-                    HttpStatus.OK );
-        }
-        catch ( final Exception e ) {
-            return new ResponseEntity(
-                    errorResponse( "Could not delete one or more AppointmentRequests " + e.getMessage() ),
-                    HttpStatus.BAD_REQUEST );
-        }
-    }
-
-    /**
      * View Appointments will retrieve and display all appointments for the
      * logged-in HCP that are in "approved" status
      *
@@ -256,13 +253,14 @@ public class APIAppointmentRequestController extends APIController {
      * @return The page to display for the user
      */
     @GetMapping ( BASE_PATH + "/viewAppointments" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_VIROLOGIST')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP')" )
     public List<AppointmentRequest> upcomingAppointments () {
-        final List<AppointmentRequest> appointment = AppointmentRequest
-                .getAppointmentRequestsForHCP( LoggerUtil.currentUser() ).stream()
+        final User hcp = userService.findByName( LoggerUtil.currentUser() );
+
+        final List<AppointmentRequest> appointment = service.findByHcp( hcp ).stream()
                 .filter( e -> e.getStatus().equals( Status.APPROVED ) ).collect( Collectors.toList() );
         /* Log the event */
-        appointment.stream().map( AppointmentRequest::getPatient ).forEach( e -> LoggerUtil
+        appointment.stream().map( AppointmentRequest::getPatient ).distinct().forEach( e -> loggerUtil
                 .log( TransactionType.APPOINTMENT_REQUEST_VIEWED, LoggerUtil.currentUser(), e.getUsername() ) );
         return appointment;
     }

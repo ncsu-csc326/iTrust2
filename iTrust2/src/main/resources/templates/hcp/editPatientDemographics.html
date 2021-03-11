@@ -1,0 +1,273 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title>Document Office Visit</title>
+<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+
+			var app = angular.module('myApp', ['dateTimeServices']);
+			app
+					.controller(
+							'editPatientDemographicsCtrl',
+							function($scope, $http, dateTimeService) {
+								$scope.displayName = function(p) {
+									return p.firstName + " " + p.lastName + " (" + p.username + ")";
+								}
+								
+								// documentation on Angular filters: https://docs.angularjs.org/api/ng/filter/filter
+								$scope.searchFilter = "";
+								$scope.filterPatients = function(patient) {
+									return ($scope.displayName(patient)).toLowerCase().match($scope.searchFilter.toLowerCase());
+								}
+								
+								function formDifferent(current, original) {
+									for (var field in original) {
+										if (current[field] != original[field]) return true;
+									}
+									return false;
+								}
+								
+								$scope.originalForm = {};
+								$scope.patientForm = {};
+								$scope.selectPatient = function(patient, override) {
+									if (!override && formDifferent($scope.patientForm, $scope.originalForm)) {
+										if (!confirm("You have made changes to " + $scope.patientForm.username
+												+ ". Would you like to continue? (changes will be lost)")) {
+											$scope.selectedPatient = "";
+											$scope.selectedPatient = $scope.patientForm.username;
+											return;
+										}
+									}
+									
+									var pf = $scope.patientForm = {};
+									var of = $scope.originalForm = {};
+									
+									// make a copy of the patient
+									for (var field in patient) {
+										if (field[0] == '$') continue; // don't mess with angular fields
+										pf[field] = of[field] = patient[field];
+									}
+									pf.dateOfBirth = new Date(of.dateOfBirth);
+									pf.username = of.username = patient.username;
+									// swap out enum id's for names
+									for (var i in $scope.states)
+										if (patient.state == $scope.states[i].id) {
+											pf.state = of.state = $scope.states[i].name;
+											break;
+										}
+									for (var i in $scope.bloodTypes)
+										if (patient.bloodType == $scope.bloodTypes[i].id) {
+											pf.bloodType = of.bloodType = $scope.bloodTypes[i].name;
+											break;
+										}
+									for (var i in $scope.ethnicities)
+										if (patient.ethnicity == $scope.ethnicities[i].id) {
+											pf.ethnicity = of.ethnicity = $scope.ethnicities[i].name;
+											break;
+										}
+									for (var i in $scope.genders)
+										if (patient.gender == $scope.genders[i].id) {
+											pf.gender = of.gender = $scope.genders[i].name;
+											break;
+										}
+									
+									$scope.selectedPatient = pf.username;
+								}
+								
+								$http.get("/iTrust2/api/v1/patients").then(
+										function(response) {
+											$scope.patients = response.data;
+										});
+								
+								$http.get("/iTrust2/api/v1/state").then(
+										function(response) {
+											$scope.states = response.data;
+										});
+								
+								$http.get("/iTrust2/api/v1/bloodtype").then(
+										function(response) {
+											$scope.bloodTypes = response.data;
+										});
+								
+								$http.get("/iTrust2/api/v1/ethnicity").then(
+										function(response) {
+											$scope.ethnicities = response.data;
+										});
+								
+								$http.get("/iTrust2/api/v1/gender").then(
+										function(response) {
+											$scope.genders = response.data;
+										});
+
+								$scope.submit = function() {
+									var patient = angular.copy($scope.patientForm);
+									patient.dateOfBirth = dateTimeService.toDateString(patient.dateOfBirth);
+
+									$http({
+										method : 'PUT',
+										url : '/iTrust2/api/v1/patients/' + patient.username,
+										data : patient
+									}).then(function(response) {
+										$scope.message = "Patient demographics updated successfully.";
+										
+										// replace the patient in session 
+										for (var i in $scope.patients)
+											if ($scope.patients[i].username == response.data.username) {
+												$scope.patients[i] = response.data;
+												$scope.selectPatient(response.data, true);
+											}
+									}, function(rejection) {
+										if (rejection.data.msg) {
+											$scope.message = "Error: " + rejection.data.msg;
+										} else {
+											$scope.message = "An error occured updating demographics.";
+										}
+									})
+								}
+							});
+
+			/*]]>*/
+		</script>
+
+
+
+		<div ng-app="myApp" ng-controller="editPatientDemographicsCtrl">
+			<div style="float: left; width: 30%; height: 75%; overflow-y: auto">
+				<h2>Patients:</h2>
+				<!-- info on filtering taken from here: https://www.w3schools.com/angular/angular_filters.asp
+				and https://docs.angularjs.org/api/ng/filter/filter -->
+				<h4>
+					Search: <input type="text" name="search" ng-model="searchFilter" />
+				</h4>
+				<!-- Info on scrolling taken from here: https://www.w3schools.com/cssref/pr_pos_overflow.asp -->
+				<!-- and here: https://stackoverflow.com/questions/9560330/how-to-hide-a-vertical-scroll-bar-when-not-needed -->
+				<ul style="overflow: auto;height=90%;">
+					<!-- Information on how labels wor from here: https://stackoverflow.com/questions/7863251/clicking-the-text-to-select-corresponding-radio-button -->
+					<li ng-repeat="patient in patients | filter:filterPatients"><h4>
+							<label> <input type="radio"
+								ng-model="$parent.selectedPatient" name="patient"
+								value="{{patient.username}}"
+								ng-click='$parent.selectPatient(patient)' />&nbsp;{{$parent.displayName(patient)}}
+							</label>
+						</h4></li>
+				</ul>
+			</div>
+			<!-- information on vertical rule found here: https://stackoverflow.com/questions/571900/is-there-a-vr-vertical-rule-in-html  -->
+			<div
+				style="float: left; width: 70%; border-left: 1px solid #bbb; padding-left: 3%; height: 75%; overflow-y: auto">
+				<h2 id="header0">Edit Patient Demographics</h2>
+				<div ng-show="selectedPatient">
+					<h3>Username: {{selectedPatient}}</h3>
+					<table>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>First
+									Name:</b></td>
+							<td><input type="text" name="firstName"
+								ng-model="patientForm.firstName" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Last
+									Name:</b></td>
+							<td><input type="text" name="lastName"
+								ng-model="patientForm.lastName" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Preferred
+									Name:</b></td>
+							<td><input type="text" name="preferredName"
+								ng-model="patientForm.preferredName" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Mother
+									(username):</b></td>
+							<td><input type="text" name="mother"
+								ng-model="patientForm.mother" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Father
+									(username):</b></td>
+							<td><input type="text" name="father"
+								ng-model="patientForm.father" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Email:</b></td>
+							<td><input type="text" name="email"
+								ng-model="patientForm.email" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Address
+									Line 1:</b></td>
+							<td><input type="text" name="address1"
+								ng-model="patientForm.address1" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Address
+									Line 2:</b></td>
+							<td><input type="text" name="address2"
+								ng-model="patientForm.address2" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>City:</b></td>
+							<td><input type="text" name="city"
+								ng-model="patientForm.city" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>State:</b></td>
+							<td><select name="state" ng-model="patientForm.state">
+									<option ng-repeat="st in states">{{st.name}}</option>
+							</select></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Zip:</b></td>
+							<td><input type="text" name="zip" ng-model="patientForm.zip" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Phone:</b></td>
+							<td><input type="text" name="phone"
+								ng-model="patientForm.phone" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Date of
+									Birth:</b></td>
+							<td><input type="date" name="dateOfBirth"
+								ng-model="patientForm.dateOfBirth" /></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Blood
+									Type:</b></td>
+							<td><select name="bloodType"
+								ng-model="patientForm.bloodType">
+									<option ng-repeat="bt in bloodTypes">{{bt.name}}</option>
+							</select></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Ethnicity:</b></td>
+							<td><select name="ethnicity"
+								ng-model="patientForm.ethnicity">
+									<option ng-repeat="eth in ethnicities">{{eth.name}}</option>
+							</select></td>
+						</tr>
+						<tr>
+							<td style="text-align: right; padding: 5px"><b>Gender:</b></td>
+							<td><select name="gender" ng-model="patientForm.gender">
+									<option ng-repeat="gen in genders">{{gen.name}}</option>
+							</select></td>
+						</tr>
+					</table>
+
+					<br />
+					<button ng-click="submit()" name="submit">Submit</button>
+
+					<div name="success">{{message}}</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

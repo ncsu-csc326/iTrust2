@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.models.enums;
+package edu.ncsu.csc.iTrust2.models.enums;
 
 import java.util.HashMap;
 import java.util.Map;

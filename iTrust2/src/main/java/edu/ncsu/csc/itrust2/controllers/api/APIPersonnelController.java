@@ -1,24 +1,23 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.forms.personnel.PersonnelForm;
-import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.Personnel;
-import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.forms.PersonnelForm;
+import edu.ncsu.csc.iTrust2.models.Personnel;
+import edu.ncsu.csc.iTrust2.models.enums.Role;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.services.PersonnelService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Controller responsible for providing various REST API endpoints for the
@@ -31,14 +30,21 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 @SuppressWarnings ( { "rawtypes", "unchecked" } )
 public class APIPersonnelController extends APIController {
 
+    @Autowired
+    private LoggerUtil       loggerUtil;
+
+    @Autowired
+    private PersonnelService service;
+
     /**
      * Retrieves and returns a list of all Personnel stored in the system
      *
      * @return list of personnel
      */
     @GetMapping ( BASE_PATH + "/personnel" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_ADMIN')" )
     public List<Personnel> getPersonnel () {
-        return Personnel.getPersonnel();
+        return (List<Personnel>) service.findAll();
     }
 
     /**
@@ -50,13 +56,14 @@ public class APIPersonnelController extends APIController {
      * @return response
      */
     @GetMapping ( BASE_PATH + "/personnel/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_ADMIN')" )
     public ResponseEntity getPersonnel ( @PathVariable ( "id" ) final String id ) {
-        final Personnel personnel = Personnel.getByName( id );
+        final Personnel personnel = (Personnel) service.findByName( id );
         if ( null == personnel ) {
             return new ResponseEntity( errorResponse( "No personnel found for id " + id ), HttpStatus.NOT_FOUND );
         }
         else {
-            LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, LoggerUtil.currentUser() );
+            loggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, LoggerUtil.currentUser() );
             return new ResponseEntity( personnel, HttpStatus.OK );
         }
     }
@@ -69,48 +76,18 @@ public class APIPersonnelController extends APIController {
      * @return The personnel object for the currently authenticated user.
      */
     @GetMapping ( BASE_PATH + "/curPersonnel" )
-    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_OD', 'ROLE_OPH', 'ROLE_LABTECH', 'ROLE_ER', 'ROLE_ADMIN', 'ROLE_VIROLOGIST')" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_ADMIN')" )
     public ResponseEntity getCurrentPersonnel () {
-        final User self = User.getByName( LoggerUtil.currentUser() );
-        final Personnel personnel = Personnel.getByName( self.getUsername() );
+        final String username = LoggerUtil.currentUser();
+        final Personnel personnel = (Personnel) service.findByName( username );
         if ( personnel == null ) {
-            return new ResponseEntity(
-                    errorResponse( "Could not find a personnel entry for you, " + self.getUsername() ),
+            return new ResponseEntity( errorResponse( "Could not find a personnel entry for you, " + username ),
                     HttpStatus.NOT_FOUND );
         }
         else {
-            LoggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, self.getUsername(),
-                    "Retrieved demographics for user " + self.getUsername() );
+            loggerUtil.log( TransactionType.VIEW_DEMOGRAPHICS, username,
+                    "Retrieved demographics for user " + username );
             return new ResponseEntity( personnel, HttpStatus.OK );
-        }
-    }
-
-    /**
-     * Creates a new Personnel record for a User from the RequestBody provided.
-     *
-     * @param personnelF
-     *            the Personnel to be validated and saved to the database
-     * @return response
-     */
-    @PostMapping ( BASE_PATH + "/personnel" )
-    public ResponseEntity createPersonnel ( @RequestBody final PersonnelForm personnelF ) {
-        final User self = User.getByName( LoggerUtil.currentUser() );
-        personnelF.setSelf( self.getUsername() );
-        final Personnel personnel = new Personnel( personnelF );
-        if ( null != Personnel.getByName( personnel.getSelf() ) ) {
-            return new ResponseEntity(
-                    errorResponse( "Personnel with the id " + personnel.getSelf() + " already exists" ),
-                    HttpStatus.CONFLICT );
-        }
-        try {
-            personnel.save();
-            LoggerUtil.log( TransactionType.CREATE_DEMOGRAPHICS, self );
-            return new ResponseEntity( personnel, HttpStatus.OK );
-        }
-        catch ( final Exception e ) {
-            return new ResponseEntity(
-                    errorResponse( "Could not create " + personnel.toString() + " because of " + e.getMessage() ),
-                    HttpStatus.BAD_REQUEST );
         }
     }
 
@@ -126,28 +103,30 @@ public class APIPersonnelController extends APIController {
      * @return response
      */
     @PutMapping ( BASE_PATH + "/personnel/{id}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_ADMIN')" )
     public ResponseEntity updatePersonnel ( @PathVariable final String id,
             @RequestBody final PersonnelForm personnelF ) {
-        final Personnel personnel = new Personnel( personnelF );
-        if ( null != personnel.getSelf() && null != personnel.getSelf().getUsername()
-                && !id.equals( personnel.getSelf().getUsername() ) ) {
+
+        final Personnel fromDb = (Personnel) service.findByName( id );
+
+        if ( null == fromDb ) {
+            return new ResponseEntity( errorResponse( "Could not find a personnel entry for you, " + id ),
+                    HttpStatus.NOT_FOUND );
+        }
+
+        fromDb.update( personnelF );
+        if ( ( null != fromDb.getUsername() && !id.equals( fromDb.getUsername() ) ) ) {
             return new ResponseEntity(
                     errorResponse( "The ID provided does not match the ID of the Personnel provided" ),
                     HttpStatus.CONFLICT );
         }
-        final Personnel dbPersonnel = Personnel.getByName( id );
-        if ( null == dbPersonnel ) {
-            return new ResponseEntity( errorResponse( "No personnel found for id " + id ), HttpStatus.NOT_FOUND );
-        }
-        personnel.setId( dbPersonnel.getId() );
         try {
-            personnel.save();
-            LoggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS, LoggerUtil.currentUser() );
-            return new ResponseEntity( personnel, HttpStatus.OK );
+            service.save( fromDb );
+            loggerUtil.log( TransactionType.EDIT_DEMOGRAPHICS, LoggerUtil.currentUser() );
+            return new ResponseEntity( fromDb, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            return new ResponseEntity(
-                    errorResponse( "Could not update " + personnel.toString() + " because of " + e.getMessage() ),
+            return new ResponseEntity( errorResponse( "Could not update " + id + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
         }
     }
@@ -160,39 +139,21 @@ public class APIPersonnelController extends APIController {
      * @return response and list of personnel matching query
      */
     @GetMapping ( BASE_PATH + "/personnel/getbyroles/{role}" )
+    @PreAuthorize ( "hasAnyRole('ROLE_HCP', 'ROLE_ADMIN', 'ROLE_PATIENT')" )
     public ResponseEntity getPersonnelByRole ( @PathVariable ( "role" ) final String role ) {
-        if ( role.equals( Role.ROLE_LABTECH.toString() ) ) {
-            final List<Personnel> allLabtechs = new ArrayList<Personnel>();
-            for ( final User u : User.getByRole( Role.ROLE_LABTECH ) ) {
-                if ( Personnel.getByName( u ) != null ) {
-                    allLabtechs.add( Personnel.getByName( u ) );
-                }
-            }
-            return new ResponseEntity( allLabtechs, HttpStatus.OK );
+        final List<Personnel> allPersonnel = (List<Personnel>) service.findAll();
+
+        try {
+            final Role desired = Role.valueOf( role );
+
+            allPersonnel.removeIf( e -> !e.getRoles().contains( desired ) );
+
+            return new ResponseEntity( allPersonnel, HttpStatus.OK );
         }
-        else if ( role.equals( Role.ROLE_HCP.toString() ) ) {
-            return new ResponseEntity( User.getByRole( Role.ROLE_HCP ), HttpStatus.OK );
-        }
-        else if ( role.equals( Role.ROLE_OD.toString() ) ) {
-            return new ResponseEntity( User.getByRole( Role.ROLE_OD ), HttpStatus.OK );
-        }
-        else if ( role.equals( Role.ROLE_VIROLOGIST.toString() ) ) {
-            return new ResponseEntity( User.getByRole( Role.ROLE_VIROLOGIST ), HttpStatus.OK );
-        }
-        else if ( role.equals( Role.ROLE_OPH.toString() ) ) {
-            return new ResponseEntity( User.getByRole( Role.ROLE_OPH ), HttpStatus.OK );
-        }
-        else if ( role.equals( Role.ROLE_ER.toString() ) ) {
-            final List<Personnel> allErs = new ArrayList<Personnel>();
-            for ( final User u : User.getByRole( Role.ROLE_ER ) ) {
-                if ( Personnel.getByName( u ) != null ) {
-                    allErs.add( Personnel.getByName( u ) );
-                }
-            }
-            return new ResponseEntity( allErs, HttpStatus.OK );
+        catch ( final IllegalArgumentException iae ) {
+            return new ResponseEntity( errorResponse( "Invalid role" ), HttpStatus.BAD_REQUEST );
         }
 
-        return new ResponseEntity( errorResponse( "Invalid role" ), HttpStatus.BAD_REQUEST );
     }
 
 }

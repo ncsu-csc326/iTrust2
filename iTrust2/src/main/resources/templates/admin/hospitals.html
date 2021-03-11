@@ -1,0 +1,244 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Manage Hospitals</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+		<script th::inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+ 			var app = angular.module("manageHospitalsApp", []);
+			app.controller("manageHospitalsCtrl", function($scope, $http) {
+				
+				var checkValidHospitalForm = function(hospital) {
+					var err = [];
+					for(var i = 0; i < $scope.hospitals.length; i++) {
+						if(hospital.name === $scope.hospitals[i].name) {
+							err.push("A hospital with this name already exists");
+						}
+					}
+					if(!/(^\d{5}$)|(^\d{5}-\d{4}$)/.test(hospital.zip) ) {
+						err.push("zipcode must be 5 numbers");
+					}
+					if(hospital.name === "" || hospital.address === "" || hospital.state == ""
+					   || hospital.zip === "") {
+						err.push("Make sure no fields are empty");
+					}
+					return err.join(".  ");
+				}
+				
+		    $scope.hospitals = [];
+	        $scope.loadHospitals = function () {
+	          $http.get("/iTrust2/api/v1/hospitals").then(
+	            function (response) {
+	              $scope.hospitals = response.data;
+	              $scope.message = "";
+	            }, function (rejection) {
+	              $scope.hospitals = [];
+	              $scope.message = "Could not display hospitals";
+	            });
+	        }
+	        
+	        $scope.addHospital = function () {
+		          var err = checkValidHospitalForm($scope.hospital);
+		          if (err) {
+		            $scope.errorAdding = err;
+		            $scope.successMessage = "";
+		          } else {
+		            $http.post("/iTrust2/api/v1/hospitals", $scope.hospital).then(
+		              function (response) {
+		            	    $scope.loadHospitals();
+		                $scope.hospital.name = "";
+		                $scope.hospital.address = "";
+		                $scope.hospital.state = "AL";
+		                $scope.hospital.zipcode = ""
+		                $scope.errorAdding = "";
+		                $scope.successMessage = "Hospital added successfully.";
+		              }, function (rejection) {
+		                $scope.errorAdding = "Could not add Hospital.";
+		                $scope.successMessage = "";
+		              });
+		          }
+
+		      }
+			
+	        $scope.deleteHospital = function(hospital) {
+	            $http.delete('/iTrust2/api/v1/hospitals/' + hospital.name).then(
+	              function (response) {
+	                $scope.loadHospitals();
+	              }, function (rejection) {
+	            	    $scope.loadHospitals();
+	                $scope.message = "Could not remove hospital";
+	              });
+	          }
+
+	        $scope.getTemplate = function (hospital) {
+	          return 'view';
+	        };
+			
+		$scope.loadHospitals();
+		});
+			
+</script>
+		<div ng-app="manageHospitalsApp" ng-controller="manageHospitalsCtrl">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3>Admin Manage Hospitals</h3>
+							</div>
+							<div class="panel-body">
+								<table class="table table-bordered">
+									<caption>Existing Hospitals:</caption>
+									<thead>
+										<tr>
+											<th>Hospital Name</th>
+											<th>Address</th>
+											<th>State</th>
+											<th>Zip Code</th>
+											<th>Delete Hospital</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr name="hospitalTableRow"
+											ng-repeat="h in hospitals | orderBy: 'name'"
+											ng-include=getTemplate(h) userId={{h.name}}>
+										</tr>
+									</tbody>
+								</table>
+								<!-- table in view mode -->
+								<script type="text/ng-template" id="view">
+                  console.log("test");
+                  <td name="nameCell">{{h.name}}</td>
+                  <td name="addressCell">{{h.address}}</td>
+                  <td name="stateCell">{{h.state}}</td>
+                  <td name="zipCell">{{h.zip}}</td>
+                  <td>
+                    <div class="row text-center">
+                      <div class="col-md-6">
+                          <input type="button" value="Delete" class="btn btn-danger" name="deleteHospital" ng-click="deleteHospital(h)"/>                          
+                      </div>
+                    </div>
+                  </td>
+                  /*]]>*/
+                </script>
+
+								<style>
+form {
+	width: 400px;
+}
+
+.label {
+	float: right;
+	text-align: left;
+	width: 200px;
+	height: 20px;
+	color: #000000
+}
+
+input[type=text] {
+	float: right;
+	text-align: left;
+	width: 200px;
+	height: 20px
+}
+
+.clear {
+	clear: both;
+	height: 0;
+	line-height: 0;
+}
+
+.floatright {
+	float: right;
+}
+</style>
+								<br>
+								<div class="row">
+									<div class="col-md-12">
+										<div class="panel panel-default">
+											<div class="panel-heading ">Add a Hospital</div>
+											<div class="panel-body">
+												<form name="addHospitalForm"
+													ng-submit="addHospital(addHospitalForm.$valid)">
+													<b>Name:</b> <input type="text" name="name" id="name"
+														ng-model="hospital.name" /> <br>
+													<br> <b>Address:</b> <input type="text" name="address"
+														id="address" ng-model="hospital.address" /> <br>
+													<br> <b>State:</b> <select class="label" id="state"
+														name="state" ng-model="hospital.state">
+														<option value="AL">Alabama</option>
+														<option value="AK">Alaska</option>
+														<option value="AZ">Arizona</option>
+														<option value="AR">Arkansas</option>
+														<option value="CA">California</option>
+														<option value="CO">Colorado</option>
+														<option value="CT">Connecticut</option>
+														<option value="DE">Delaware</option>
+														<option value="DC">District Of Columbia</option>
+														<option value="FL">Florida</option>
+														<option value="GA">Georgia</option>
+														<option value="HI">Hawaii</option>
+														<option value="ID">Idaho</option>
+														<option value="IL">Illinois</option>
+														<option value="IN">Indiana</option>
+														<option value="IA">Iowa</option>
+														<option value="KS">Kansas</option>
+														<option value="KY">Kentucky</option>
+														<option value="LA">Louisiana</option>
+														<option value="ME">Maine</option>
+														<option value="MD">Maryland</option>
+														<option value="MA">Massachusetts</option>
+														<option value="MI">Michigan</option>
+														<option value="MN">Minnesota</option>
+														<option value="MS">Mississippi</option>
+														<option value="MO">Missouri</option>
+														<option value="MT">Montana</option>
+														<option value="NE">Nebraska</option>
+														<option value="NV">Nevada</option>
+														<option value="NH">New Hampshire</option>
+														<option value="NJ">New Jersey</option>
+														<option value="NM">New Mexico</option>
+														<option value="NY">New York</option>
+														<option value="NC">North Carolina</option>
+														<option value="ND">North Dakota</option>
+														<option value="OH">Ohio</option>
+														<option value="OK">Oklahoma</option>
+														<option value="OR">Oregon</option>
+														<option value="PA">Pennsylvania</option>
+														<option value="RI">Rhode Island</option>
+														<option value="SC">South Carolina</option>
+														<option value="SD">South Dakota</option>
+														<option value="TN">Tennessee</option>
+														<option value="TX">Texas</option>
+														<option value="UT">Utah</option>
+														<option value="VT">Vermont</option>
+														<option value="VA">Virginia</option>
+														<option value="WA">Washington</option>
+														<option value="WV">West Virginia</option>
+														<option value="WI">Wisconsin</option>
+														<option value="WY">Wyoming</option>
+													</select> <br>
+													<br> <b>Zip Code:</b> <input type="text"
+														name="zipcode" id="zip" ng-model="hospital.zip" /> <br>
+													<br> <input type="submit" id="submit"
+														value="Add Hospital" />
+												</form>
+												<div>
+													<p style="color: red" ng-model="errorAdding" id="errP">{{errorAdding}}</p>
+												</div>
+												<div>
+													<p style="color: green" ng-model="successMessage"
+														id="success">{{successMessage}}</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+</body>
+</html>

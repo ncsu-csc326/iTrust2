@@ -5,7 +5,7 @@ Feature: HCP Edit Patient Demographics
 
 
 Scenario Outline: Edit Demographics
-	Given the required users exist
+	Given Jim Nellie and Shelly exist
 	And Dr Shelly Vang has logged in and chosen to edit a patient
 	When she selects the patient with first name: <first> and last name: <last>
 	And she changes the zip code to: <zip>
@@ -18,7 +18,7 @@ Examples:
 
 
 Scenario Outline: Edit Invalid Demographics
-	Given the required users exist
+	Given Jim Nellie and Shelly exist
 	And Dr Shelly Vang has logged in and chosen to edit a patient
 	When she selects the patient with first name: <first> and last name: <last>
 	And she changes the zip code to: <badZip>
@@ -34,7 +34,7 @@ Examples:
 
 
 Scenario Outline: Change Patient While Editing
-	Given the required users exist
+	Given Jim Nellie and Shelly exist
 	And Dr Shelly Vang has logged in and chosen to edit a patient
 	When she selects the patient with first name: <first1> and last name: <last1>
 	And she changes the zip code to: <zip1>

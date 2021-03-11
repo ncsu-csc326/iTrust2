@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.models.enums;
+package edu.ncsu.csc.iTrust2.models.enums;
 
 /**
  * A TransactionType represents an event that took place in the system and that
@@ -63,6 +63,11 @@ public enum TransactionType {
      * User changed/updated
      */
     UPDATE_USER ( 104, "User updated", false ),
+
+    /**
+     * Sample users for login generated
+     */
+    USERS_GENERATED ( 105, "Sample users generated", false ),
 
     /**
      * User viewed their demographics

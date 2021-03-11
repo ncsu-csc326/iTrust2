@@ -1,8 +1,6 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.text.ParseException;
 import java.time.LocalDateTime;
@@ -17,109 +15,35 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import cucumber.api.java.en.And;
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
-import edu.ncsu.csc.itrust2.forms.patient.AppointmentRequestForm;
-import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.models.persistent.AppointmentRequest;
-import edu.ncsu.csc.itrust2.models.persistent.DomainObject;
-import edu.ncsu.csc.itrust2.models.persistent.Patient;
-import edu.ncsu.csc.itrust2.models.persistent.User;
+import edu.ncsu.csc.iTrust2.forms.AppointmentRequestForm;
+import edu.ncsu.csc.iTrust2.models.AppointmentRequest;
+import edu.ncsu.csc.iTrust2.services.AppointmentRequestService;
+import edu.ncsu.csc.iTrust2.services.UserService;
+import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 /**
  * Step definitions for AppointmentRequest feature.
  *
  * @author Matt Dzwonczyk (mgdzwonc)
+ * @author Kai Presler-Marshall (kpresle)
  */
 public class AppointmentRequestStepDefs extends CucumberTest {
 
-    private final String baseUrl       = "http://localhost:8080/iTrust2";
-    private final String patientString = "bobby";
-    private final String hcpString     = "hcp";
-    private final String odHcpString   = "bobbyOD";
-    private final String ophHcpString  = "robortOPH";
+    private final String              patientString = "patient";
+    private final String              hcpString     = "hcp";
+    private final String              odHcpString   = "bobbyOD";
+    private final String              ophHcpString  = "robortOPH";
 
-    /**
-     * Asserts that the text is on the page
-     *
-     * @param text
-     *            text to check
-     */
-    public void assertTextPresent ( final String text ) {
-        try {
-            assertTrue( driver.getPageSource().contains( text ) );
-        }
-        catch ( final Exception e ) {
-            fail();
-        }
-    }
+    @Autowired
+    private AppointmentRequestService service;
 
-    /**
-     * Creates a patient in the system.
-     */
-    @Given ( "^There exists a patient in the system$" )
-    public void patientExists () {
-        attemptLogout();
-
-        // Create the test User
-        final User user = new User( patientString, "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
-                Role.ROLE_PATIENT, 1 );
-        user.save();
-
-        // The User must also be created as a Patient
-        // to show up in the list of Patients
-        final Patient patient = new Patient( user.getUsername() );
-        patient.save();
-
-        // All tests can safely assume the existence of the 'hcp', 'admin', and
-        // 'patient' users
-    }
-
-    /**
-     * Creates HCPs in the system.
-     */
-    @Given ( "^There exists an HCP in the system$" )
-    public void hcpExists () {
-        attemptLogout();
-
-        final User hcp = new User( hcpString, "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
-                Role.ROLE_HCP, 1 );
-        hcp.save();
-
-        final User odHcp = new User( odHcpString, "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
-                Role.ROLE_OD, 1 );
-        odHcp.save();
-
-        final User ophHcp = new User( ophHcpString, "$2a$10$EblZqNptyYvcLm/VwDCVAuBjzZOI7khzdyGPBr08PpIi0na624b8.",
-                Role.ROLE_OPH, 1 );
-        ophHcp.save();
-
-        // All tests can safely assume the existence of the 'hcp', 'admin', and
-        // 'patient' users
-    }
-
-    /**
-     * Logs in as a patient.
-     */
-    @Then ( "^I log on as a patient$" )
-    public void loginPatient () {
-        attemptLogout();
-
-        driver.get( baseUrl );
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( patientString );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-
-        assertEquals( "iTrust2: Patient Home", driver.getTitle() );
-    }
+    @Autowired
+    private UserService               userService;
 
     /**
      * Navigates to the Manage Appointment Requests page.
@@ -263,8 +187,6 @@ public class AppointmentRequestStepDefs extends CucumberTest {
     @Given ( "^The patient has requested a medical appointment with type (.+), HCP (.+), date (.+), time (.+), and comments (.+)$" )
     public void createAppointmentRequest ( final String type, final String hcp, final String date, String time,
             final String comments ) throws ParseException {
-        DomainObject.deleteAll( AppointmentRequest.class );
-        loginPatient();
         patientNavigateToView();
 
         final AppointmentRequestForm form = new AppointmentRequestForm();
@@ -298,8 +220,8 @@ public class AppointmentRequestStepDefs extends CucumberTest {
         form.setStatus( "PENDING" );
         form.setPatient( patientString );
 
-        final AppointmentRequest request = new AppointmentRequest( form );
-        request.save();
+        final AppointmentRequest request = service.build( form );
+        service.save( request );
 
         // addAppointmentRequest( type, hcp, date, time, comments );
     }
@@ -337,7 +259,7 @@ public class AppointmentRequestStepDefs extends CucumberTest {
     public void loginHcp ( final String hcp ) {
         attemptLogout();
 
-        driver.get( baseUrl );
+        driver.get( BASE_URL );
         final WebElement username = driver.findElement( By.name( "username" ) );
         username.clear();
         username.sendKeys( hcp );
@@ -378,7 +300,6 @@ public class AppointmentRequestStepDefs extends CucumberTest {
         assertTextPresent( "Type: " + type );
         assertTextPresent( "Date: " + date );
 
-        DomainObject.deleteAll( AppointmentRequest.class );
     }
 
     /**
@@ -429,7 +350,6 @@ public class AppointmentRequestStepDefs extends CucumberTest {
         assertTextPresent( "Type: " + type );
         assertTextPresent( "Date: " + date );
 
-        DomainObject.deleteAll( AppointmentRequest.class );
     }
 
     /**
@@ -438,13 +358,12 @@ public class AppointmentRequestStepDefs extends CucumberTest {
     @Then ( "^The HCP behavior is logged on the iTrust2 homepage$" )
     public void hcpBehaviorLoggedOnHomepage () {
         // Needs to be done
-        driver.get( baseUrl );
+        driver.get( BASE_URL );
 
         final WebDriverWait wait = new WebDriverWait( driver, 20 );
         wait.until( ExpectedConditions.titleContains( "HCP Home" ) );
         assertEquals( "iTrust2: HCP Home", driver.getTitle() );
 
-        // assertTextPresent( "" );
     }
 
     /**
