@@ -1,20 +1,91 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.paulhammant.ngwebdriver.NgWebDriver;
 
+import edu.ncsu.csc.iTrust2.services.UserService;
 import io.github.bonigarcia.wdm.ChromeDriverManager;
 
 public abstract class CucumberTest {
+
+    @Autowired
+    protected UserService userService;
+
+    /* Common steps */
+
+    protected void setTextField ( final By byVal, final Object value ) {
+        final WebElement elem = driver.findElement( byVal );
+        elem.clear();
+        elem.sendKeys( value.toString() );
+    }
+
+    protected void enterValue ( final String name, final String value ) {
+        setTextField( By.name( name ), value );
+    }
+
+    protected void selectName ( final String name ) {
+        final WebElement element = driver.findElement( By.cssSelector( "input[name='" + name + "']" ) );
+        element.click();
+    }
+
+    /**
+     * Fills in the date and time fields with the specified date and time.
+     *
+     * @param date
+     *            The date to enter.
+     * @param time
+     *            The time to enter.
+     */
+    protected void fillInDateTime ( final String dateField, final String date, final String timeField,
+            final String time ) {
+        fillInDate( dateField, date );
+        fillInTime( timeField, time );
+    }
+
+    /**
+     * Fills in the date field with the specified date.
+     *
+     * @param date
+     *            The date to enter.
+     */
+    protected void fillInDate ( final String dateField, final String date ) {
+        driver.findElement( By.name( dateField ) ).clear();
+        final WebElement dateElement = driver.findElement( By.name( dateField ) );
+        dateElement.sendKeys( date.replace( "/", "" ) );
+    }
+
+    /**
+     * Fills in the time field with the specified time.
+     *
+     * @param time
+     *            The time to enter.
+     */
+    private void fillInTime ( final String timeField, String time ) {
+        // Zero-pad the time for entry
+        if ( time.length() == 7 ) {
+            time = "0" + time;
+        }
+
+        driver.findElement( By.name( timeField ) ).clear();
+        final WebElement timeElement = driver.findElement( By.name( timeField ) );
+        timeElement.sendKeys( time.replace( ":", "" ).replace( " ", "" ) );
+    }
+
+    /* Selenium setup stuff */
 
     static {
         ChromeDriverManager.chromedriver().setup();
     }
 
-    final static private String   BASE_URL = "http://localhost:8080/iTrust2/";
+    final static protected String BASE_URL = "http://localhost:8080/iTrust2/";
 
     final static private String   OS       = System.getProperty( "os.name" );
 
@@ -102,4 +173,20 @@ public abstract class CucumberTest {
         }
 
     }
+
+    /**
+     * Asserts that the text is on the page
+     *
+     * @param text
+     *            text to check
+     */
+    protected void assertTextPresent ( final String text ) {
+        try {
+            assertTrue( driver.getPageSource().contains( text ) );
+        }
+        catch ( final Exception e ) {
+            fail();
+        }
+    }
+
 }

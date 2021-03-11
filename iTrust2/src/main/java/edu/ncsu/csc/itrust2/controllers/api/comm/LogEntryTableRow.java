@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.controllers.api.comm;
+package edu.ncsu.csc.iTrust2.controllers.api.comm;
 
 /**
  * A class representing the 4 string values in a row of the Log Entry view.

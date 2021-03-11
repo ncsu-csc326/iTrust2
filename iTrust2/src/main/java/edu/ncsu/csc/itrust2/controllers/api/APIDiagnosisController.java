@@ -1,18 +1,22 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.Diagnosis;
-import edu.ncsu.csc.itrust2.models.persistent.GeneralCheckup;
-import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.models.Diagnosis;
+import edu.ncsu.csc.iTrust2.models.OfficeVisit;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.services.DiagnosisService;
+import edu.ncsu.csc.iTrust2.services.OfficeVisitService;
+import edu.ncsu.csc.iTrust2.services.UserService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Class that provided the REST endpoints for dealing with diagnoses. Diagnoses
@@ -26,6 +30,18 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 @SuppressWarnings ( { "unchecked", "rawtypes" } )
 public class APIDiagnosisController extends APIController {
 
+    @Autowired
+    private LoggerUtil         loggerUtil;
+
+    @Autowired
+    private DiagnosisService   diagnosisService;
+
+    @Autowired
+    private OfficeVisitService officeVisitService;
+
+    @Autowired
+    private UserService        userService;
+
     /**
      * Returns the Diagnosis with the specified ID.
      *
@@ -35,8 +51,8 @@ public class APIDiagnosisController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/diagnosis/{id}" )
     public ResponseEntity getDiagnosis ( @PathVariable ( "id" ) final Long id ) {
-        final Diagnosis d = Diagnosis.getById( id );
-        LoggerUtil.log( TransactionType.DIAGNOSIS_VIEW_BY_ID, LoggerUtil.currentUser(),
+        final Diagnosis d = (Diagnosis) diagnosisService.findById( id );
+        loggerUtil.log( TransactionType.DIAGNOSIS_VIEW_BY_ID, LoggerUtil.currentUser(),
                 "Retrieved diagnosis with id " + id );
         return null == d
                 ? new ResponseEntity( errorResponse( "No Diagnosis found for id " + id ), HttpStatus.NOT_FOUND )
@@ -53,13 +69,15 @@ public class APIDiagnosisController extends APIController {
     @GetMapping ( BASE_PATH + "/diagnosesforvisit/{id}" )
     public List<Diagnosis> getDiagnosesForVisit ( @PathVariable ( "id" ) final Long id ) {
         // Check if office visit exists
-        if ( GeneralCheckup.getById( id ) == null ) {
+        if ( !officeVisitService.existsById( id ) ) {
             return null;
         }
-        LoggerUtil.log( TransactionType.DIAGNOSIS_VIEW_BY_OFFICE_VISIT, LoggerUtil.currentUser(),
-                GeneralCheckup.getById( id ).getPatient().getUsername(),
-                "Retrieved diagnoses for office visit with id " + id );
-        return Diagnosis.getByVisit( id );
+
+        final OfficeVisit visit = (OfficeVisit) officeVisitService.findById( id );
+
+        loggerUtil.log( TransactionType.DIAGNOSIS_VIEW_BY_OFFICE_VISIT, LoggerUtil.currentUser(),
+                ( visit ).getPatient().getUsername(), "Retrieved diagnoses for office visit with id " + id );
+        return visit.getDiagnoses();
     }
 
     /**
@@ -69,14 +87,14 @@ public class APIDiagnosisController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/diagnoses" )
     public List<Diagnosis> getDiagnosis () {
-        final User self = User.getByName( LoggerUtil.currentUser() );
+        final User self = userService.findByName( LoggerUtil.currentUser() );
         if ( self == null ) {
             return null;
         }
-        LoggerUtil.log( TransactionType.DIAGNOSIS_PATIENT_VIEW_ALL, self.getUsername(),
+        loggerUtil.log( TransactionType.DIAGNOSIS_PATIENT_VIEW_ALL, self.getUsername(),
                 self.getUsername() + " viewed their diagnoses" );
 
-        return Diagnosis.getForPatient( self );
+        return diagnosisService.findByPatient( self );
     }
 
 }

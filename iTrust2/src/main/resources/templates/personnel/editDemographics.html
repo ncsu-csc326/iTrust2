@@ -1,0 +1,182 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="layout :: head(title=~{::title},links=~{})">
+<title>Edit My Demographics</title>
+</head>
+<body th:include="layout :: body" th:with="content=~{::content}">
+
+
+	<div th:fragment="content">
+		<script th:inline="javascript">
+	    /* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+	    /*<![CDATA[*/
+	    var app = angular.module("editPersonnelApp", []);
+	    app.controller("editPersonnelCtrl", function($scope, $http) {
+			$scope.err = [];
+			for(var i = 0; i < 12; i++) {
+		   	   $scope.err[i] = "";
+			}
+			$http.get("/iTrust2/api/v1/curPersonnel").then(function(response) {
+			    $scope.personnel = response.data;
+			    $scope.personnelForm = {};
+			    Object.assign($scope.personnelForm, $scope.personnel);    
+			
+			}, function(rejection) {
+			    $scope.personnel = "";
+			    $scope.personnelForm = {};
+			    $scope.personnelForm.state = "AL";
+			});
+			
+			$http.get("/iTrust2/api/v1/state").then(function(response) {
+			    $scope.states = response.data;
+			});
+			
+			function checkValidForm(form) {
+			    var valid = true;
+			    if(!form.firstName || form.firstName.length > 20) {
+				    $scope.err[0] = ("first name can not be empty or longer than 20 characters");
+				    valid = false;
+			    } else {
+				    $scope.err[0] = "";
+			    }
+			    if(!form.lastName || form.lastName.length > 30) {
+				    $scope.err[1] = ("last name can not be empty or longer than 30 characters");
+				    valid = false;
+			    } else {
+				    $scope.err[1] = "";
+			    }
+			    if(!form.email || form.email.length > 30) {
+				    $scope.err[2] = ("email can not be empty or longer than 30 characters");
+				    valid = false;
+			    } else {
+				    $scope.err[2] = "";
+			    }
+			    if(!form.address1 || form.address1.length > 50) {
+				    $scope.err[3] = ("primary address can not be empty or longer than 50 characters");
+				    valid = false;
+			    } else {
+				    $scope.err[3] = "";
+			    }
+			    if(form.address2 && form.address2.length > 50) {
+				    $scope.err[4] = ("secondary address can not be longer than 50 characters");
+				    valid = false;
+			    } else {
+				    $scope.err[4] = "";
+			    }
+			    if(!form.city || form.city.length > 15) {
+				    $scope.err[5] = ("city can not be empty or longer than 15 characters");	
+				    valid = false;
+			    } else {
+				    $scope.err[5] = "";
+			    }
+			    if(!/(^\d{5}$)|(^\d{5}-\d{4}$)/.test(form.zip) ) {
+					$scope.err[6] = ("zipcode must be 5 numbers");
+					valid = false;
+				} else {
+				    $scope.err[6] = "";
+				    }
+			    if(!/(^[0-9]{3}-[0-9]{3}-[0-9]{4}$)/.test(form.phone) || !form.phone) {
+				    $scope.err[7] = ("phone can not be empty and must have correct format (e.g. 123-456-7890");
+				    valid = false;
+			    } else {
+				    $scope.err[7] = "";
+			    }
+			    return valid;
+			}
+			
+			$scope.submit = function() {
+			    var valid = checkValidForm($scope.personnelForm);
+			    if(!valid) {
+					$scope.message = "";
+			    } else {
+			    			$http.put("/iTrust2/api/v1/personnel/"
+				    		+ $scope.personnel.username, $scope.personnelForm).then(
+				    		function(response) {
+				    		    $scope.message = "Your demographics were updated successfully."
+				    		}, function(rejection) {
+				    		    $scope.message = "Failed to update demographics."
+				    		});
+
+			    }
+			}
+			
+			
+	    	});
+	    /*]]>*/
+		</script>
+		<div ng-app="editPersonnelApp" ng-controller="editPersonnelCtrl">
+			<div
+				style="float: left; width: 80%; border-left: 1px solid #bbb; padding-left: 3%; height: 100%; overflow-y: auto">
+				<h2 id="header0">Edit My Demographics</h2>
+				<table>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>First Name:</b></td>
+						<td><input type="text" name="firstName" id="firstName"
+							value="{{personnelForm.firstName}}"
+							ng-model="personnelForm.firstName" /></td>
+						<td style="color: red;" ng-show="err[0]">{{err[0]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Last Name:</b></td>
+						<td><input type="text" name="lastName" id="lastName"
+							ng-model="personnelForm.lastName" /></td>
+						<td style="color: red;" ng-show="err[1]">{{err[1]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Email:</b></td>
+						<td><input type="text" name="email" id="email"
+							ng-model="personnelForm.email" /></td>
+						<td style="color: red;" ng-show="err[2]">{{err[2]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Address
+								Line 1:</b></td>
+						<td><input type="text" name="address1" id="address1"
+							value="{{personnelForm.address1}}"
+							ng-model="personnelForm.address1" /></td>
+						<td style="color: red;" ng-show="err[3]">{{err[3]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Address
+								Line 2:</b></td>
+						<td><input type="text" name="address2" id="address2"
+							ng-model="personnelForm.address2" /></td>
+						<td style="color: red;" ng-show="err[4]">{{err[4]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>City:</b></td>
+						<td><input type="text" name="city" id="city"
+							ng-model="personnelForm.city" /></td>
+						<td style="color: red;" ng-show="err[5]">{{err[5]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>State:</b></td>
+						<td><select name="state" id="state"
+							ng-model="personnelForm.state">
+								<option ng-repeat="st in states">{{st.id}}</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Zip:</b></td>
+						<td><input type="text" name="zip" id="zip"
+							ng-model="personnelForm.zip" /></td>
+						<td style="color: red;" ng-show="err[6]">{{err[6]}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: left; padding: 5px"><b>Phone:</b></td>
+						<td><input type="text" name="phone" id="phone"
+							value="personnelForm.phone" placeholder="xxx-xxx-xxxx"
+							ng-model="personnelForm.phone" /></td>
+						<td style="color: red;" ng-show="err[7]">{{err[7]}}</td>
+					</tr>
+				</table>
+
+				<br />
+				<button ng-click="submit()" class="btn" name="submit">Submit</button>
+
+				<div name="success" style="color: green;">{{message}}</div>
+			</div>
+		</div>
+
+	</div>
+</body>
+</html>

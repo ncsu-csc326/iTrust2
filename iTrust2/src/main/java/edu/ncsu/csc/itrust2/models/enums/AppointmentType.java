@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.models.enums;
+package edu.ncsu.csc.iTrust2.models.enums;
 
 /**
  * Enum of all of the types of appointments that are recognized by the system.

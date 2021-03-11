@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.controllers.api.comm;
+package edu.ncsu.csc.iTrust2.controllers.api.comm;
 
 /**
  * A POJO class that represents the request body of a GET request for log

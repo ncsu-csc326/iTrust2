@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import com.google.gson.Gson;
 

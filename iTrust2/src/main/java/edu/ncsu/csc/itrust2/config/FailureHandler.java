@@ -1,35 +1,59 @@
-package edu.ncsu.csc.itrust2.config;
+package edu.ncsu.csc.iTrust2.config;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
 
-import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.LoginAttempt;
-import edu.ncsu.csc.itrust2.models.persistent.LoginBan;
-import edu.ncsu.csc.itrust2.models.persistent.LoginLockout;
-import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.EmailUtil;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.models.security.LoginAttempt;
+import edu.ncsu.csc.iTrust2.models.security.LoginBan;
+import edu.ncsu.csc.iTrust2.models.security.LoginLockout;
+import edu.ncsu.csc.iTrust2.services.UserService;
+import edu.ncsu.csc.iTrust2.services.security.LoginAttemptService;
+import edu.ncsu.csc.iTrust2.services.security.LoginBanService;
+import edu.ncsu.csc.iTrust2.services.security.LoginLockoutService;
+import edu.ncsu.csc.iTrust2.utils.EmailUtil;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Custom AuthenticationFailureHandler to record Failed attempts, and lockout or
  * ban a user or IP if necessary.
  *
  * @author Thomas
+ * @author Kai Presler-Marshall
  *
  */
 public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
+
+    @Autowired
+    private LoggerUtil          loggerUtil;
+
+    @Autowired
+    private EmailUtil           emailUtil;
+
+    @Autowired
+    private LoginBanService     loginBanService;
+
+    @Autowired
+    private LoginLockoutService loginLockoutService;
+
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
+    @Autowired
+    private UserService         userService;
+
     @Override
     public void onAuthenticationFailure ( final HttpServletRequest request, final HttpServletResponse response,
             final AuthenticationException ae ) throws IOException, ServletException {
@@ -43,19 +67,24 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
         User user = null;
         final String addr = request.getRemoteAddr();
 
+        if ( username != null ) {
+            user = userService.findByName( username );
+        }
+
         if ( ae instanceof BadCredentialsException ) {
             // need to lockout IP
-            if ( LoginAttempt.getIPFailures( addr ) >= 5 ) {
-                LoginAttempt.clearIP( addr );
+            if ( loginAttemptService.countByIP( addr ) >= 5 ) {
+                loginAttemptService.clearIP( addr );
                 // Check if need to ban IP
-                if ( LoginLockout.getRecentIPLockouts( addr ) >= 2 ) {
+                if ( loginLockoutService.getRecentIPLockouts( addr ) >= 2 ) {
                     // BAN
                     final LoginBan ban = new LoginBan();
                     ban.setIp( addr );
                     ban.setTime( ZonedDateTime.now() );
-                    ban.save();
-                    LoginLockout.clearIP( addr );
-                    LoggerUtil.log( TransactionType.IP_BANNED, addr, null, addr + " has been banned." );
+                    loginBanService.save( ban );
+
+                    loginLockoutService.clearIP( addr );
+                    loggerUtil.log( TransactionType.IP_BANNED, addr, null, addr + " has been banned." );
                     this.getRedirectStrategy().sendRedirect( request, response, "/login?ipbanned" );
                 }
                 else {
@@ -63,25 +92,11 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     final LoginLockout lockout = new LoginLockout();
                     lockout.setIp( addr );
                     lockout.setTime( ZonedDateTime.now() );
-                    lockout.save();
-                    LoggerUtil.log( TransactionType.IP_LOCKOUT, addr, null, addr + " has been locked out for 1 hour." );
+                    loginLockoutService.save( lockout );
+                    loggerUtil.log( TransactionType.IP_LOCKOUT, addr, null, addr + " has been locked out for 1 hour." );
                     this.getRedirectStrategy().sendRedirect( request, response, "/login?iplocked" );
 
-                    final String name = username;
-                    final String email = EmailUtil.getEmailByUsername( name );
-                    if ( email != null ) {
-                        try {
-                            EmailUtil.sendEmail( email, "iTrust2: Your account has beeen locked out",
-                                    "Your iTrust2 account has been locked out due to too many failed log in attemtps." );
-                            LoggerUtil.log( TransactionType.CREATE_LOCKOUT_EMAIL, name );
-                        }
-                        catch ( final MessagingException e ) {
-                            e.printStackTrace();
-                        }
-                    }
-                    else {
-                        LoggerUtil.log( TransactionType.CREATE_MISSING_EMAIL_LOG, name );
-                    }
+                    sendEmail( username );
                 }
                 return;
             }
@@ -90,69 +105,42 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                 final LoginAttempt attempt = new LoginAttempt();
                 attempt.setTime( ZonedDateTime.now() );
                 attempt.setIp( addr );
-                attempt.save();
+                loginAttemptService.save( attempt );
             }
 
             // check username
             if ( username != null ) {
-                user = User.getByName( username );
+                user = userService.findByName( username );
             }
 
             if ( user != null ) {
                 // check if need to lockout username
-                if ( LoginAttempt.getUserFailures( user ) >= 2 ) {
-                    LoginAttempt.clearUser( user );
+                if ( loginAttemptService.countByUser( user ) >= 2 ) {
+                    loginAttemptService.clearUser( user );
                     // check if need to ban user
-                    if ( LoginLockout.getRecentUserLockouts( user ) >= 2 ) {
-                        LoginLockout.clearUser( user );
+                    if ( loginLockoutService.getRecentUserLockouts( user ) >= 2 ) {
+                        loginLockoutService.clearUser( user );
                         final LoginBan ban = new LoginBan();
                         ban.setTime( ZonedDateTime.now() );
                         ban.setUser( user );
-                        ban.save();
-                        LoggerUtil.log( TransactionType.USER_BANNED, username, null, username + " has been banned." );
+                        loginBanService.save( ban );
+                        loggerUtil.log( TransactionType.USER_BANNED, username, null, username + " has been banned." );
                         this.getRedirectStrategy().sendRedirect( request, response, "/login?banned" );
 
-                        final String name = username;
-                        final String email = EmailUtil.getEmailByUsername( name );
-                        if ( email != null ) {
-                            try {
-                                EmailUtil.sendEmail( email, "iTrust2: Your account has beeen locked out",
-                                        "Your iTrust2 account has been locked out due to too many failed log in attemtps." );
-                                LoggerUtil.log( TransactionType.CREATE_LOCKOUT_EMAIL, name );
-                            }
-                            catch ( final MessagingException e ) {
-                                e.printStackTrace();
-                            }
-                        }
-                        else {
-                            LoggerUtil.log( TransactionType.CREATE_MISSING_EMAIL_LOG, name );
-                        }
+                        sendEmail( username );
+
                     }
                     else {
                         // lockout user
                         final LoginLockout lock = new LoginLockout();
                         lock.setTime( ZonedDateTime.now() );
                         lock.setUser( user );
-                        lock.save();
-                        LoggerUtil.log( TransactionType.USER_LOCKOUT, username, null,
+                        loginLockoutService.save( lock );
+                        loggerUtil.log( TransactionType.USER_LOCKOUT, username, null,
                                 username + " has been locked out for 1 hour." );
                         this.getRedirectStrategy().sendRedirect( request, response, "/login?locked" );
 
-                        final String name = username;
-                        final String email = EmailUtil.getEmailByUsername( name );
-                        if ( email != null ) {
-                            try {
-                                EmailUtil.sendEmail( email, "iTrust2: Your account has beeen locked out",
-                                        "Your iTrust2 account has been locked out due to too many failed log in attemtps." );
-                                LoggerUtil.log( TransactionType.CREATE_LOCKOUT_EMAIL, name );
-                            }
-                            catch ( final MessagingException e ) {
-                                e.printStackTrace();
-                            }
-                        }
-                        else {
-                            LoggerUtil.log( TransactionType.CREATE_MISSING_EMAIL_LOG, name );
-                        }
+                        sendEmail( username );
                     }
                     return;
                 }
@@ -161,22 +149,22 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
                     final LoginAttempt attempt = new LoginAttempt();
                     attempt.setTime( ZonedDateTime.now() );
                     attempt.setUser( user );
-                    attempt.save();
+                    loginAttemptService.save( attempt );
                 }
             }
 
         }
         else if ( ae instanceof DisabledException ) {
             if ( username != null ) {
-                user = User.getByName( username );
+                user = userService.findByName( username );
             }
             if ( user != null ) {
                 // redirect to user lockout or user ban
-                if ( LoginBan.isUserBanned( user ) ) {
+                if ( loginBanService.isUserBanned( user ) ) {
                     this.getRedirectStrategy().sendRedirect( request, response, "/login?banned" );
                     return;
                 }
-                else if ( LoginLockout.isUserLocked( user ) ) {
+                else if ( loginLockoutService.isUserLocked( user ) ) {
                     this.getRedirectStrategy().sendRedirect( request, response, "/login?locked" );
                     return;
                 }
@@ -187,6 +175,19 @@ public class FailureHandler extends SimpleUrlAuthenticationFailureHandler {
             return;
         }
         this.getRedirectStrategy().sendRedirect( request, response, "/login?error" );
+    }
+
+    private void sendEmail ( final String username ) {
+        final User user = userService.findByName( username );
+        if ( null != user ) {
+            emailUtil.sendEmail( user, "iTrust2: Your account has beeen locked out",
+                    "Your iTrust2 account has been locked out due to too many failed log in attempts." );
+            loggerUtil.log( TransactionType.CREATE_LOCKOUT_EMAIL, username );
+
+        }
+        else {
+            loggerUtil.log( TransactionType.CREATE_MISSING_EMAIL_LOG, username );
+        }
     }
 
 }

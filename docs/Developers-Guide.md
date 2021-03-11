@@ -20,23 +20,15 @@ To import your project:
 Give your workspace time to build.  If you run into issues with your project building, you may want to shut down Eclipse, delete the `.m2` directory in your user directory and restart Eclipse with a fresh Maven setup.
 
 ## iTrust2 Properties
-There are two properties files that need to be set up for iTrust2 to talk with your database and an email account.  For the first two files, make a copy of the `*.properites.template` file and edit the file to contain your database's password.  `.gitignore` has been set up so that the two files will not be pushed to GitHub, but double check that they are not in your first push.
+Similar to CoffeeMaker, there's a properties file that need to be set up for iTrust2 to talk with your database.  Copy `iTrust2/src/main/resources/application.yml.template` to `iTrust2/src/main/resources/application.yml` and add in your database credentials.  **Do not rename the file or it will break the gitignore setup**
 
-  * `src/main/java/db.properties.template` copied to `src/main/java/db.properties`
-  * `src/main/java/email.properties.template` copied to `src/main/java/email.properties`
 
-Edit the _second_ file (`email.properties`) and add in the credentials of a throwaway Gmail account.  Your team can create one; we suggest naming it something like `csc326f18-20x-y`.  The first two lines of the properties file get the email account; the third one gets the password for your account.  You will also need to [enable less secure access](https://support.google.com/accounts/answer/6010255?hl=en) on your email account.
 
-## Setting up Admin User
-An Admin user is required to start using iTrust2.  It's also helpful to have a HCP and Patient to work with.
-
-Run `edu.ncsu.csc.itrust2.utils.HibernateDataGenerator` in the `src/test/java/` folder to create a starting set of users. This should create all the users required for running the test suite later, and refreshes the database into "good to test" state.
-
-## Run iTrust2 on Jetty
+## Run iTrust2 on Tomcat
 To run iTrust2:
 1. Right-click on iTrust2 in Eclipse
 2. Select Run As -> `Maven Build...`
-3. In the "Goals" field, type `jetty:run`
+3. In the "Goals" field, type `spring-boot:run`
 4. Click "Apply"
 5. Click "Run"
 6. If you see an error like:
@@ -54,18 +46,23 @@ make sure that you add a JDK to your Eclipse workspace: Window -> Preferences ->
 
 Once the server is running, open your favorite browser and go to http://localhost:8080/iTrust2.  You'll see our favorite Dr. Jenkins' smiling face!
 
+## Setting up Admin User
+An Admin user is required to start using iTrust2.  It's also helpful to have a HCP and Patient to work with.  Once iTrust2 launches, click the Generate Sample Users button on the login screen.
+
+
 ## Run Tests
 Just like with CoffeeMaker, the server must be running for Cucmber tests to run.  You can run all of the tests at once by right clicking on the `src/test/java` folder and selecting **Run As > JUnit** or you can run the tests by type by selecting the `unit`, `apitest`, or `cucmber` folders.
 
-If tests seem to fail for no reason, try running `edu.ncsu.csc.itrust2.utils.HibernateDataGenerator` in the `src/test/java/` folder before running the tests again. Its possible that your database is in a state that is incompatible with the current test suite.
+If tests seem to fail for no reason, drop your database (through MySQL Workbench or similar) and rerun.  
+
 
 ## Run CheckStyle
 iTrust2 has been set up with the CSC Checkstyle configuration in `src/test/resources/reporting/csc_checkstyle.xml`.  The requirement for the `@author` tag has been removed, so you can update your local Checkstyle to use the updated configuration file in your iTrust2 project.
 
 ## Run Maven Build
-Maven is set up to run locally so you can start testing what the build will look like on Jenkins (which will be ready by Part 2).  The goals are `clean test verify checkstyle:checkstyle`. 
+Maven is set up to run locally so you can start testing what the build will look like on Jenkins (which will be ready by Part 2).  The goals are `clean test integration-test checkstyle:checkstyle`. 
 
-**The Jetty server is started/stopped as part of the build.  Do NOT have a local instance of Jetty running, or you'll receive errors during the build.**
+**The Tomcat application server is started/stopped as part of the build.  Do NOT have a local instance of Tomcat running, or you'll receive errors during the build.**
 
 If you don't want to use Eclipse, you can also run iTrust2 in development mode directly from the command line.  To run the data generator, you can run `mvn -f pom-data.xml process-test-classes`; to run the main iTrust2 server, run `mvn jetty:run`.  Note that to run any of these, you'll need to have Maven on your path.  If you do not, instructions are available [here](https://maven.apache.org/install.html).
 
@@ -118,7 +115,3 @@ and similarly for ZonedDateTime objects:
 @JsonAdapter( ZonedDateTimeAdapter.class )
 private ZonedDateTime date;
 ```
-
-# Notes and Quirks
-
-The current implementation of "Personal Representatives" only works when logged in as a patient with a Patient object. If the patient you are logged in as prompts strange errors for Personal Representatives, go to their Edit Demographics page and fill in a set of demographics for the patient. This should create a Patient object for the user, and no longer prompt errors on Personal Representatives.

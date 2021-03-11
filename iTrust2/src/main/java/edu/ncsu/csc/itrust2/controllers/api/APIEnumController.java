@@ -1,28 +1,27 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.models.enums.AppointmentType;
-import edu.ncsu.csc.itrust2.models.enums.BloodType;
-import edu.ncsu.csc.itrust2.models.enums.Ethnicity;
-import edu.ncsu.csc.itrust2.models.enums.EyeSurgeryType;
-import edu.ncsu.csc.itrust2.models.enums.Gender;
-import edu.ncsu.csc.itrust2.models.enums.HouseholdSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.LabResultScale;
-import edu.ncsu.csc.itrust2.models.enums.PatientSmokingStatus;
-import edu.ncsu.csc.itrust2.models.enums.Role;
-import edu.ncsu.csc.itrust2.models.enums.Specialty;
-import edu.ncsu.csc.itrust2.models.enums.State;
-import edu.ncsu.csc.itrust2.models.enums.Status;
-import edu.ncsu.csc.itrust2.models.enums.SymptomSeverity;
-import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.models.User;
+import edu.ncsu.csc.iTrust2.models.enums.AppointmentType;
+import edu.ncsu.csc.iTrust2.models.enums.BloodType;
+import edu.ncsu.csc.iTrust2.models.enums.Ethnicity;
+import edu.ncsu.csc.iTrust2.models.enums.Gender;
+import edu.ncsu.csc.iTrust2.models.enums.HouseholdSmokingStatus;
+import edu.ncsu.csc.iTrust2.models.enums.PatientSmokingStatus;
+import edu.ncsu.csc.iTrust2.models.enums.Role;
+import edu.ncsu.csc.iTrust2.models.enums.State;
+import edu.ncsu.csc.iTrust2.models.enums.Status;
+import edu.ncsu.csc.iTrust2.services.UserService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * This class provides GET endpoints for all of the Enums, so that they can be
@@ -33,43 +32,11 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
 @RestController
 public class APIEnumController extends APIController {
 
-    /**
-     * Gets appointment types
-     *
-     * @return appointment types
-     */
-    @GetMapping ( BASE_PATH + "/appointmenttype" )
-    public List<AppointmentType> getAppointmentTypes () {
-        final User user = User.getByName( LoggerUtil.currentUser() );
-        final Role role = user.getRole();
-        if ( role.equals( Role.ROLE_HCP ) ) {
-            return Arrays.asList( AppointmentType.GENERAL_CHECKUP );
-        }
-        if ( role.equals( Role.ROLE_OD ) ) {
-            return Arrays.asList( AppointmentType.GENERAL_CHECKUP, AppointmentType.GENERAL_OPHTHALMOLOGY );
-        }
-        return Arrays.asList( AppointmentType.values() );
-    }
+    @Autowired
+    private LoggerUtil  loggerUtil;
 
-    /**
-     * Gets ophthalomogy surgery types
-     *
-     * @return ophthalomogy surgery types
-     */
-    @GetMapping ( BASE_PATH + "/ophthalmologysurgerytype" )
-    public List<EyeSurgeryType> getOphthalmologySurgeryTypes () {
-        return Arrays.asList( EyeSurgeryType.values() );
-    }
-
-    /**
-     * Gets appointment statuses
-     *
-     * @return appointment statuses
-     */
-    @GetMapping ( BASE_PATH + "/appointmentstatus" )
-    public List<Status> getAppointmentStatuses () {
-        return Arrays.asList( Status.values() );
-    }
+    @Autowired
+    private UserService userService;
 
     /**
      * Get the blood types
@@ -112,6 +79,41 @@ public class APIEnumController extends APIController {
     }
 
     /**
+     * Gets appointment types
+     *
+     * @return appointment types
+     */
+    @GetMapping ( BASE_PATH + "/appointmenttype" )
+    public List<AppointmentType> getAppointmentTypes () {
+        final User user = userService.findByName( LoggerUtil.currentUser() );
+        final Collection<Role> role = user.getRoles();
+        if ( role.contains( Role.ROLE_OD ) ) {
+            return List.of( AppointmentType.GENERAL_CHECKUP, AppointmentType.GENERAL_OPHTHALMOLOGY );
+        }
+
+        if ( role.contains( Role.ROLE_OPH ) ) {
+            return List.of( AppointmentType.GENERAL_CHECKUP, AppointmentType.GENERAL_OPHTHALMOLOGY,
+                    AppointmentType.OPHTHALMOLOGY_SURGERY );
+        }
+
+        if ( role.contains( Role.ROLE_HCP ) ) {
+            return List.of( AppointmentType.GENERAL_CHECKUP );
+        }
+
+        return Arrays.asList( AppointmentType.values() );
+    }
+
+    /**
+     * Gets appointment statuses
+     *
+     * @return appointment statuses
+     */
+    @GetMapping ( BASE_PATH + "/appointmentstatus" )
+    public List<Status> getAppointmentStatuses () {
+        return Arrays.asList( Status.values() );
+    }
+
+    /**
      * Get house smoking statuses
      *
      * @return house smoking statuses
@@ -133,46 +135,6 @@ public class APIEnumController extends APIController {
         final List<PatientSmokingStatus> ret = Arrays.asList( PatientSmokingStatus.values() ).subList( 1,
                 PatientSmokingStatus.values().length );
         return ret;
-    }
-
-    /**
-     * Gets lab result scales
-     *
-     * @return lab result scale
-     */
-    @GetMapping ( BASE_PATH + "/labresultscale" )
-    public List<LabResultScale> getLabResultScale () {
-        return Arrays.asList( LabResultScale.values() );
-    }
-
-    /**
-     * Get specialty types
-     *
-     * @return list of specialty types
-     */
-    @GetMapping ( BASE_PATH + "/specialties" )
-    public List<Specialty> getSpecialtyTypes () {
-        return Arrays.asList( Specialty.values() );
-    }
-
-    /**
-     * Get specialty type names
-     *
-     * @return list of specialty types
-     */
-    @GetMapping ( BASE_PATH + "/specialtynames" )
-    public List<String> getSpecialtyNames () {
-        return Specialty.getAllNames();
-    }
-
-    /**
-     * Gets symptom severity levels
-     *
-     * @return list of symptom severity levels
-     */
-    @GetMapping ( BASE_PATH + "/symptomseverities" )
-    public List<SymptomSeverity> getSymptomSeverityTypes () {
-        return Arrays.asList( SymptomSeverity.values() );
     }
 
 }

@@ -1,7 +1,8 @@
-package edu.ncsu.csc.itrust2.controllers.api;
+package edu.ncsu.csc.iTrust2.controllers.api;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,11 +14,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.ncsu.csc.itrust2.forms.admin.ICDCodeForm;
-import edu.ncsu.csc.itrust2.models.enums.TransactionType;
-import edu.ncsu.csc.itrust2.models.persistent.ICDCode;
-import edu.ncsu.csc.itrust2.models.persistent.User;
-import edu.ncsu.csc.itrust2.utils.LoggerUtil;
+import edu.ncsu.csc.iTrust2.forms.ICDCodeForm;
+import edu.ncsu.csc.iTrust2.models.ICDCode;
+import edu.ncsu.csc.iTrust2.models.enums.TransactionType;
+import edu.ncsu.csc.iTrust2.services.ICDCodeService;
+import edu.ncsu.csc.iTrust2.utils.LoggerUtil;
 
 /**
  * Class that provides the REST endpoints for handling ICD Codes. They can be
@@ -25,11 +26,18 @@ import edu.ncsu.csc.itrust2.utils.LoggerUtil;
  * remove, or edit them.
  *
  * @author Thomas
+ * @author Kai Presler-Marshall
  *
  */
 @RestController
 @SuppressWarnings ( { "unchecked", "rawtypes" } )
 public class APIICDCodeController extends APIController {
+
+    @Autowired
+    private LoggerUtil     loggerUtil;
+
+    @Autowired
+    private ICDCodeService service;
 
     /**
      * Returns a list of Codes in the system
@@ -38,8 +46,8 @@ public class APIICDCodeController extends APIController {
      */
     @GetMapping ( BASE_PATH + "/icdcodes" )
     public List<ICDCode> getCodes () {
-        LoggerUtil.log( TransactionType.ICD_VIEW_ALL, LoggerUtil.currentUser(), "Fetched icd codes" );
-        return ICDCode.getAll();
+        loggerUtil.log( TransactionType.ICD_VIEW_ALL, LoggerUtil.currentUser(), "Fetched icd codes" );
+        return (List<ICDCode>) service.findAll();
     }
 
     /**
@@ -52,11 +60,11 @@ public class APIICDCodeController extends APIController {
     @GetMapping ( BASE_PATH + "/icdcode/{id}" )
     public ResponseEntity getCode ( @PathVariable ( "id" ) final Long id ) {
         try {
-            final ICDCode code = ICDCode.getById( id );
+            final ICDCode code = (ICDCode) service.findById( id );
             if ( code == null ) {
                 return new ResponseEntity( errorResponse( "No code with id " + id ), HttpStatus.NOT_FOUND );
             }
-            LoggerUtil.log( TransactionType.ICD_VIEW, LoggerUtil.currentUser(), "Fetched icd code with id " + id );
+            loggerUtil.log( TransactionType.ICD_VIEW, LoggerUtil.currentUser(), "Fetched icd code with id " + id );
             return new ResponseEntity( code, HttpStatus.OK );
         }
         catch ( final Exception e ) {
@@ -79,23 +87,16 @@ public class APIICDCodeController extends APIController {
     @PreAuthorize ( "hasRole('ROLE_ADMIN')" )
     public ResponseEntity updateCode ( @PathVariable ( "id" ) final Long id, @RequestBody final ICDCodeForm form ) {
         try {
-            final ICDCode code = ICDCode.getById( id );
-            if ( code == null ) {
+            if ( !service.existsById( id ) ) {
                 return new ResponseEntity( "No code with id " + id, HttpStatus.NOT_FOUND );
             }
             form.setId( id );
-            final ICDCode updatedCode = new ICDCode( form );
-            updatedCode.save();
-            User user = null;
-            try {
-                user = User.getByName( LoggerUtil.currentUser() );
-            }
-            catch ( final Exception e ) {
-                // ignore, its was a test that wasn't authenticated properly.
-            }
-            LoggerUtil.log( TransactionType.ICD_EDIT, user.getUsername(), user.getUsername() + " edited an ICD Code" );
+            final ICDCode code = new ICDCode( form );
+            service.save( code );
+            loggerUtil.log( TransactionType.ICD_EDIT, LoggerUtil.currentUser(),
+                    LoggerUtil.currentUser() + " edited an ICD Code" );
 
-            return new ResponseEntity( updatedCode, HttpStatus.OK );
+            return new ResponseEntity( code, HttpStatus.OK );
         }
         catch ( final Exception e ) {
             return new ResponseEntity(
@@ -116,21 +117,13 @@ public class APIICDCodeController extends APIController {
     public ResponseEntity addCode ( @RequestBody final ICDCodeForm form ) {
         try {
             final ICDCode code = new ICDCode( form );
-            code.save();
-            User user = null;
-            try {
-                user = User.getByName( LoggerUtil.currentUser() );
-            }
-            catch ( final Exception e ) {
-                // ignore, its was a test that wasn't authenticated properly.
-            }
-            LoggerUtil.log( TransactionType.ICD_CREATE, user.getUsername(),
-                    user.getUsername() + " created an ICD Code" );
+            service.save( code );
+            loggerUtil.log( TransactionType.ICD_CREATE, LoggerUtil.currentUser(),
+                    LoggerUtil.currentUser() + " created an ICD Code" );
 
             return new ResponseEntity( code, HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            e.printStackTrace();
             return new ResponseEntity(
                     errorResponse( "Could not create ICD Code " + form.getCode() + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );
@@ -148,22 +141,14 @@ public class APIICDCodeController extends APIController {
     @PreAuthorize ( "hasRole('ROLE_ADMIN')" )
     public ResponseEntity deleteCode ( @PathVariable ( "id" ) final Long id ) {
         try {
-            final ICDCode code = ICDCode.getById( id );
-            code.delete();
-            User user = null;
-            try {
-                user = User.getByName( LoggerUtil.currentUser() );
-            }
-            catch ( final Exception e ) {
-                // ignore, its was a test that wasn't authenticated properly.
-            }
-            LoggerUtil.log( TransactionType.ICD_DELETE, LoggerUtil.currentUser(),
-                    user.getUsername() + " deleted an ICD Code" );
+            final ICDCode code = (ICDCode) service.findById( id );
+            service.delete( code );
+            loggerUtil.log( TransactionType.ICD_DELETE, LoggerUtil.currentUser(),
+                    LoggerUtil.currentUser() + " deleted an ICD Code" );
 
             return new ResponseEntity( HttpStatus.OK );
         }
         catch ( final Exception e ) {
-            e.printStackTrace();
             return new ResponseEntity(
                     errorResponse( "Could not delete ICD Code " + id + " because of " + e.getMessage() ),
                     HttpStatus.BAD_REQUEST );

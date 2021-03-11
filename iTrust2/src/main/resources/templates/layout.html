@@ -1,0 +1,257 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-spring4-3.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="head(title,links)">
+<title>iTrust2: <th:block th:include="${title}"></th:block>
+</title>
+<link rel="icon" type="image/x-icon"
+	th:href="@{/resources/img/favicon.ico}"
+	href="../resources/img/favicon.ico" />
+
+<!-- jQuery library -->
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!-- AngularJS library -->
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script
+	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<style type="text/css">
+/* Sticky footer styles
+      -------------------------------------------------- */
+html, body {
+	height: 100%;
+	/* The html and body elements cannot have any padding or margin. */
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	/* Negative indent footer by it's height */
+	margin: 0 auto -60px;
+}
+
+/* Set the fixed height of the footer here */
+#push, #footer {
+	height: 60px;
+}
+
+#footer {
+	background-color: #f5f5f5;
+}
+
+/* Lastly, apply responsive CSS fixes as necessary */
+@media ( max-width : 767px) {
+	#footer {
+		margin-left: -20px;
+		margin-right: -20px;
+		padding-left: 20px;
+		padding-right: 20px;
+	}
+}
+
+/* Custom page CSS
+      -------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+.container {
+	width: auto;
+	/* max-width: 680px; */
+}
+
+.container .credit {
+	margin: 20px 0;
+	text-align: center;
+}
+
+a {
+	color: green;
+}
+
+.navbar-form {
+	margin-left: 1em;
+}
+</style>
+
+<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+<!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+<th:block th:replace="${links}" />
+</head>
+
+<body th:fragment="body">
+	<script th:inline="javascript">
+		$(function () {
+			$http = angular.injector(["ng"]).get("$http");
+			$http.get("/iTrust2/api/v1/role").then(
+				function (response) {
+					var role = response.data.message; //contains user role
+					var navbarparent = document.getElementById('navbar-parent');
+					var admindropdown = document.getElementById('admin-dropdown');
+					var patientdropdown = document.getElementById('patient-dropdown');
+					var hcpdropdown = document.getElementById('hcp-dropdown');
+					var erdropdown = document.getElementById('er-dropdown');
+					var ltdropdown = document.getElementById('labtech-dropdown');
+					var virologistdropdown = document.getElementById('virologist-dropdown');
+					if (!role.includes('PATIENT')) {
+						navbarparent.removeChild(patientdropdown);
+					}
+					if (!role.includes('ADMIN')) {
+						navbarparent.removeChild(admindropdown);
+					}
+					if (!(role.includes('HCP') || role.includes('OD') || role.includes('OPH') || role.includes('VIROLOGIST'))) {
+						navbarparent.removeChild(hcpdropdown);
+					}
+					if (!role.includes('VIROLOGIST')) {
+						navbarparent.removeChild(virologistdropdown);
+					}
+					if (!role.includes('ER')) {
+						navbarparent.removeChild(erdropdown);
+					}
+					if (!role.includes('LABTECH')) {
+						navbarparent.removeChild(ltdropdown);
+					}
+
+				});
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+
+		})
+
+			/*]]>*/
+	</script>
+	<div id="wrap">
+
+		<!-- Navbar -->
+		<nav class="navbar navbar-inverse" style="margin: 0">
+			<div id="navbar-parent" class="container-fluid">
+				<div class="navbar-header">
+					<a class="navbar-brand" th:href="@{/}" id="homePage">iTrust2</a>
+				</div>
+				<!-- Admin navbar -->
+				<ul id="admin-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Admin<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/admin/hospitals" id="deletehospital">Manage
+									Hospitals</a></li>
+							<li><a href="/iTrust2/admin/users" id="users">Manage
+									Users</a></li>
+							<li><a href="/iTrust2/admin/drugs" id="drugs">Manage
+									Drugs</a></li>
+							<li><a href="/iTrust2/admin/manageICDCodes"
+								id="manageICDCodes">Manage ICD-10 Codes</a></li>
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics-personnel">Edit Demographics</a></li>
+						</ul></li>
+				</ul>
+				<!-- HCP navbar -->
+				<ul id="hcp-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#" id="hcpPatientDropDown">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/hcp/appointmentRequests"
+								id="viewrequests">View Appointment Requests and Upcoming
+									Appointments</a></li>
+							<li><a href="/iTrust2/hcp/editPatientDemographics"
+								id="editPatientDemographics">Edit Patient</a></li>
+							<li><a href="/iTrust2/hcp/documentOfficeVisit"
+								id="documentOfficeVisit">Document Office Visit</a></li>
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/personnel/editDemographics"
+								id="editdemographics">Edit Demographics</a></li>
+							<li><a href="/iTrust2/hcp/editOfficeVisit"
+								id="editOfficeVisit">Edit Office Visit</a></li>
+							<li><a href="/iTrust2/hcp/editPrescriptions"
+								id="editPrescriptions-personnel">Edit Prescriptions</a></li>
+						</ul></li>
+				</ul>
+				
+
+				<!-- Patient dropdown -->
+				<ul id="patient-dropdown" class="nav navbar-nav">
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" href="#">Patient<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle"
+						data-toggle="dropdown" id="appointments" href="#">Appointments<span
+							class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a
+								href="/iTrust2/patient/manageAppointmentRequest"
+								id="requestappointment">Manage Appointment Requests</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewOfficeVisits"
+								id="viewOfficeVisits">Past Office Visits</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewDiagnoses"
+								id="viewDiagnoses">Diagnoses</a></li>
+							<li><a href="/iTrust2/patient/officeVisit/viewPrescriptions"
+								id="viewPrescriptions">Prescriptions</a></li>
+							
+						</ul></li>
+					<li class="dropdown"><a class="dropdown-toggle" id="edit"
+						data-toggle="dropdown" href="#">Edit<span class="caret"></span></a>
+						<ul class="dropdown-menu">
+							<li><a href="/iTrust2/patient/editDemographics"
+								id="editdemographics-patient">Edit Demographics</a></li>
+						</ul></li>
+				</ul>
+				<ul id="extra-dropdown" class="nav navbar-nav">
+					<li><a
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v8/wiki">About</a></li>
+					<li><a
+						href="https://github.ncsu.edu/engr-csc326-staff/iTrust2-v8">View
+							Source</a></li>
+				</ul>
+				<div th:if="${#httpServletRequest.remoteUser != null}">
+					<form class="navbar-form navbar-right" th:action="@{/logout}"
+						method="post">
+						<a id="changePassword" style="color: white;"
+							href="/iTrust2/changePassword">Change Password</a> <input
+							type="submit" value="Log out" id="logout" />
+					</form>
+					<p class="navbar-text pull-right"
+						th:text="${#httpServletRequest.remoteUser}">sample_user</p>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Begin page content -->
+		<div class="container">
+			<div class="alert alert-success" th:if="${globalMessage}"
+				th:text="${globalMessage}"></div>
+			<div th:replace="${content}"></div>
+		</div>
+
+		<div id="push">
+			<!--  -->
+		</div>
+	</div>
+
+	<div id="footer">
+		<div class="container">
+			<p class="muted credit">iTrust2-v8</p>
+		</div>
+	</div>
+</body>
+
+</html>

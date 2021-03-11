@@ -1,0 +1,274 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:include="layout :: head(title=~{::title},links=~{::script})">
+<title>Request Appointment</title>
+<script th:src="@{/js/dateTimeService.js}"
+		src="../js/dateTimeService.js"></script>
+</head>
+
+<body th:include="layout :: body" th:with="content=~{::content}">
+	<div th:fragment="content">
+
+		<script th:inline="javascript">
+		/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+		/*<![CDATA[*/
+			var app = angular.module("manageAppointmentRequestApp", ['dateTimeServices']);
+
+			/**
+			 * A filter to humanize the text to be more user friendly.
+			 */
+			app.filter('humanize', function() {
+				return function(input) {
+					return input.toLowerCase().split('_')
+						.map((word) => word.charAt(0).toUpperCase() + word.substring(1))
+						.join(' ');
+				}
+            });
+
+			app.controller('manageAppointmentRequestCtrl', function($scope, $http, dateTimeService) {
+				$scope.appointment = {};
+				$scope.hcps = [];
+				
+				/**
+				 * Gets the personnel for the given role and adds it to the doctors object.
+				 * @param {string} role The role for which to get a list of personnel.
+				 */
+				$scope.getPersonnelByRole = function(roleObj) {
+					if (Array.isArray(roleObj)) {
+						for (var role of roleObj) {
+							$scope.getPersonnelByRole(role);
+						}
+					} else {
+						$http.get(`/iTrust2/api/v1/personnel/getbyroles/ROLE_${roleObj}`).then(
+							function(response) {
+								for (var user of response.data) {
+									$scope.hcps.push(user);
+								}
+							}, function(rejection) {
+								$scope.hcps = [];
+								$scope.message = "";
+								$scope.errorMsg += `${roleObj} not found\n`;
+							});
+					}
+				}
+				
+				/**
+				 * Loads the proper list of HCPs for the current appointment type.
+				 */
+				$scope.getHCPsForType = function() {
+					const type = $scope.appointment.type;
+					$scope.hcps = [];
+					
+					if (type === 'GENERAL_OPHTHALMOLOGY') {
+						// Gets all of the ophthalmology personnel
+						$scope.getPersonnelByRole(['OD', 'OPH']);
+					} else if (type === 'OPHTHALMOLOGY_SURGERY') {
+						// Gets all of the ophthalmologist personnel
+						$scope.getPersonnelByRole('OPH');
+					} else {
+						// Gets all of the doctor personnel
+						$scope.getPersonnelByRole(['HCP']);
+					}
+				}
+				
+				/**
+				 * Loads the appointment types from the API.
+				 */
+				$http.get("/iTrust2/api/v1/appointmenttype")
+					.then(function (response) {
+						$scope.types = response.data;
+					});
+				
+				/**
+				 * Submits the appointment request.
+				 */
+				$scope.submit = function() {
+					$scope.errorMsg = "";
+					$scope.appointment.patient = /*[[${#httpServletRequest.remoteUser}]]*/null;
+
+					// Validate request date
+					var date = new Date($scope.inputDate);
+					const now = new Date();
+					if (!dateTimeService.isValidDate(date) || date - now < 0) {
+						$scope.errorMsg += "Please input a valid date\n";
+					}
+
+					const time = new Date($scope.inputTime);
+					if (!dateTimeService.isValidDate(time)) {
+						$scope.errorMsg += "Please input a valid time\n";
+					}
+
+					if (!$scope.errorMsg.length) {
+						date.setHours(time.getHours());
+						date.setMinutes(time.getMinutes());
+						
+						if (!dateTimeService.isValidDate(date) || date - now < 0) {
+							$scope.errorMsg += "Please input a valid date and time\n";
+						} else {
+							$scope.appointment.date = date.toISOString();
+							delete $scope.appointment.time;
+						}
+					}
+
+					if (!$scope.appointment.hcp) {
+		            	$scope.errorMsg += "Please select an HCP\n";
+		            	$scope.message = "";
+		                $scope.message1 = "";
+		            }
+		            
+		            if ($scope.appointment.comments && $scope.appointment.comments.length > 50) {
+		            	$scope.errorMsg += "Comments must be less than 50 characters\n";
+		            	$scope.message = "";
+		                $scope.message1 = "";
+		            }
+					
+					// Add generic error message to front
+					if ($scope.errorMsg) {
+						$scope.errorMsg = "Could not submit appointment request\n" + $scope.errorMsg;
+					}
+					$http.post("/iTrust2/api/v1/appointmentrequests", $scope.appointment).then( 
+						function(response) {	
+							$scope.loadAppointments();
+							$scope.message = "Your appointment request has been requested successfully."
+							$scope.message1 = "";
+							$scope.appointment = {};
+							$scope.inputDate = null;
+							$scope.inputTime = null;
+							$scope.errorMsg1 = "";
+							$scope.selectedAppointment = {};
+						}, function(rejection) {
+							$scope.errorMsg += "Could not complete appointment request"
+							$scope.message = "";
+							$scope.message1 = "";
+						});
+				}
+				
+				$scope.selectedAppointment = {};
+				$scope.appointments = [];
+				$scope.patient = /*[[${#httpServletRequest.remoteUser}]]*/null;
+				$scope.loadAppointments = function() {
+					$http.get("/iTrust2/api/v1/appointmentrequest").then(
+						function(response) {
+							$scope.appointments = response.data;
+
+							if ($scope.appointments && !$scope.appointments.length) {
+								$scope.errorMsg1 = "No appointment requests found."
+							}
+						});
+				}
+				
+				$scope.deleteAppointment = function() {
+					$http.delete("/iTrust2/api/v1/appointmentrequests/" + $scope.selectedAppointment.id).then(
+						function (response) {
+							$scope.message1 = "Your appointment request was successfully deleted.";
+							$scope.message = "";
+			                $scope.loadAppointments();
+			                $scope.errorMsg1 = "";
+			                $scope.selectedAppointment = {};
+			            }, function (rejection) {
+			                $scope.errorMsg1 = "Could not remove appointment";
+			            });
+				} 
+				
+				$scope.loadAppointments();
+			});
+			/*]]>*/
+		</script>
+
+		<div ng-app="manageAppointmentRequestApp"
+			ng-controller="manageAppointmentRequestCtrl">
+			<div class="row" style="margin-top: 15px;">
+				<div class="col-md-7">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h3 class="panel-title">Pending Medical Appointments</h3>
+						</div>
+						<div class="panel-body">
+							<div class="col radio-box">
+								<div class="form-check">
+									<ul style="list-style: none; padding: 0;">
+										<li ng-repeat="appt in appointments"><span> <input
+												type="radio" ng-model="selectedAppointment.id" name="appt"
+												id="appt{{appt.id}}" value="{{appt.id}}" required="true" />
+												<label for="appt{{appt.id}}"
+												style="vertical-align: middle; padding-left: 10px; cursor: pointer;">
+													Type: {{appt.type | humanize}}<br /> Date: {{appt.date |
+													date : 'MM/dd/yyyy'}}<br /> Time: {{appt.date | date :
+													'shortTime'}}<br /> Status: {{appt.status | humanize}}
+											</label>
+										</span></li>
+									</ul>
+								</div>
+
+								<button class="btn btn-danger" ng-if="appointments.length"
+									ng-click="deleteAppointment()" name="deleteRequest">Delete</button>
+
+								<div name="success" class="text-success">{{message1}}</div>
+								<div name="errorMsg" class="text-danger">{{errorMsg1}}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-5">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h3 class="panel-title">Request Medical Appointment</h3>
+						</div>
+						<div class="panel-body">
+							<form>
+								<div class="form-group">
+									<label for="type">Type:</label> <select
+										ng-model="appointment.type" name="type" class="form-control"
+										ng-change="getHCPsForType()">
+										<option ng-repeat="type in types" value="{{type}}">{{type
+											| humanize}}</option>
+									</select>
+								</div>
+
+								<div class="form-group">
+									<label for="hcp">HCP:
+										</td> <select ng-model="appointment.hcp" name="hcp" id="hcp"
+										class="form-control" ng-disabled="!appointment.type">
+											<option ng-repeat="hcp in hcps">{{hcp.username}}</option>
+									</select>
+								</div>
+
+								<div class="form-group">
+									<label for="date">Date:</label> <input id="date" type="date"
+										class="form-control" ng-model="inputDate" name="date"
+										ng-disabled="!appointment.type" required="true" />
+								</div>
+
+								<div class="form-group">
+									<label for="time">Time:</label> <input id="time" type="time"
+										name="time" class="form-control" ng-model="inputTime"
+										ng-disabled="!appointment.type" required="true" />
+								</div>
+
+								<div class="form-group">
+									<label for="comments">Comments:</label>
+									<textarea id="comments" class="form-control"
+										ng-disabled="!appointment.type"
+										ng-model="appointment.comments" name="comments">
+									</textarea>
+								</div>
+
+								<div class="form-group">
+									<button type="submit" class="btn btn-primary"
+										ng-click="submit()" name="submitRequest">Submit
+										Request</button>
+								</div>
+
+								<div name="success" class="text-success"
+									style="white-space: pre;">{{message}}</div>
+								<div name="errorMsg" class="text-danger"
+									style="white-space: pre;">{{errorMsg}}</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:tiles="http://www.thymeleaf.org">
+<head>
+<title tiles:fragment="title">iTrust2 :: View Internal Emails</title>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- AngularJS library -->
+<script
+	src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+</head>
+<body>
+	<div tiles:fragment="content">
+		<script th:inline="javascript">
+			/* Otherwise Thymeleaf tries to parse Javascript as XML and breaks itself sometimes.  Sigh */
+			/*<![CDATA[*/
+			var app = angular.module("emailsApp", []);
+			app.controller('emailsCtrl', function($scope, $http) {
+				$scope.fetchEmails = function() {
+					$http.get("api/v1/emails").then(function(response) {
+						$scope.emails = response.data;
+					}, function(failure) {
+						console.log("Could not fetch emails!");
+					});
+				}
+
+				$scope.fetchEmails();
+			});
+			/*]]>*/
+		</script>
+
+		<div class="container" ng-app="emailsApp" ng-controller="emailsCtrl">
+			<div class="row">
+				<div class="col">
+					Normally you would <strong>never</strong> want to make data like
+					this available without authentication. This is done solely for
+					testing purposes so that we can avoid a reliance on third-party
+					services such as Gmail.
+				</div>
+
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="panel panel-primary">
+						<div class="panel-heading">
+							<h3>iTrust2 System Emails</h3>
+						</div>
+						<div class="panel-body">
+							<table class="table table-bordered">
+								<thead>
+									<tr>
+										<th>Sender</th>
+										<th>Receiver</th>
+										<th>Subject</th>
+										<th>Content</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr name="emailTableRow"
+										ng-repeat="email in emails track by $index">
+										<td name="senderCell">{{email.sender}}</td>
+										<td name="receiverCell">{{email.receiver.username}}</td>
+										<td name="subjectCell">{{email.subject}}</td>
+										<td name="messageCell">{{email.messageBody}}</td>
+									</tr>
+								</tbody>
+							</table>
+							<br>
+
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</body>
+</html>

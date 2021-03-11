@@ -1,4 +1,4 @@
-package edu.ncsu.csc.itrust2.cucumber;
+package edu.ncsu.csc.iTrust2.cucumber;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -8,36 +8,10 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 
 public class PersonnelEditDemographicsStepDefs extends CucumberTest {
-
-    private final String baseUrl = "http://localhost:8080/iTrust2";
-
-    @Given ( "An admin exists in the system" )
-    public void personnelExists () {
-        attemptLogout();
-
-        // All tests can safely assume the existence of the 'hcp', 'admin', and
-        // 'patient' users
-    }
-
-    @When ( "I log in as a personnel admin" )
-    public void loginAsHCP () {
-        driver.get( baseUrl );
-        waitForAngular();
-
-        final WebElement username = driver.findElement( By.name( "username" ) );
-        username.clear();
-        username.sendKeys( "admin" );
-        final WebElement password = driver.findElement( By.name( "password" ) );
-        password.clear();
-        password.sendKeys( "123456" );
-        final WebElement submit = driver.findElement( By.className( "btn" ) );
-        submit.click();
-    }
 
     @When ( "I navigate to the Personnel Edit My Demographics page" )
     public void editDemographicsP () {
@@ -83,10 +57,6 @@ public class PersonnelEditDemographicsStepDefs extends CucumberTest {
         phone.clear();
         phone.sendKeys( "123-456-7890" );
 
-        final WebElement specialty = driver.findElement( By.id( "specialty" ) );
-        specialty.clear();
-        specialty.sendKeys( "Politiker" );
-
         final WebElement submit = driver.findElement( By.className( "btn" ) );
         submit.click();
 
@@ -102,7 +72,7 @@ public class PersonnelEditDemographicsStepDefs extends CucumberTest {
 
     @Then ( "The admin can view new demographics" )
     public void viewDemographicsP () {
-        driver.get( baseUrl );
+        driver.get( BASE_URL );
         waitForAngular();
 
         ( (JavascriptExecutor) driver )
