@@ -64,7 +64,7 @@
 		<dependency>
 			<groupId>io.github.bonigarcia</groupId>
 			<artifactId>webdrivermanager</artifactId>
-			<version>3.6.2</version>
+			<version>6.1.0</version>
 		</dependency>
 
 		<!-- end Selenium-related dependencies -->
