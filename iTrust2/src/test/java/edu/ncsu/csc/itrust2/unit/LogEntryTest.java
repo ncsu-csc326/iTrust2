@@ -79,4 +79,27 @@ public class LogEntryTest {
                 3, service.findAllForUser( USER_1 ).size() );
 
     }
+
+    /**
+     * UC3 [S2]: "The values from range 1-99 are logging events which do not
+     * exist in any use case but are concerned with the system as a whole.
+     * Logging associated with authentication [UC2] is also in this range."
+     * Verifies that every authentication-related TransactionType (UC2) is
+     * assigned a code within the reserved 1-99 range, as opposed to a
+     * UC-specific range (e.g. the 100s reserved for UC1).
+     */
+    @Test
+    public void testAuthenticationTransactionCodes_fallWithinReservedRange () {
+
+        final TransactionType[] authEvents = { TransactionType.LOGIN_FAILURE, TransactionType.LOGIN_SUCCESS,
+                TransactionType.LOGOUT, TransactionType.USER_LOCKOUT, TransactionType.IP_LOCKOUT,
+                TransactionType.USER_BANNED, TransactionType.IP_BANNED };
+
+        for ( final TransactionType type : authEvents ) {
+            Assert.assertTrue(
+                    "Authentication event " + type + " should have a code in the reserved 1-99 range, but was "
+                            + type.getCode(),
+                    type.getCode() >= 1 && type.getCode() <= 99 );
+        }
+    }
 }
